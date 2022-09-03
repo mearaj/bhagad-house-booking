@@ -17,5 +17,5 @@ go build cmd/main.go
 
 ## Compile for windows on Arch Linux
 ```#!console
-GOOS=windows go build cmd/main.go -o output/windows/booking.exe
+GOOS=windows go build -o output/windows/booking.exe cmd/main.go
 ```

@@ -20,13 +20,15 @@ import (
 
 type BookingForm struct {
 	Manager
-	Theme             *material.Theme
-	Booking           service.Booking
-	btnStartDate      widget.Clickable
-	btnEndDate        widget.Clickable
-	btnClearStartDate IconButton
-	btnClearEndDate   IconButton
-	initialized       bool
+	Theme              *material.Theme
+	Booking            service.Booking
+	btnStartDate       widget.Clickable
+	btnEndDate         widget.Clickable
+	btnClearStartDate  IconButton
+	btnClearEndDate    IconButton
+	startFieldCalendar calendar.Calendar
+	endFieldCalendar   calendar.Calendar
+	initialized        bool
 }
 
 // NewBookingForm Always call this function to create BookingForm
@@ -147,19 +149,17 @@ func (bf *BookingForm) drawDateField(gtx Gtx, label string, btnDate *widget.Clic
 func (bf *BookingForm) showStartFieldCalendar(gtx Gtx) Dim {
 	gtx.Constraints.Max.X = int(float32(gtx.Constraints.Max.X) * 0.85)
 	gtx.Constraints.Max.Y = int(float32(gtx.Constraints.Max.Y) * 0.85)
-	cal := calendar.Calendar{}
-	cal.OnCalendarDateClick = bf.onCalendarStartDateFieldClick
-	cal.Inset = layout.UniformInset(unit.Dp(16))
-	return ModalContentInstance.DrawContent(gtx, bf.Theme, cal.Layout)
+	bf.startFieldCalendar.OnCalendarDateClick = bf.onCalendarStartDateFieldClick
+	bf.startFieldCalendar.Inset = layout.UniformInset(unit.Dp(16))
+	return ModalContentInstance.DrawContent(gtx, bf.Theme, bf.startFieldCalendar.Layout)
 }
 
 func (bf *BookingForm) showEndFieldCalendar(gtx Gtx) Dim {
 	gtx.Constraints.Max.X = int(float32(gtx.Constraints.Max.X) * 0.85)
 	gtx.Constraints.Max.Y = int(float32(gtx.Constraints.Max.Y) * 0.85)
-	cal := calendar.Calendar{}
-	cal.OnCalendarDateClick = bf.onCalendarEndDateFieldClick
-	cal.Inset = layout.UniformInset(unit.Dp(16))
-	return ModalContentInstance.DrawContent(gtx, bf.Theme, cal.Layout)
+	bf.startFieldCalendar.OnCalendarDateClick = bf.onCalendarEndDateFieldClick
+	bf.endFieldCalendar.Inset = layout.UniformInset(unit.Dp(16))
+	return ModalContentInstance.DrawContent(gtx, bf.Theme, bf.endFieldCalendar.Layout)
 }
 func (bf *BookingForm) onCalendarStartDateFieldClick(t time.Time) {
 	bf.Modal().Dismiss(nil)

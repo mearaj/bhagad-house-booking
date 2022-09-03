@@ -11,6 +11,7 @@ import (
 	"gioui.org/unit"
 	"gioui.org/widget"
 	"gioui.org/widget/material"
+	"github.com/mearaj/bhagad-house-booking/alog"
 	"golang.org/x/exp/shiny/materialdesign/colornames"
 	"golang.org/x/exp/shiny/materialdesign/icons"
 	"image"
@@ -48,7 +49,7 @@ var cellItemsArr = make([]cellItem, 35)
 // space between months and years dropdown in the header
 var spaceBetweenHeaderDropdowns = unit.Dp(32)
 
-const dropdownWidth = unit.Dp(96)
+const dropdownWidth = unit.Dp(120)
 const minCellHeight = unit.Dp(80)
 
 var allMonthsButtonsArr = [12]monthButton{
@@ -122,22 +123,22 @@ func (c *Calendar) Layout(gtx Gtx) Dim {
 		}}
 	})
 
-	var monthsDropBtnOffLeft, yearsDropBtnOffRight int
 	d := c.Inset.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
 		flex := layout.Flex{Axis: layout.Vertical}
 		return flex.Layout(gtx,
 			layout.Rigid(func(gtx Gtx) Dim {
-				return c.drawViewHeader(gtx, &monthsDropBtnOffLeft, &yearsDropBtnOffRight)
+				return c.drawViewHeader(gtx)
 			}),
 			layout.Rigid(c.drawHeaderRow),
 			layout.Rigid(c.drawBodyRows),
 		)
 	})
 	if c.showMonths {
-		c.drawMonthsDropdownItems(gtx, monthsDropBtnOffLeft)
+		c.drawMonthsDropdownItems(gtx)
 	}
 	if c.showYears {
-		c.drawYearsDropdownItems(gtx, yearsDropBtnOffRight)
+		gtx.Constraints.Max.Y = d.Size.Y - gtx.Dp(viewHeaderHeight)
+		c.drawYearsDropdownItems(gtx)
 	}
 
 	return d
@@ -272,11 +273,11 @@ func (c *Calendar) OnYearButtonClick(gtx Gtx, year *yearButton) {
 	op.InvalidateOp{}.Add(gtx.Ops)
 }
 
-func (c *Calendar) drawMonthsDropdownItems(gtx Gtx, monthsDropBtnOffLeft int) Dim {
+func (c *Calendar) drawMonthsDropdownItems(gtx Gtx) Dim {
 	gtx.Constraints.Max.Y = gtx.Constraints.Max.Y - gtx.Dp(viewHeaderHeight)
 	op.Offset(image.Point{
-		X: monthsDropBtnOffLeft - gtx.Dp(spaceBetweenHeaderDropdowns),
-		Y: gtx.Dp(viewHeaderHeight),
+		X: gtx.Dp(16),
+		Y: gtx.Dp(viewHeaderHeight) + gtx.Dp(8),
 	}).Add(gtx.Ops)
 	layout.Stack{}.Layout(gtx,
 		layout.Stacked(func(gtx layout.Context) layout.Dimensions {
@@ -336,12 +337,11 @@ func (c *Calendar) drawMonthsDropdownItems(gtx Gtx, monthsDropBtnOffLeft int) Di
 	return Dim{}
 }
 
-func (c *Calendar) drawYearsDropdownItems(gtx Gtx, yearsDropBtnOffRight int) Dim {
+func (c *Calendar) drawYearsDropdownItems(gtx Gtx) Dim {
 	gtx.Constraints.Max.Y = gtx.Constraints.Max.Y - gtx.Dp(viewHeaderHeight)
-	width := gtx.Constraints.Max.X
 	op.Offset(image.Point{
-		X: width - (gtx.Dp(dropdownWidth) + yearsDropBtnOffRight + gtx.Dp(spaceBetweenHeaderDropdowns)),
-		Y: gtx.Dp(viewHeaderHeight),
+		X: gtx.Dp(16) + gtx.Dp(dropdownWidth) + gtx.Dp(spaceBetweenHeaderDropdowns),
+		Y: gtx.Dp(viewHeaderHeight) + gtx.Dp(8),
 	}).Add(gtx.Ops)
 	layout.Stack{}.Layout(gtx,
 		layout.Stacked(func(gtx layout.Context) layout.Dimensions {
@@ -401,77 +401,74 @@ func (c *Calendar) drawYearsDropdownItems(gtx Gtx, yearsDropBtnOffRight int) Dim
 	return Dim{}
 }
 
-func (c *Calendar) drawViewHeader(gtx Gtx, monthsDropBtnOffLeft, yearsDropBtnOffRight *int) Dim {
+func (c *Calendar) drawViewHeader(gtx Gtx) Dim {
 	month := c.Time().Month().String()
 	year := fmt.Sprintf("%d", c.Time().Year())
 	gtx.Constraints.Max.Y, gtx.Constraints.Min.Y = gtx.Dp(viewHeaderHeight), gtx.Dp(viewHeaderHeight)
-	flex := layout.Flex{Spacing: layout.SpaceSides, Alignment: layout.Middle}
-	d := flex.Layout(gtx,
-		layout.Flexed(1, func(gtx layout.Context) layout.Dimensions {
-			*monthsDropBtnOffLeft = gtx.Constraints.Max.X
-			return Dim{}
-		}),
-		layout.Rigid(func(gtx Gtx) Dim {
-			if c.btnDropdownMonth.Clicked() {
-				c.showMonths = !c.showMonths
-				c.showYears = false
-				if c.showMonths {
-					for i, eachButton := range allMonthsButtonsArr {
-						if eachButton.Month.String() == c.Time().Month().String() {
-							c.monthsList.Position.First = i
-							c.monthsList.Position.Offset = -32
-							break
+	inset := layout.Inset{Left: unit.Dp(16)}
+	d := inset.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
+		flex := layout.Flex{Spacing: layout.SpaceSides, Alignment: layout.Middle}
+		return flex.Layout(gtx,
+			layout.Rigid(func(gtx Gtx) Dim {
+				if c.btnDropdownMonth.Clicked() {
+					alog.Logger().Println("clicked")
+					c.showMonths = !c.showMonths
+					c.showYears = false
+					if c.showMonths {
+						for i, eachButton := range allMonthsButtonsArr {
+							if eachButton.Month.String() == c.Time().Month().String() {
+								c.monthsList.Position.First = i
+								c.monthsList.Position.Offset = -32
+								break
+							}
 						}
 					}
 				}
-			}
-			gtx.Constraints.Min.X = gtx.Dp(dropdownWidth)
-			d := c.btnDropdownMonth.Layout(gtx, func(gtx Gtx) Dim {
-				flex := layout.Flex{Spacing: layout.SpaceBetween}
-				return flex.Layout(gtx,
-					layout.Rigid(func(gtx Gtx) Dim {
-						label := material.Label(c.Theme, c.Theme.TextSize, month)
-						return label.Layout(gtx)
-					}),
-					layout.Rigid(layout.Spacer{Width: unit.Dp(16)}.Layout),
-					layout.Rigid(func(gtx Gtx) Dim {
-						downIcon, _ := widget.NewIcon(icons.NavigationArrowDropDown)
-						return downIcon.Layout(gtx, c.Theme.ContrastBg)
-					}),
-				)
-			})
-			return d
-		}),
-		layout.Rigid(layout.Spacer{Width: spaceBetweenHeaderDropdowns}.Layout),
-		layout.Rigid(func(gtx Gtx) Dim {
-			if c.btnDropdownYear.Clicked() {
-				c.showMonths = false
-				c.showYears = !c.showYears
-				if c.showYears {
-					c.scrollToSelectedYear()
+				gtx.Constraints.Min.X = gtx.Dp(dropdownWidth)
+				d := c.btnDropdownMonth.Layout(gtx, func(gtx Gtx) Dim {
+					flex := layout.Flex{Spacing: layout.SpaceBetween}
+					return flex.Layout(gtx,
+						layout.Rigid(func(gtx Gtx) Dim {
+							label := material.Label(c.Theme, c.Theme.TextSize, month)
+							return label.Layout(gtx)
+						}),
+						layout.Rigid(layout.Spacer{Width: unit.Dp(16)}.Layout),
+						layout.Rigid(func(gtx Gtx) Dim {
+							downIcon, _ := widget.NewIcon(icons.NavigationArrowDropDown)
+							return downIcon.Layout(gtx, c.Theme.ContrastBg)
+						}),
+					)
+				})
+				return d
+			}),
+			layout.Rigid(layout.Spacer{Width: spaceBetweenHeaderDropdowns}.Layout),
+			layout.Rigid(func(gtx Gtx) Dim {
+				if c.btnDropdownYear.Clicked() {
+					c.showMonths = false
+					c.showYears = !c.showYears
+					if c.showYears {
+						c.scrollToSelectedYear()
+					}
 				}
-			}
-			d := c.btnDropdownYear.Layout(gtx, func(gtx Gtx) Dim {
-				flex := layout.Flex{Spacing: layout.SpaceBetween}
-				return flex.Layout(gtx,
-					layout.Rigid(func(gtx Gtx) Dim {
-						label := material.Label(c.Theme, c.Theme.TextSize, year)
-						return label.Layout(gtx)
-					}),
-					layout.Rigid(layout.Spacer{Width: unit.Dp(16)}.Layout),
-					layout.Rigid(func(gtx Gtx) Dim {
-						downIcon, _ := widget.NewIcon(icons.NavigationArrowDropDown)
-						return downIcon.Layout(gtx, c.Theme.ContrastBg)
-					}),
-				)
-			})
-			return d
-		}),
-		layout.Flexed(1, func(gtx layout.Context) layout.Dimensions {
-			*yearsDropBtnOffRight = gtx.Constraints.Max.X
-			return Dim{}
-		}),
-	)
+				d := c.btnDropdownYear.Layout(gtx, func(gtx Gtx) Dim {
+					gtx.Constraints.Min.X = gtx.Dp(dropdownWidth)
+					flex := layout.Flex{Spacing: layout.SpaceBetween}
+					return flex.Layout(gtx,
+						layout.Rigid(func(gtx Gtx) Dim {
+							label := material.Label(c.Theme, c.Theme.TextSize, year)
+							return label.Layout(gtx)
+						}),
+						layout.Rigid(layout.Spacer{Width: unit.Dp(16)}.Layout),
+						layout.Rigid(func(gtx Gtx) Dim {
+							downIcon, _ := widget.NewIcon(icons.NavigationArrowDropDown)
+							return downIcon.Layout(gtx, c.Theme.ContrastBg)
+						}),
+					)
+				})
+				return d
+			}),
+		)
+	})
 	return d
 }
 
