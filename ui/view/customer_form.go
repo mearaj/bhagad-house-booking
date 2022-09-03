@@ -39,7 +39,7 @@ type CustomerForm struct {
 }
 
 // NewCustomerForm Always call this function to create CustomerForm
-func NewCustomerForm(manager Manager, customer service.Customer, OnSuccess func(addr string)) *CustomerForm {
+func NewCustomerForm(manager Manager, customer service.Customer, OnSuccess func(addr string)) CustomerForm {
 	inActiveTheme := fonts.NewTheme()
 	inActiveTheme.ContrastBg = color.NRGBA(colornames.Grey500)
 	contForm := CustomerForm{
@@ -48,7 +48,7 @@ func NewCustomerForm(manager Manager, customer service.Customer, OnSuccess func(
 		Customer:  customer,
 		OnSuccess: OnSuccess,
 	}
-	return &contForm
+	return contForm
 }
 
 func (p *CustomerForm) Layout(gtx Gtx) Dim {

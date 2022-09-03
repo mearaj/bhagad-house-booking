@@ -21,7 +21,7 @@ type page struct {
 	navigationIcon   *widget.Icon
 	buttonNavigation widget.Clickable
 	initialized      bool
-	booking          service.Booking
+	bookingForm      BookingForm
 }
 
 func New(manager Manager, booking service.Booking) Page {
@@ -35,7 +35,7 @@ func New(manager Manager, booking service.Booking) Page {
 		Manager:        manager,
 		Theme:          th,
 		navigationIcon: navIcon,
-		booking:        booking,
+		bookingForm:    NewBookingForm(manager, booking),
 	}
 	return &s
 }
@@ -48,6 +48,7 @@ func (p *page) Layout(gtx Gtx) Dim {
 	flex := layout.Flex{Axis: layout.Vertical, Alignment: layout.Start}
 	d := flex.Layout(gtx,
 		layout.Rigid(p.DrawAppBar),
+		layout.Rigid(p.bookingForm.Layout),
 	)
 	return d
 }
@@ -72,8 +73,8 @@ func (p *page) DrawAppBar(gtx Gtx) Dim {
 					}),
 					layout.Rigid(func(gtx Gtx) Dim {
 						return layout.Inset{Left: unit.Dp(16)}.Layout(gtx, func(gtx Gtx) Dim {
-							titleText := fmt.Sprintf("Edit Booking %d", p.booking.ID)
-							if p.booking.ID == 0 {
+							titleText := fmt.Sprintf("Edit Booking %d", p.bookingForm.Booking.ID)
+							if p.bookingForm.Booking.ID == 0 {
 								titleText = "Add New Booking"
 							}
 							title := material.Body1(th, titleText)
@@ -88,5 +89,5 @@ func (p *page) DrawAppBar(gtx Gtx) Dim {
 	})
 }
 func (p *page) URL() URL {
-	return AddEditBookingPageURL(p.booking.ID)
+	return AddEditBookingPageURL(p.bookingForm.Booking.ID)
 }

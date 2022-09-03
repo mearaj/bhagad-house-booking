@@ -22,6 +22,8 @@ type ModalContent struct {
 	layout.List
 }
 
+var ModalContentInstance = NewModalContent(nil)
+
 func NewModalContent(onCloseClick func()) *ModalContent {
 	iconClear, _ := widget.NewIcon(icons.ContentClear)
 	return &ModalContent{

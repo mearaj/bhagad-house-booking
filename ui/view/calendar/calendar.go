@@ -11,7 +11,6 @@ import (
 	"gioui.org/unit"
 	"gioui.org/widget"
 	"gioui.org/widget/material"
-	"github.com/mearaj/bhagad-house-booking/alog"
 	"golang.org/x/exp/shiny/materialdesign/colornames"
 	"golang.org/x/exp/shiny/materialdesign/icons"
 	"image"
@@ -22,6 +21,8 @@ import (
 
 type Dim = layout.Dimensions
 type Gtx = layout.Context
+
+type OnCalendarDateClick func(t time.Time)
 
 var weekdays = [7]time.Weekday{
 	time.Monday, time.Tuesday, time.Wednesday, time.Thursday, time.Friday, time.Saturday, time.Sunday,
@@ -82,6 +83,9 @@ type Calendar struct {
 	showYears        bool
 	fullView         widget.Clickable
 	viewList         layout.List
+	MaxWidthHeight   image.Point
+	OnCalendarDateClick
+	layout.Inset
 }
 
 func (c *Calendar) SetTime(t time.Time) {
@@ -110,7 +114,7 @@ func (c *Calendar) Layout(gtx Gtx) Dim {
 			c.showYears = false
 		}
 	}
-	flex := layout.Flex{Axis: layout.Vertical}
+
 	c.fullView.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
 		return Dim{Size: image.Point{
 			X: gtx.Constraints.Max.X,
@@ -119,13 +123,16 @@ func (c *Calendar) Layout(gtx Gtx) Dim {
 	})
 
 	var monthsDropBtnOffLeft, yearsDropBtnOffRight int
-	d := flex.Layout(gtx,
-		layout.Rigid(func(gtx Gtx) Dim {
-			return c.drawViewHeader(gtx, &monthsDropBtnOffLeft, &yearsDropBtnOffRight)
-		}),
-		layout.Rigid(c.drawHeaderRow),
-		layout.Rigid(c.drawBodyRows),
-	)
+	d := c.Inset.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
+		flex := layout.Flex{Axis: layout.Vertical}
+		return flex.Layout(gtx,
+			layout.Rigid(func(gtx Gtx) Dim {
+				return c.drawViewHeader(gtx, &monthsDropBtnOffLeft, &yearsDropBtnOffRight)
+			}),
+			layout.Rigid(c.drawHeaderRow),
+			layout.Rigid(c.drawBodyRows),
+		)
+	})
 	if c.showMonths {
 		c.drawMonthsDropdownItems(gtx, monthsDropBtnOffLeft)
 	}
@@ -180,7 +187,9 @@ func (c *Calendar) drawColumn(gtx Gtx, columnWidth int, btn *cellItem) layout.Fl
 		}
 		if c.Time().Month() == btn.Month() {
 			if btn.Clicked() {
-				c.OnCalendarItemClick(btn.Time)
+				if c.OnCalendarDateClick != nil {
+					c.OnCalendarDateClick(btn.Time)
+				}
 			}
 			now := time.Now()
 			isEqual := btn.Day() == now.Day() && now.Year() == btn.Year() && now.Month() == btn.Month()
@@ -223,7 +232,7 @@ func (c *Calendar) drawBodyRows(gtx Gtx) Dim {
 	endDate := lastDate
 	index := 0
 	rowIndex := 0
-	minMaxHeight := gtx.Constraints.Max.Y / 5
+	minMaxHeight := c.MaxWidthHeight.Y - gtx.Dp(viewHeaderHeight+monthsHeaderRowHeight)
 	if unit.Dp(minMaxHeight) < minCellHeight {
 		minMaxHeight = gtx.Dp(minCellHeight)
 	}
@@ -247,10 +256,6 @@ func (c *Calendar) drawBodyRows(gtx Gtx) Dim {
 		return flex.Layout(gtx, allRows[:]...)
 	})
 	return d
-}
-
-func (c *Calendar) OnCalendarItemClick(day time.Time) {
-	alog.Logger().Println(day.Day())
 }
 
 func (c *Calendar) OnMonthButtonClick(gtx Gtx, month *monthButton) {
@@ -439,7 +444,6 @@ func (c *Calendar) drawViewHeader(gtx Gtx, monthsDropBtnOffLeft, yearsDropBtnOff
 		}),
 		layout.Rigid(layout.Spacer{Width: spaceBetweenHeaderDropdowns}.Layout),
 		layout.Rigid(func(gtx Gtx) Dim {
-			alog.Logger().Println(gtx.Constraints.Max.X)
 			if c.btnDropdownYear.Clicked() {
 				c.showMonths = false
 				c.showYears = !c.showYears

@@ -84,7 +84,8 @@ func New(manager Manager) Page {
 			Started:  time.Time{},
 		},
 	}
-	p.CustomerForm = view.NewCustomerForm(manager, service.Customer{}, p.onAddCustomerSuccess)
+	customerForm := view.NewCustomerForm(manager, service.Customer{}, p.onAddCustomerSuccess)
+	p.CustomerForm = &customerForm
 	p.ModalContent = view.NewModalContent(func() { p.Modal().Dismiss(nil) })
 	p.NoCustomer = view.NewNoCustomer(manager, p.onAddCustomerSuccess, "Add Customer")
 	return &p
@@ -431,7 +432,8 @@ func (p *page) drawDeleteCustomersModal(gtx Gtx) Dim {
 
 func (p *page) onAddCustomerSuccess(addr string) {
 	p.Modal().Dismiss(func() {
-		p.CustomerForm = view.NewCustomerForm(p.Manager, service.Customer{}, p.onAddCustomerSuccess)
+		customerForm := view.NewCustomerForm(p.Manager, service.Customer{}, p.onAddCustomerSuccess)
+		p.CustomerForm = &customerForm
 		txt := fmt.Sprintf("Successfully added customer %s", addr)
 		p.Snackbar().Show(txt, nil, color.NRGBA{}, "")
 	})

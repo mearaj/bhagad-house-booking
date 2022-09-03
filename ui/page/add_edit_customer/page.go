@@ -20,7 +20,7 @@ type page struct {
 	Theme            *material.Theme
 	navigationIcon   *widget.Icon
 	buttonNavigation widget.Clickable
-	*CustomerForm
+	CustomerForm
 	initialized bool
 }
 
@@ -35,7 +35,7 @@ func New(manager Manager, customer service.Customer) Page {
 		Manager:        manager,
 		Theme:          th,
 		navigationIcon: navIcon,
-		CustomerForm: NewCustomerForm(manager, customer, func(addr string) {
+		CustomerForm: NewCustomerForm(manager, customer, func(customerID string) {
 
 		}),
 	}

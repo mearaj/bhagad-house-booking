@@ -16,19 +16,25 @@ type IconButton struct {
 	Icon   *widget.Icon
 	Text   string
 	layout.Inset
+	initialized bool
 }
 
 func (b *IconButton) Layout(gtx Gtx) Dim {
 	btnLayoutStyle := material.ButtonLayout(b.Theme, &b.Button)
 	btnLayoutStyle.CornerRadius = unit.Dp(8)
 	return btnLayoutStyle.Layout(gtx, func(gtx Gtx) Dim {
-		inset := b.Inset
-		if b.Inset == (layout.Inset{}) {
-			inset = layout.UniformInset(unit.Dp(12))
+		if !b.initialized {
+			if b.Inset == (layout.Inset{}) {
+				b.Inset = layout.UniformInset(unit.Dp(12))
+			}
+			b.initialized = true
 		}
-		return inset.Layout(gtx, func(gtx Gtx) Dim {
+		return b.Inset.Layout(gtx, func(gtx Gtx) Dim {
 			iconAndLabel := layout.Flex{Alignment: layout.Middle, Spacing: layout.SpaceSides}
 			textIconSpacer := unit.Dp(5)
+			if b.Text == "" {
+				textIconSpacer = 0
+			}
 
 			layIcon := layout.Rigid(func(gtx Gtx) Dim {
 				return layout.Inset{Right: textIconSpacer}.Layout(gtx, func(gtx Gtx) Dim {
@@ -44,6 +50,9 @@ func (b *IconButton) Layout(gtx Gtx) Dim {
 			})
 
 			layLabel := layout.Rigid(func(gtx Gtx) Dim {
+				if b.Text == "" {
+					return Dim{}
+				}
 				return layout.Inset{Left: textIconSpacer}.Layout(gtx, func(gtx Gtx) Dim {
 					l := material.Label(b.Theme, b.Theme.TextSize, b.Text)
 					l.Alignment = text.Middle
