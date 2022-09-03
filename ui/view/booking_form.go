@@ -157,7 +157,7 @@ func (bf *BookingForm) showStartFieldCalendar(gtx Gtx) Dim {
 func (bf *BookingForm) showEndFieldCalendar(gtx Gtx) Dim {
 	gtx.Constraints.Max.X = int(float32(gtx.Constraints.Max.X) * 0.85)
 	gtx.Constraints.Max.Y = int(float32(gtx.Constraints.Max.Y) * 0.85)
-	bf.startFieldCalendar.OnCalendarDateClick = bf.onCalendarEndDateFieldClick
+	bf.endFieldCalendar.OnCalendarDateClick = bf.onCalendarEndDateFieldClick
 	bf.endFieldCalendar.Inset = layout.UniformInset(unit.Dp(16))
 	return ModalContentInstance.DrawContent(gtx, bf.Theme, bf.endFieldCalendar.Layout)
 }
