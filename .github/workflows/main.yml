@@ -18,7 +18,7 @@ jobs:
         env:
           POSTGRES_USER: root
           POSTGRES_PASSWORD: secret
-          POSTGRES_DB: simple_bank
+          POSTGRES_DB: bhagad_house_booking
         ports:
           - 5432:5432
         options: >-
@@ -45,7 +45,7 @@ jobs:
           which migrate
 
       - name: Run migrations
-        run: make migrateup
+        run: cd backend && make migrateup
 
       - name: Test
-        run: make test
+        run: cd backend && make test

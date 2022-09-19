@@ -12,7 +12,7 @@ var testQueries *Queries
 
 const (
 	dbDriver = "postgres"
-	dbSource = "postgresql://root:secret@localhost:5433/bhagad_house_booking?sslmode=disable"
+	dbSource = "postgresql://root:secret@localhost:5432/bhagad_house_booking?sslmode=disable"
 )
 
 var testDB *sql.DB
