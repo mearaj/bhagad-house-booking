@@ -3,15 +3,16 @@ module github.com/mearaj/bhagad-house-booking
 go 1.19
 
 require (
-	gioui.org v0.0.0-20220830130127-276b7eefdd65
-	gioui.org/x v0.0.0-20220812201728-6e5ccb802ed1
+	gioui.org v0.0.0-20221004231135-80196f3c3ed3
+	gioui.org/x v0.0.0-20220919203322-ce11c01a7117
 	github.com/dustin/go-humanize v1.0.0
-	github.com/lib/pq v1.10.6
-	github.com/mearaj/giowidgets v0.0.0-00010101000000-000000000000
+	github.com/lib/pq v1.10.7
+	github.com/mearaj/giowidgets v0.0.0-20220904074149-98ae4abd9760
 	github.com/sirupsen/logrus v1.9.0
-	golang.org/x/exp/shiny v0.0.0-20220827204233-334a2380cb91
+	github.com/stretchr/testify v1.8.0
+	golang.org/x/exp/shiny v0.0.0-20221004215720-b9f4876ce741
 	gorm.io/driver/sqlite v1.3.6
-	gorm.io/gorm v1.23.8
+	gorm.io/gorm v1.23.10
 )
 
 require (
@@ -30,8 +31,6 @@ require (
 	github.com/mattn/go-sqlite3 v1.14.15 // indirect
 	github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/stretchr/objx v0.4.0 // indirect
-	github.com/stretchr/testify v1.8.0 // indirect
 	golang.org/x/image v0.0.0-20220722155232-062f8c9fd539 // indirect
 	golang.org/x/sys v0.0.0-20220825204002-c680a09ffe64 // indirect
 	golang.org/x/text v0.3.7 // indirect
