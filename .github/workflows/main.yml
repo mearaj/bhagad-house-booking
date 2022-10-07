@@ -45,7 +45,7 @@ jobs:
           which migrate
 
       - name: Run migrations
-        run: cd backend && make migrateup
+        run: cd common && make migrateup
 
       - name: Test
-        run: cd backend && make test
+        run: cd common && make test
