@@ -6,7 +6,7 @@ import (
 	"gioui.org/unit"
 	"gioui.org/widget"
 	"gioui.org/widget/material"
-	"github.com/mearaj/bhagad-house-booking/frontend/service"
+	. "github.com/mearaj/bhagad-house-booking/common/db/sqlc"
 	. "github.com/mearaj/bhagad-house-booking/frontend/ui/fwk"
 	"golang.org/x/exp/shiny/materialdesign/icons"
 	"image/color"
@@ -42,7 +42,7 @@ func (nc *NoCustomerView) Layout(gtx Gtx) Dim {
 	flex := layout.Flex{Axis: layout.Vertical, Spacing: layout.SpaceSides, Alignment: layout.Middle}
 	gtx.Constraints.Min.Y = gtx.Constraints.Max.Y
 	if nc.buttonAddCustomer.Button.Clicked() {
-		nc.Manager.NavigateToUrl(AddEditCustomerPageURL(service.Customer{}.ID), func() {})
+		nc.Manager.NavigateToUrl(AddEditCustomerPageURL(Customer{}.ID), func() {})
 	}
 	d := flex.Layout(gtx,
 		layout.Rigid(func(gtx Gtx) Dim {

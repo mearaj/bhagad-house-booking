@@ -46,8 +46,8 @@ front-build-win:
 	cd $(REPO_NAME)/frontend/cmd && CGO_ENABLED=1 GOOS=windows GOARCH=amd64 go build -o $(FRONT_OUT_ABS)/win/booking.exe .
 front-build-wasm:
 	# wasm
-	# fails because frontend and backend are intertwined...
-	#cd $(REPO_NAME)/frontend/cmd && gogio -target js -o $(FRONT_OUT_ABS)/wasm .
+	#fails because frontend and backend are intertwined...
+	cd $(REPO_NAME)/frontend/cmd && gogio -target js -o $(FRONT_OUT_ABS)/wasm .
 front-build-delete:
 	cd $(REPO_NAME)/frontend/cmd && rm -f $(FRONT_OUT_ABS)
 front-run-mac:
@@ -60,20 +60,20 @@ front-run-wasm:
 # postgresql://root:secret@localhost:5432/bhagad_house_booking?sslmode=disable"
 # MAKE sure postres NOT running on desktop, using the same port !!
 back-gen:
-	cd $(REPO_NAME)/backend/ && $(MAKE) sqlc
+	cd $(REPO_NAME)/common/ && $(MAKE) sqlc
 back-db-run:
-	cd $(REPO_NAME)/backend/ && $(MAKE) postgres
+	cd $(REPO_NAME)/common/ && $(MAKE) postgres
 back-db-create:
-	cd $(REPO_NAME)/backend/ && $(MAKE) createdb
+	cd $(REPO_NAME)/common/ && $(MAKE) createdb
 back-db-drop:
-	cd $(REPO_NAME)/backend/ && $(MAKE) dropdb
+	cd $(REPO_NAME)/common/ && $(MAKE) dropdb
 back-db-migrate-up:
-	cd $(REPO_NAME)/backend/ && $(MAKE) migrateup
+	cd $(REPO_NAME)/common/ && $(MAKE) migrateup
 back-db-migrate-down:
-	cd $(REPO_NAME)/backend/ && $(MAKE) migratedown
+	cd $(REPO_NAME)/common/ && $(MAKE) migratedown
 back-db-test:
 	# fills db with data..
-	cd $(REPO_NAME)/backend/ && $(MAKE) test
+	cd $(REPO_NAME)/common/ && $(MAKE) test
 
 
 ### pgweb

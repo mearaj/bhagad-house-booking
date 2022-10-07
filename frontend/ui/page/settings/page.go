@@ -9,7 +9,7 @@ import (
 	"gioui.org/widget"
 	"gioui.org/widget/material"
 	"gioui.org/x/component"
-	"github.com/mearaj/bhagad-house-booking/frontend/service"
+	"github.com/mearaj/bhagad-house-booking/common/db/sqlc"
 	. "github.com/mearaj/bhagad-house-booking/frontend/ui/fwk"
 	"github.com/mearaj/bhagad-house-booking/frontend/ui/page/add_edit_booking"
 	"github.com/mearaj/bhagad-house-booking/frontend/ui/view"
@@ -106,7 +106,7 @@ func (p *page) Layout(gtx Gtx) (d Dim) {
 		p.items = make([]*pageItem, 0)
 	}
 	if p.btnAddBooking.Clicked() {
-		addEditBookingPage := add_edit_booking.New(p.Manager, service.Booking{})
+		addEditBookingPage := add_edit_booking.New(p.Manager, sqlc.Booking{})
 		p.Manager.NavigateToPage(addEditBookingPage, func() {
 
 		})

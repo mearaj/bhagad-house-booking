@@ -7,7 +7,7 @@ import (
 	"gioui.org/widget"
 	"gioui.org/widget/material"
 	"github.com/mearaj/bhagad-house-booking/common/assets/fonts"
-	"github.com/mearaj/bhagad-house-booking/frontend/service"
+	"github.com/mearaj/bhagad-house-booking/common/db/sqlc"
 	. "github.com/mearaj/bhagad-house-booking/frontend/ui/fwk"
 	. "github.com/mearaj/bhagad-house-booking/frontend/ui/view"
 	"golang.org/x/exp/shiny/materialdesign/colornames"
@@ -24,7 +24,7 @@ type page struct {
 	initialized bool
 }
 
-func New(manager Manager, customer service.Customer) Page {
+func New(manager Manager, customer sqlc.Customer) Page {
 	navIcon, _ := widget.NewIcon(icons.NavigationArrowBack)
 	th := manager.Theme()
 	errorTh := *fonts.NewTheme()

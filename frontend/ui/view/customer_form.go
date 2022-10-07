@@ -6,7 +6,7 @@ import (
 	"gioui.org/widget/material"
 	"gioui.org/x/component"
 	"github.com/mearaj/bhagad-house-booking/common/assets/fonts"
-	"github.com/mearaj/bhagad-house-booking/frontend/service"
+	. "github.com/mearaj/bhagad-house-booking/common/db/sqlc"
 	. "github.com/mearaj/bhagad-house-booking/frontend/ui/fwk"
 	"golang.org/x/exp/shiny/materialdesign/colornames"
 	"image/color"
@@ -33,13 +33,13 @@ var customerFields = []*customerField{
 type CustomerForm struct {
 	Manager
 	Theme              *material.Theme
-	Customer           service.Customer
+	Customer           Customer
 	customerFieldsList layout.List
 	OnSuccess          func(addr string)
 }
 
 // NewCustomerForm Always call this function to create CustomerForm
-func NewCustomerForm(manager Manager, customer service.Customer, OnSuccess func(addr string)) CustomerForm {
+func NewCustomerForm(manager Manager, customer Customer, OnSuccess func(addr string)) CustomerForm {
 	inActiveTheme := fonts.NewTheme()
 	inActiveTheme.ContrastBg = color.NRGBA(colornames.Grey500)
 	contForm := CustomerForm{

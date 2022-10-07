@@ -10,7 +10,7 @@ import (
 	"gioui.org/widget"
 	"gioui.org/widget/material"
 	"gioui.org/x/component"
-	"github.com/mearaj/bhagad-house-booking/frontend/service"
+	"github.com/mearaj/bhagad-house-booking/common/db/sqlc"
 	. "github.com/mearaj/bhagad-house-booking/frontend/ui/fwk"
 	"github.com/mearaj/bhagad-house-booking/frontend/ui/view"
 	"golang.org/x/exp/shiny/materialdesign/colornames"
@@ -29,7 +29,7 @@ type pageItem struct {
 	listBookingDetails    layout.List
 	buttonIconMoreDim     Dim
 	Manager
-	service.Booking
+	sqlc.Booking
 	PressedStamp int64
 	view.AvatarView
 	iconMore           *widget.Icon

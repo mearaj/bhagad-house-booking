@@ -3,7 +3,7 @@ package sqlc
 import (
 	"context"
 	"database/sql"
-	"github.com/mearaj/bhagad-house-booking/backend/db/util"
+	"github.com/mearaj/bhagad-house-booking/common/db/util"
 	"github.com/stretchr/testify/require"
 	"testing"
 )

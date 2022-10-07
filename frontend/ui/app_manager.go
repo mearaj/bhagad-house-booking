@@ -13,6 +13,7 @@ import (
 	"gioui.org/x/notify"
 	"github.com/mearaj/bhagad-house-booking/common/alog"
 	"github.com/mearaj/bhagad-house-booking/common/assets/fonts"
+	"github.com/mearaj/bhagad-house-booking/common/db/sqlc"
 	service2 "github.com/mearaj/bhagad-house-booking/frontend/service"
 	. "github.com/mearaj/bhagad-house-booking/frontend/ui/fwk"
 	"github.com/mearaj/bhagad-house-booking/frontend/ui/page/about"
@@ -366,13 +367,13 @@ func (m *AppManager) NavigateToUrl(pageURL URL, AfterNavCallback func()) {
 		m.pagesStack = []Page{m.settingsSideBar}
 	case BookingsPageURL:
 		page = bookings.New(m)
-	case AddEditBookingPageURL(bookingOrCustomerID):
-		booking := service2.Booking{}
-		booking.ID = bookingOrCustomerID
+	case AddEditBookingPageURL(int64(bookingOrCustomerID)):
+		booking := sqlc.Booking{}
+		booking.ID = int64(bookingOrCustomerID)
 		page = add_edit_booking.New(m, booking)
-	case AddEditCustomerPageURL(bookingOrCustomerID):
-		customer := service2.Customer{}
-		customer.ID = bookingOrCustomerID
+	case AddEditCustomerPageURL(int64(bookingOrCustomerID)):
+		customer := sqlc.Customer{}
+		customer.ID = int64(bookingOrCustomerID)
 		page = add_edit_customer.New(m, customer)
 	case CustomersPageURL:
 		page = customers.New(m)

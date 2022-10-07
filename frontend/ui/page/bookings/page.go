@@ -11,6 +11,7 @@ import (
 	"gioui.org/widget"
 	"gioui.org/widget/material"
 	"gioui.org/x/component"
+	"github.com/mearaj/bhagad-house-booking/common/db/sqlc"
 	"github.com/mearaj/bhagad-house-booking/frontend/service"
 	. "github.com/mearaj/bhagad-house-booking/frontend/ui/fwk"
 	"github.com/mearaj/bhagad-house-booking/frontend/ui/page/add_edit_booking"
@@ -51,7 +52,7 @@ type page struct {
 	isFetchingBookingsCount bool
 	initialized             bool
 	subscription            service.Subscriber
-	fetchingBookingsCh      chan []service.Booking
+	fetchingBookingsCh      chan []sqlc.Booking
 	fetchingBookingsCountCh chan int64
 	bookingsCount           int64
 }
@@ -74,7 +75,7 @@ func New(manager Manager) Page {
 		bookingsView:            []*pageItem{},
 		menuIcon:                iconMenu,
 		closeIcon:               closeIcon,
-		fetchingBookingsCh:      make(chan []service.Booking, 10),
+		fetchingBookingsCh:      make(chan []sqlc.Booking, 10),
 		fetchingBookingsCountCh: make(chan int64, 10),
 		menuVisibilityAnim: component.VisibilityAnimation{
 			Duration: time.Millisecond * 250,
@@ -348,7 +349,7 @@ func (p *page) drawDeleteBookingsModal(gtx Gtx) Dim {
 	gtx.Constraints.Max.X = int(float32(gtx.Constraints.Max.X) * 0.85)
 	gtx.Constraints.Max.Y = int(float32(gtx.Constraints.Max.Y) * 0.85)
 	if p.btnYes.Clicked() {
-		bookings := make([]service.Booking, 0)
+		bookings := make([]sqlc.Booking, 0)
 		bookingsViewSize := len(p.bookingsView)
 		for _, eachView := range p.bookingsView {
 			if eachView.Selected {
@@ -514,7 +515,7 @@ func (p *page) handleSelectionMode() {
 
 func (p *page) handleAddBookingClick(gtx Gtx) {
 	if p.btnAddBooking.Clicked() {
-		addEditBookingPage := add_edit_booking.New(p.Manager, service.Booking{})
+		addEditBookingPage := add_edit_booking.New(p.Manager, sqlc.Booking{})
 		p.Manager.NavigateToPage(addEditBookingPage, func() {
 			p.menuVisibilityAnim.Disappear(gtx.Now)
 		})

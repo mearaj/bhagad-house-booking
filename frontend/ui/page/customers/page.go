@@ -11,6 +11,7 @@ import (
 	"gioui.org/widget"
 	"gioui.org/widget/material"
 	"gioui.org/x/component"
+	"github.com/mearaj/bhagad-house-booking/common/db/sqlc"
 	service2 "github.com/mearaj/bhagad-house-booking/frontend/service"
 	. "github.com/mearaj/bhagad-house-booking/frontend/ui/fwk"
 	view2 "github.com/mearaj/bhagad-house-booking/frontend/ui/view"
@@ -49,7 +50,7 @@ type page struct {
 	CustomerForm       View
 	*view2.ModalContent
 	SelectionMode            bool
-	fetchingCustomersCh      chan []service2.Customer
+	fetchingCustomersCh      chan []sqlc.Customer
 	isFetchingCustomers      bool
 	isFetchingCustomersCount bool
 	listPosition             layout.Position
@@ -76,7 +77,7 @@ func New(manager Manager) Page {
 		List:                     layout.List{Axis: layout.Vertical},
 		contactsView:             []*pageItem{},
 		menuIcon:                 iconMenu,
-		fetchingCustomersCh:      make(chan []service2.Customer, 10),
+		fetchingCustomersCh:      make(chan []sqlc.Customer, 10),
 		fetchingCustomersCountCh: make(chan int64, 10),
 		menuVisibilityAnim: component.VisibilityAnimation{
 			Duration: time.Millisecond * 250,
@@ -84,7 +85,7 @@ func New(manager Manager) Page {
 			Started:  time.Time{},
 		},
 	}
-	customerForm := view2.NewCustomerForm(manager, service2.Customer{}, p.onAddCustomerSuccess)
+	customerForm := view2.NewCustomerForm(manager, sqlc.Customer{}, p.onAddCustomerSuccess)
 	p.CustomerForm = &customerForm
 	p.ModalContent = view2.NewModalContent(func() { p.Modal().Dismiss(nil) })
 	p.NoCustomer = view2.NewNoCustomer(manager, p.onAddCustomerSuccess, "Add Customer")
@@ -384,7 +385,7 @@ func (p *page) drawDeleteCustomersModal(gtx Gtx) Dim {
 	gtx.Constraints.Max.X = int(float32(gtx.Constraints.Max.X) * 0.85)
 	gtx.Constraints.Max.Y = int(float32(gtx.Constraints.Max.Y) * 0.85)
 	if p.btnYes.Clicked() {
-		contacts := make([]service2.Customer, 0)
+		contacts := make([]sqlc.Customer, 0)
 		contactsViewSize := len(p.contactsView)
 		for _, eachView := range p.contactsView {
 			if eachView.Selected {
@@ -432,7 +433,7 @@ func (p *page) drawDeleteCustomersModal(gtx Gtx) Dim {
 
 func (p *page) onAddCustomerSuccess(addr string) {
 	p.Modal().Dismiss(func() {
-		customerForm := view2.NewCustomerForm(p.Manager, service2.Customer{}, p.onAddCustomerSuccess)
+		customerForm := view2.NewCustomerForm(p.Manager, sqlc.Customer{}, p.onAddCustomerSuccess)
 		p.CustomerForm = &customerForm
 		txt := fmt.Sprintf("Successfully added customer %s", addr)
 		p.Snackbar().Show(txt, nil, color.NRGBA{}, "")

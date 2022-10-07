@@ -11,7 +11,7 @@ import (
 	"gioui.org/widget/material"
 	"gioui.org/x/component"
 	"github.com/mearaj/bhagad-house-booking/common/assets/fonts"
-	"github.com/mearaj/bhagad-house-booking/frontend/service"
+	. "github.com/mearaj/bhagad-house-booking/common/db/sqlc"
 	. "github.com/mearaj/bhagad-house-booking/frontend/ui/fwk"
 	"golang.org/x/exp/shiny/materialdesign/colornames"
 	"golang.org/x/exp/shiny/materialdesign/icons"
@@ -27,7 +27,7 @@ type BookingDetails struct {
 	buttonPrivateKeyVisible IconButton
 	buttonPrivateKeyHidden  IconButton
 	inputPassword           *component.TextField
-	Booking                 service.Booking
+	Booking                 Booking
 	inputPasswordStr        string
 	pvtKeyStr               string
 	pvtKeyListLayout        layout.List
@@ -35,7 +35,7 @@ type BookingDetails struct {
 	Manager
 }
 
-func NewBookingDetails(manager Manager, booking service.Booking) *BookingDetails {
+func NewBookingDetails(manager Manager, booking Booking) *BookingDetails {
 	iconCopy, _ := widget.NewIcon(icons.ContentContentCopy)
 	iconVisible, _ := widget.NewIcon(icons.ActionVisibility)
 	iconHidden, _ := widget.NewIcon(icons.ActionVisibilityOff)

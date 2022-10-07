@@ -79,11 +79,11 @@ const (
 	AboutPageURL             = SettingsPageURL + "/about"
 )
 
-func AddEditBookingPageURL(bookingID uint) URL {
+func AddEditBookingPageURL(bookingID int64) URL {
 	return URL(fmt.Sprintf("%s/%d", BookingsPageURL, bookingID))
 }
 
-func AddEditCustomerPageURL(customerID uint) URL {
+func AddEditCustomerPageURL(customerID int64) URL {
 	return URL(fmt.Sprintf("%s/%d", CustomersPageURL, customerID))
 }
 
