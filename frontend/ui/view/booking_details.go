@@ -12,7 +12,6 @@ import (
 	"gioui.org/x/component"
 	"github.com/mearaj/bhagad-house-booking/common/assets/fonts"
 	. "github.com/mearaj/bhagad-house-booking/common/db/sqlc"
-	. "github.com/mearaj/bhagad-house-booking/frontend/ui/fwk"
 	"golang.org/x/exp/shiny/materialdesign/colornames"
 	"golang.org/x/exp/shiny/materialdesign/icons"
 	"image"

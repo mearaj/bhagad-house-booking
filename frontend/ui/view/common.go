@@ -6,7 +6,6 @@ import (
 	"gioui.org/unit"
 	"gioui.org/widget/material"
 	"gioui.org/x/component"
-	. "github.com/mearaj/bhagad-house-booking/frontend/ui/fwk"
 	"image"
 	"image/color"
 	"strings"

@@ -3,17 +3,17 @@ package sqlc
 import (
 	"context"
 	"database/sql"
-	"github.com/mearaj/bhagad-house-booking/common/db/util"
+	"github.com/mearaj/bhagad-house-booking/common/utils"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
 
 func createRandomCustomer(t *testing.T) Customer {
 	arg := CreateCustomerParams{
-		Name:    util.RandomCustomerName(),
-		Address: util.RandomCustomerAddr(),
-		Phone:   util.RandomPhone(),
-		Email:   util.RandomEmail(),
+		Name:    utils.RandomName(),
+		Address: utils.RandomAddress(),
+		Phone:   utils.RandomPhone(),
+		Email:   utils.RandomEmail(),
 	}
 	customer, err := testQueries.CreateCustomer(context.Background(), arg)
 	require.NoError(t, err)

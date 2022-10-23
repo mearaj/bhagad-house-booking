@@ -4,7 +4,6 @@ import (
 	"gioui.org/layout"
 	"gioui.org/widget/material"
 	"github.com/mearaj/bhagad-house-booking/common/assets/fonts"
-	. "github.com/mearaj/bhagad-house-booking/frontend/ui/fwk"
 )
 
 type ErrorView struct {

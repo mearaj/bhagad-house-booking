@@ -10,7 +10,7 @@ import (
 	"gioui.org/widget/material"
 	"gioui.org/x/component"
 	"github.com/mearaj/bhagad-house-booking/common/db/sqlc"
-	. "github.com/mearaj/bhagad-house-booking/frontend/ui/fwk"
+	"github.com/mearaj/bhagad-house-booking/frontend/ui/fwk"
 	"github.com/mearaj/bhagad-house-booking/frontend/ui/page/add_edit_booking"
 	"github.com/mearaj/bhagad-house-booking/frontend/ui/view"
 	"golang.org/x/exp/shiny/materialdesign/colornames"
@@ -25,18 +25,18 @@ import (
 
 type page struct {
 	layout.List
-	Manager
+	fwk.Manager
 	buttonNavIcon      widget.Clickable
 	btnAddBooking      widget.Clickable
 	btnShowBookings    widget.Clickable
 	menuIcon           *widget.Icon
 	items              []*pageItem
-	BookingsView       View
+	BookingsView       fwk.View
 	menuVisibilityAnim component.VisibilityAnimation
 	*view.ModalContent
 }
 
-func New(manager Manager) Page {
+func New(manager fwk.Manager) fwk.Page {
 	menuIcon, _ := widget.NewIcon(icons.ContentAddCircle)
 	bookingsIcon, _ := widget.NewIcon(icons.SocialGroup)
 	contactsIcon, _ := widget.NewIcon(icons.CommunicationContacts)
@@ -59,49 +59,49 @@ func New(manager Manager) Page {
 				Theme:   manager.Theme(),
 				Title:   "Bookings",
 				Icon:    bookingsIcon,
-				url:     BookingsPageURL,
+				url:     fwk.BookingsPageURL,
 			},
 			{
 				Manager: manager,
 				Theme:   manager.Theme(),
 				Title:   "Customers",
 				Icon:    contactsIcon,
-				url:     CustomersPageURL,
+				url:     fwk.CustomersPageURL,
 			},
 			{
 				Manager: manager,
 				Theme:   manager.Theme(),
 				Title:   "Theme",
 				Icon:    themeIcon,
-				url:     ThemePageURL,
+				url:     fwk.ThemePageURL,
 			},
 			{
 				Manager: manager,
 				Theme:   manager.Theme(),
 				Title:   "Notifications",
 				Icon:    notificationsIcon,
-				url:     NotificationsPageURL,
+				url:     fwk.NotificationsPageURL,
 			},
 			{
 				Manager: manager,
 				Theme:   manager.Theme(),
 				Title:   "Help",
 				Icon:    helpIcon,
-				url:     HelpPageURL,
+				url:     fwk.HelpPageURL,
 			},
 			{
 				Manager: manager,
 				Theme:   manager.Theme(),
 				Title:   "About",
 				Icon:    aboutIcon,
-				url:     AboutPageURL,
+				url:     fwk.AboutPageURL,
 			},
 		},
 	}
 	p.ModalContent = view.NewModalContent(func() { p.Modal().Dismiss(nil) })
 	return &p
 }
-func (p *page) Layout(gtx Gtx) (d Dim) {
+func (p *page) Layout(gtx fwk.Gtx) (d fwk.Dim) {
 	if p.items == nil {
 		p.items = make([]*pageItem, 0)
 	}
@@ -114,7 +114,7 @@ func (p *page) Layout(gtx Gtx) (d Dim) {
 
 	if p.btnShowBookings.Clicked() {
 		p.menuVisibilityAnim.Disappear(gtx.Now)
-		p.Modal().Show(p.drawShowBookingsModal, nil, Animation{
+		p.Modal().Show(p.drawShowBookingsModal, nil, fwk.Animation{
 			Duration: time.Millisecond * 250,
 			State:    component.Invisible,
 			Started:  time.Time{},
@@ -131,29 +131,29 @@ func (p *page) Layout(gtx Gtx) (d Dim) {
 	)
 	return d
 }
-func (p *page) DrawAppBar(gtx Gtx) Dim {
+func (p *page) DrawAppBar(gtx fwk.Gtx) fwk.Dim {
 	if p.buttonNavIcon.Clicked() {
-		p.Manager.NavigateToUrl(SettingsPageURL, nil)
+		p.Manager.NavigateToUrl(fwk.SettingsPageURL, nil)
 	}
 
-	return view.DrawAppBarLayout(gtx, p.Manager.Theme(), func(gtx Gtx) Dim {
+	return view.DrawAppBarLayout(gtx, p.Manager.Theme(), func(gtx fwk.Gtx) fwk.Dim {
 		return layout.Flex{Alignment: layout.Middle, Spacing: layout.SpaceBetween}.Layout(gtx,
-			layout.Rigid(func(gtx Gtx) Dim {
+			layout.Rigid(func(gtx fwk.Gtx) fwk.Dim {
 				return layout.Flex{Alignment: layout.Middle}.Layout(gtx,
-					layout.Rigid(func(gtx Gtx) Dim {
+					layout.Rigid(func(gtx fwk.Gtx) fwk.Dim {
 						return material.ButtonLayoutStyle{
 							Background:   p.Manager.Theme().ContrastBg,
 							Button:       &p.buttonNavIcon,
 							CornerRadius: unit.Dp(56 / 2),
 						}.Layout(gtx,
-							func(gtx Gtx) Dim {
+							func(gtx fwk.Gtx) fwk.Dim {
 								return view.DrawAppImageForNav(gtx, p.Manager.Theme())
 							},
 						)
 					}),
-					layout.Rigid(func(gtx Gtx) Dim {
+					layout.Rigid(func(gtx fwk.Gtx) fwk.Dim {
 						gtx.Constraints.Max.X = gtx.Constraints.Max.X - gtx.Dp(56)
-						return layout.Inset{Left: unit.Dp(12)}.Layout(gtx, func(gtx Gtx) Dim {
+						return layout.Inset{Left: unit.Dp(12)}.Layout(gtx, func(gtx fwk.Gtx) fwk.Dim {
 							titleText := "Settings"
 							label := material.Label(p.Manager.Theme(), unit.Sp(18), titleText)
 							label.Color = p.Manager.Theme().Palette.ContrastFg
@@ -162,7 +162,7 @@ func (p *page) DrawAppBar(gtx Gtx) Dim {
 					}),
 				)
 			}),
-			layout.Rigid(func(gtx Gtx) Dim {
+			layout.Rigid(func(gtx fwk.Gtx) fwk.Dim {
 				var img image.Image
 				//var err error
 				//a := p.Service().Booking()
@@ -196,19 +196,19 @@ func (p *page) DrawAppBar(gtx Gtx) Dim {
 		)
 	})
 }
-func (p *page) drawItems(gtx Gtx) Dim {
-	return p.List.Layout(gtx, len(p.items), func(gtx Gtx, index int) (d Dim) {
+func (p *page) drawItems(gtx fwk.Gtx) fwk.Dim {
+	return p.List.Layout(gtx, len(p.items), func(gtx fwk.Gtx, index int) (d fwk.Dim) {
 		inset := layout.Inset{Top: unit.Dp(0), Bottom: unit.Dp(0)}
-		return inset.Layout(gtx, func(gtx Gtx) Dim {
+		return inset.Layout(gtx, func(gtx fwk.Gtx) fwk.Dim {
 			return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
 				layout.Rigid(p.items[index].Layout),
-				layout.Rigid(func(gtx Gtx) Dim {
+				layout.Rigid(func(gtx fwk.Gtx) fwk.Dim {
 					size := image.Pt(gtx.Constraints.Max.X, gtx.Dp(1))
 					bounds := image.Rectangle{Max: size}
 					bgColor := color.NRGBA(colornames.Grey500)
 					bgColor.A = 75
 					paint.FillShape(gtx.Ops, bgColor, clip.UniformRRect(bounds, 0).Op(gtx.Ops))
-					return Dim{Size: image.Pt(size.X, size.Y)}
+					return fwk.Dim{Size: image.Pt(size.X, size.Y)}
 				}),
 			)
 		})
@@ -216,11 +216,11 @@ func (p *page) drawItems(gtx Gtx) Dim {
 }
 func (p *page) onAddBookingSuccess() {
 	p.Modal().Dismiss(func() {
-		p.NavigateToUrl(SettingsPageURL, nil)
+		p.NavigateToUrl(fwk.SettingsPageURL, nil)
 	})
 }
 
-func (p *page) drawShowBookingsModal(gtx Gtx) Dim {
+func (p *page) drawShowBookingsModal(gtx fwk.Gtx) fwk.Dim {
 	gtx.Constraints.Max.X = int(float32(gtx.Constraints.Max.X) * 0.85)
 	gtx.Constraints.Max.Y = int(float32(gtx.Constraints.Max.Y) * 0.85)
 	return p.ModalContent.DrawContent(gtx, p.Theme(), p.BookingsView.Layout)
@@ -230,13 +230,13 @@ func (p *page) onBookingChange() {
 	p.Modal().Dismiss(p.afterBookingsModalDismissed)
 }
 func (p *page) afterBookingsModalDismissed() {
-	p.NavigateToUrl(SettingsPageURL, func() {
+	p.NavigateToUrl(fwk.SettingsPageURL, func() {
 		a := p.Service().Booking()
 		txt := fmt.Sprintf("Switched to %d booking", a.ID)
 		p.Snackbar().Show(txt, nil, color.NRGBA{}, "")
 	})
 }
 
-func (p *page) URL() URL {
-	return SettingsPageURL
+func (p *page) URL() fwk.URL {
+	return fwk.SettingsPageURL
 }

@@ -8,23 +8,23 @@ import (
 	"gioui.org/widget/material"
 	"github.com/mearaj/bhagad-house-booking/common/assets/fonts"
 	"github.com/mearaj/bhagad-house-booking/common/db/sqlc"
-	. "github.com/mearaj/bhagad-house-booking/frontend/ui/fwk"
-	. "github.com/mearaj/bhagad-house-booking/frontend/ui/view"
+	"github.com/mearaj/bhagad-house-booking/frontend/ui/fwk"
+	"github.com/mearaj/bhagad-house-booking/frontend/ui/view"
 	"golang.org/x/exp/shiny/materialdesign/colornames"
 	"golang.org/x/exp/shiny/materialdesign/icons"
 	"image/color"
 )
 
 type page struct {
-	Manager
+	fwk.Manager
 	Theme            *material.Theme
 	navigationIcon   *widget.Icon
 	buttonNavigation widget.Clickable
-	CustomerForm
+	view.CustomerForm
 	initialized bool
 }
 
-func New(manager Manager, customer sqlc.Customer) Page {
+func New(manager fwk.Manager, customer sqlc.Customer) fwk.Page {
 	navIcon, _ := widget.NewIcon(icons.NavigationArrowBack)
 	th := manager.Theme()
 	errorTh := *fonts.NewTheme()
@@ -35,14 +35,14 @@ func New(manager Manager, customer sqlc.Customer) Page {
 		Manager:        manager,
 		Theme:          th,
 		navigationIcon: navIcon,
-		CustomerForm: NewCustomerForm(manager, customer, func(customerID string) {
+		CustomerForm: view.NewCustomerForm(manager, customer, func(customerID string) {
 
 		}),
 	}
 	return &s
 }
 
-func (p *page) Layout(gtx Gtx) Dim {
+func (p *page) Layout(gtx fwk.Gtx) fwk.Dim {
 	if p.Theme == nil {
 		p.Theme = fonts.NewTheme()
 	}
@@ -54,17 +54,17 @@ func (p *page) Layout(gtx Gtx) Dim {
 	)
 	return d
 }
-func (p *page) DrawAppBar(gtx Gtx) Dim {
+func (p *page) DrawAppBar(gtx fwk.Gtx) fwk.Dim {
 	gtx.Constraints.Max.Y = gtx.Dp(56)
 	th := p.Theme
 	if p.buttonNavigation.Clicked() {
 		p.PopUp()
 	}
-	return DrawAppBarLayout(gtx, th, func(gtx Gtx) Dim {
+	return view.DrawAppBarLayout(gtx, th, func(gtx fwk.Gtx) fwk.Dim {
 		return layout.Flex{Alignment: layout.Middle, Spacing: layout.SpaceBetween}.Layout(gtx,
-			layout.Rigid(func(gtx Gtx) Dim {
+			layout.Rigid(func(gtx fwk.Gtx) fwk.Dim {
 				return layout.Flex{Alignment: layout.Middle}.Layout(gtx,
-					layout.Rigid(func(gtx Gtx) Dim {
+					layout.Rigid(func(gtx fwk.Gtx) fwk.Dim {
 						navigationIcon := p.navigationIcon
 						button := material.IconButton(th, &p.buttonNavigation, navigationIcon, "Nav Icon Button")
 						button.Size = unit.Dp(40)
@@ -73,8 +73,8 @@ func (p *page) DrawAppBar(gtx Gtx) Dim {
 						button.Inset = layout.UniformInset(unit.Dp(8))
 						return button.Layout(gtx)
 					}),
-					layout.Rigid(func(gtx Gtx) Dim {
-						return layout.Inset{Left: unit.Dp(16)}.Layout(gtx, func(gtx Gtx) Dim {
+					layout.Rigid(func(gtx fwk.Gtx) fwk.Dim {
+						return layout.Inset{Left: unit.Dp(16)}.Layout(gtx, func(gtx fwk.Gtx) fwk.Dim {
 							titleText := fmt.Sprintf("Edit Customer %d", p.Customer.ID)
 							if p.Customer.ID == 0 {
 								titleText = "Add New Customer"
@@ -90,6 +90,6 @@ func (p *page) DrawAppBar(gtx Gtx) Dim {
 		)
 	})
 }
-func (p *page) URL() URL {
-	return AddEditCustomerPageURL(p.Customer.ID)
+func (p *page) URL() fwk.URL {
+	return fwk.AddEditCustomerPageURL(p.Customer.ID)
 }

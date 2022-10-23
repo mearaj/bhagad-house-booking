@@ -11,7 +11,7 @@ import (
 	"gioui.org/widget/material"
 	"gioui.org/x/component"
 	"github.com/mearaj/bhagad-house-booking/common/db/sqlc"
-	. "github.com/mearaj/bhagad-house-booking/frontend/ui/fwk"
+	"github.com/mearaj/bhagad-house-booking/frontend/ui/fwk"
 	"github.com/mearaj/bhagad-house-booking/frontend/ui/view"
 	"golang.org/x/exp/shiny/materialdesign/colornames"
 	"golang.org/x/exp/shiny/materialdesign/icons"
@@ -27,8 +27,8 @@ type pageItem struct {
 	btnBookingDetails     widget.Clickable
 	btnMenuContent        widget.Clickable
 	listBookingDetails    layout.List
-	buttonIconMoreDim     Dim
-	Manager
+	buttonIconMoreDim     fwk.Dim
+	fwk.Manager
 	sqlc.Booking
 	PressedStamp int64
 	view.AvatarView
@@ -38,13 +38,13 @@ type pageItem struct {
 	ModalContent       *view.ModalContent
 }
 
-func (i *pageItem) Layout(gtx Gtx) Dim {
+func (i *pageItem) Layout(gtx fwk.Gtx) fwk.Dim {
 	if i.Theme == nil {
 		i.Theme = i.Manager.Theme()
 	}
 	return i.layoutContent(gtx)
 }
-func (i *pageItem) layoutContent(gtx Gtx) Dim {
+func (i *pageItem) layoutContent(gtx fwk.Gtx) fwk.Dim {
 	if i.menuVisibilityAnim == (component.VisibilityAnimation{}) {
 		i.menuVisibilityAnim = component.VisibilityAnimation{
 			Duration: time.Millisecond * 250,
@@ -67,7 +67,7 @@ func (i *pageItem) layoutContent(gtx Gtx) Dim {
 		if i.BookingDetails == nil {
 			i.BookingDetails = view.NewBookingDetails(i.Manager, i.Booking)
 		}
-		i.Modal().Show(i.drawBookingDetailsModal, nil, Animation{
+		i.Modal().Show(i.drawBookingDetailsModal, nil, fwk.Animation{
 			Duration: time.Millisecond * 250,
 			State:    component.Invisible,
 			Started:  time.Time{},
@@ -105,31 +105,31 @@ func (i *pageItem) layoutContent(gtx Gtx) Dim {
 	}
 
 	gtx.Constraints.Min.X = gtx.Constraints.Max.X
-	d := btnStyle.Layout(gtx, func(gtx Gtx) Dim {
+	d := btnStyle.Layout(gtx, func(gtx fwk.Gtx) fwk.Dim {
 		inset := layout.Inset{Top: unit.Dp(16), Bottom: unit.Dp(16), Left: unit.Dp(8), Right: unit.Dp(8)}
-		d := inset.Layout(gtx, func(gtx Gtx) Dim {
+		d := inset.Layout(gtx, func(gtx fwk.Gtx) fwk.Dim {
 			flex := layout.Flex{Spacing: layout.SpaceEnd, Alignment: layout.Middle}
 			d := flex.Layout(gtx,
-				layout.Rigid(func(gtx Gtx) Dim {
+				layout.Rigid(func(gtx fwk.Gtx) fwk.Dim {
 					flex := layout.Flex{Spacing: layout.SpaceSides, Alignment: layout.Start, Axis: layout.Vertical}
 					d := flex.Layout(gtx, layout.Rigid(i.AvatarView.Layout))
 					return d
 				}),
 				layout.Rigid(layout.Spacer{Width: unit.Dp(8)}.Layout),
-				layout.Rigid(func(gtx Gtx) Dim {
+				layout.Rigid(func(gtx fwk.Gtx) fwk.Dim {
 					gtx.Constraints.Max.X = gtx.Constraints.Max.X - gtx.Dp(80)
 					gtx.Constraints.Min.X = gtx.Constraints.Max.X
 					return i.listBookingDetails.Layout(gtx, 1, func(gtx layout.Context, index int) layout.Dimensions {
 						flex := layout.Flex{Spacing: layout.SpaceSides, Alignment: layout.Start, Axis: layout.Vertical}
 						inset := layout.Inset{Right: unit.Dp(16), Left: unit.Dp(16)}
-						d := inset.Layout(gtx, func(gtx Gtx) Dim {
+						d := inset.Layout(gtx, func(gtx fwk.Gtx) fwk.Dim {
 							d := flex.Layout(gtx,
-								layout.Rigid(func(gtx Gtx) Dim {
+								layout.Rigid(func(gtx fwk.Gtx) fwk.Dim {
 									b := material.Body1(i.Theme, fmt.Sprintf("%d", i.Booking.ID))
 									b.Font.Weight = text.Bold
 									return b.Layout(gtx)
 								}),
-								layout.Rigid(func(gtx Gtx) Dim {
+								layout.Rigid(func(gtx fwk.Gtx) fwk.Dim {
 									b := material.Body1(i.Theme, fmt.Sprintf("%d\n", i.Booking.ID))
 									b.Color = color.NRGBA(colornames.Grey600)
 									return b.Layout(gtx)
@@ -140,7 +140,7 @@ func (i *pageItem) layoutContent(gtx Gtx) Dim {
 						return d
 					})
 				}),
-				layout.Rigid(func(gtx Gtx) Dim {
+				layout.Rigid(func(gtx fwk.Gtx) fwk.Dim {
 					flex := layout.Flex{Axis: layout.Vertical, Spacing: layout.SpaceBetween, Alignment: layout.Middle}
 					return flex.Layout(gtx,
 						layout.Rigid(func(gtx layout.Context) layout.Dimensions {
@@ -161,7 +161,7 @@ func (i *pageItem) layoutContent(gtx Gtx) Dim {
 							//	icon, _ := widget.NewIcon(icons.ActionCheckCircle)
 							//	return icon.Layout(gtx, i.Theme.ContrastBg)
 							//}
-							return Dim{}
+							return fwk.Dim{}
 						}),
 					)
 				}),
@@ -176,15 +176,15 @@ func (i *pageItem) layoutContent(gtx Gtx) Dim {
 	return d
 }
 
-func (i *pageItem) drawMenuLayout(gtx Gtx) Dim {
+func (i *pageItem) drawMenuLayout(gtx fwk.Gtx) fwk.Dim {
 	layout.Stack{Alignment: layout.NE}.Layout(gtx,
-		layout.Stacked(func(gtx Gtx) Dim {
+		layout.Stacked(func(gtx fwk.Gtx) fwk.Dim {
 			progress := i.menuVisibilityAnim.Revealed(gtx)
 			gtx.Constraints.Max.X = int(float32(gtx.Constraints.Max.X) * progress)
 			gtx.Constraints.Max.Y = int(float32(gtx.Constraints.Max.Y) * progress)
 			return component.Rect{Size: gtx.Constraints.Max, Color: color.NRGBA{A: 200}}.Layout(gtx)
 		}),
-		layout.Stacked(func(gtx Gtx) Dim {
+		layout.Stacked(func(gtx fwk.Gtx) fwk.Dim {
 			progress := i.menuVisibilityAnim.Revealed(gtx)
 			macro := op.Record(gtx.Ops)
 			d := i.btnMenuContent.Layout(gtx, i.drawMenuItems)
@@ -198,23 +198,23 @@ func (i *pageItem) drawMenuLayout(gtx Gtx) Dim {
 			return d
 		}),
 	)
-	return Dim{}
+	return fwk.Dim{}
 }
 
-func (i *pageItem) drawMenuItems(gtx Gtx) Dim {
+func (i *pageItem) drawMenuItems(gtx fwk.Gtx) fwk.Dim {
 	inset := layout.UniformInset(unit.Dp(12))
 	gtx.Constraints.Max.X = int(float32(gtx.Constraints.Max.X) / 1.5)
 	gtx.Constraints.Min.X = gtx.Constraints.Max.X
 	return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
-		layout.Rigid(func(gtx Gtx) Dim {
+		layout.Rigid(func(gtx fwk.Gtx) fwk.Dim {
 			btnStyle := material.ButtonLayoutStyle{Button: &i.btnSetCurrentIdentity}
 			btnStyle.Background = color.NRGBA(colornames.White)
 			return btnStyle.Layout(gtx,
-				func(gtx Gtx) Dim {
+				func(gtx fwk.Gtx) fwk.Dim {
 					inset := inset
-					return inset.Layout(gtx, func(gtx Gtx) Dim {
+					return inset.Layout(gtx, func(gtx fwk.Gtx) fwk.Dim {
 						return layout.Flex{Spacing: layout.SpaceEnd}.Layout(gtx,
-							layout.Flexed(1, func(gtx Gtx) Dim {
+							layout.Flexed(1, func(gtx fwk.Gtx) fwk.Dim {
 								bd := material.Body1(i.Theme, "Set As Current Booking")
 								bd.Color = color.NRGBA(colornames.Black)
 								bd.Alignment = text.Start
@@ -225,15 +225,15 @@ func (i *pageItem) drawMenuItems(gtx Gtx) Dim {
 				},
 			)
 		}),
-		layout.Rigid(func(gtx Gtx) Dim {
+		layout.Rigid(func(gtx fwk.Gtx) fwk.Dim {
 			btnStyle := material.ButtonLayoutStyle{Button: &i.btnBookingDetails}
 			btnStyle.Background = color.NRGBA(colornames.White)
 			return btnStyle.Layout(gtx,
-				func(gtx Gtx) Dim {
+				func(gtx fwk.Gtx) fwk.Dim {
 					inset := inset
-					return inset.Layout(gtx, func(gtx Gtx) Dim {
+					return inset.Layout(gtx, func(gtx fwk.Gtx) fwk.Dim {
 						return layout.Flex{Spacing: layout.SpaceEnd}.Layout(gtx,
-							layout.Flexed(1, func(gtx Gtx) Dim {
+							layout.Flexed(1, func(gtx fwk.Gtx) fwk.Dim {
 								bd := material.Body1(i.Theme, "Booking Details")
 								bd.Color = color.NRGBA(colornames.Black)
 								bd.Alignment = text.Start
@@ -247,7 +247,7 @@ func (i *pageItem) drawMenuItems(gtx Gtx) Dim {
 	)
 }
 
-func (i *pageItem) drawBookingDetailsModal(gtx Gtx) Dim {
+func (i *pageItem) drawBookingDetailsModal(gtx fwk.Gtx) fwk.Dim {
 	gtx.Constraints.Max.X = int(float32(gtx.Constraints.Max.X) * 0.85)
 	gtx.Constraints.Max.Y = int(float32(gtx.Constraints.Max.Y) * 0.85)
 	return i.ModalContent.DrawContent(gtx, i.Theme, i.BookingDetails.Layout)

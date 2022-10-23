@@ -7,22 +7,27 @@ import (
 )
 
 // Store provides all functions to execute db queries and transactions
+type Store interface {
+	Querier
+	CreateBookingAndCustomer(ctx context.Context, arg CreateBookingAndCustomerParams) (result CreateBookingAndCustomerResult, err error)
+}
 
-type Store struct {
-	*Queries
+// SQLStore provides all functions to execute SQL queries and transactions
+type SQLStore struct {
 	db *sql.DB
+	*Queries
 }
 
 // NewStore creates a new Store
-func NewStore(db *sql.DB) *Store {
-	return &Store{
+func NewStore(db *sql.DB) Store {
+	return &SQLStore{
 		Queries: New(db),
 		db:      db,
 	}
 }
 
 // execTx executes a function within a database transaction
-func (store *Store) execTx(ctx context.Context, fn func(*Queries) error) error {
+func (store *SQLStore) execTx(ctx context.Context, fn func(*Queries) error) error {
 	tx, err := store.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
@@ -48,7 +53,7 @@ type CreateBookingAndCustomerResult struct {
 }
 
 // CreateBookingAndCustomer
-func (store *Store) CreateBookingAndCustomer(ctx context.Context, arg CreateBookingAndCustomerParams) (result CreateBookingAndCustomerResult, err error) {
+func (store *SQLStore) CreateBookingAndCustomer(ctx context.Context, arg CreateBookingAndCustomerParams) (result CreateBookingAndCustomerResult, err error) {
 	err = store.execTx(ctx, func(q *Queries) (err error) {
 		var customer Customer
 		customer, err = q.CreateCustomer(ctx, arg.CreateCustomerParams)
@@ -56,10 +61,7 @@ func (store *Store) CreateBookingAndCustomer(ctx context.Context, arg CreateBook
 			return err
 		}
 		result.Customer = customer
-		arg.CreateBookingParams.CustomerID = sql.NullInt64{
-			Int64: customer.ID,
-			Valid: true,
-		}
+		arg.CreateBookingParams.CustomerID = customer.ID
 		var booking Booking
 		booking, err = q.CreateBooking(ctx, arg.CreateBookingParams)
 		if err != nil {

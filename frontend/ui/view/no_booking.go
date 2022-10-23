@@ -8,7 +8,7 @@ import (
 	"gioui.org/widget/material"
 	"github.com/mearaj/bhagad-house-booking/common/assets/fonts"
 	. "github.com/mearaj/bhagad-house-booking/common/db/sqlc"
-	. "github.com/mearaj/bhagad-house-booking/frontend/ui/fwk"
+	"github.com/mearaj/bhagad-house-booking/frontend/ui/fwk"
 	"golang.org/x/exp/shiny/materialdesign/colornames"
 	"golang.org/x/exp/shiny/materialdesign/icons"
 	"image/color"
@@ -58,7 +58,7 @@ func (na *NoBookingView) Layout(gtx Gtx) Dim {
 	flex := layout.Flex{Axis: layout.Vertical, Spacing: layout.SpaceSides, Alignment: layout.Middle}
 	gtx.Constraints.Min.Y = gtx.Constraints.Max.Y
 	if na.buttonNewBooking.Button.Clicked() {
-		na.Manager.NavigateToUrl(AddEditBookingPageURL(Booking{}.ID), func() {})
+		na.Manager.NavigateToUrl(fwk.AddEditBookingPageURL(Booking{}.ID), func() {})
 	}
 	d := flex.Layout(gtx,
 		layout.Rigid(func(gtx Gtx) Dim {
@@ -88,6 +88,6 @@ func (na *NoBookingView) Layout(gtx Gtx) Dim {
 
 func (na *NoBookingView) onSuccess() {
 	na.Modal().Dismiss(func() {
-		na.Manager.NavigateToUrl(SettingsPageURL, nil)
+		na.Manager.NavigateToUrl(fwk.SettingsPageURL, nil)
 	})
 }

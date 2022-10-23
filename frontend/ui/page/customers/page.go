@@ -13,7 +13,7 @@ import (
 	"gioui.org/x/component"
 	"github.com/mearaj/bhagad-house-booking/common/db/sqlc"
 	service2 "github.com/mearaj/bhagad-house-booking/frontend/service"
-	. "github.com/mearaj/bhagad-house-booking/frontend/ui/fwk"
+	"github.com/mearaj/bhagad-house-booking/frontend/ui/fwk"
 	view2 "github.com/mearaj/bhagad-house-booking/frontend/ui/view"
 	"golang.org/x/exp/shiny/materialdesign/colornames"
 	"golang.org/x/exp/shiny/materialdesign/icons"
@@ -25,7 +25,7 @@ var defaultListSize = 50
 
 type page struct {
 	layout.List
-	Manager
+	fwk.Manager
 	Theme              *material.Theme
 	title              string
 	iconNewChat        *widget.Icon
@@ -46,8 +46,8 @@ type page struct {
 	menuVisibilityAnim component.VisibilityAnimation
 	navigationIcon     *widget.Icon
 	contactsView       []*pageItem
-	NoCustomer         View
-	CustomerForm       View
+	NoCustomer         fwk.View
+	CustomerForm       fwk.View
 	*view2.ModalContent
 	SelectionMode            bool
 	fetchingCustomersCh      chan []sqlc.Customer
@@ -59,7 +59,7 @@ type page struct {
 	initialized              bool
 }
 
-func New(manager Manager) Page {
+func New(manager fwk.Manager) fwk.Page {
 	navIcon, _ := widget.NewIcon(icons.NavigationArrowBack)
 	closeIcon, _ := widget.NewIcon(icons.ContentClear)
 	iconNewChat, _ := widget.NewIcon(icons.ContentCreate)
@@ -92,7 +92,7 @@ func New(manager Manager) Page {
 	return &p
 }
 
-func (p *page) Layout(gtx Gtx) Dim {
+func (p *page) Layout(gtx fwk.Gtx) fwk.Dim {
 	if !p.initialized {
 		p.fetchCustomers(0, defaultListSize)
 		p.fetchCustomersCount()
@@ -119,7 +119,7 @@ func (p *page) Layout(gtx Gtx) Dim {
 	}
 
 	if p.btnAddCustomer.Clicked() {
-		p.Modal().Show(p.drawAddCustomerModal, nil, Animation{
+		p.Modal().Show(p.drawAddCustomerModal, nil, fwk.Animation{
 			Duration: time.Millisecond * 250,
 			State:    component.Invisible,
 			Started:  time.Time{},
@@ -154,7 +154,7 @@ func (p *page) Layout(gtx Gtx) Dim {
 	return d
 }
 
-func (p *page) DrawAppBar(gtx Gtx) Dim {
+func (p *page) DrawAppBar(gtx fwk.Gtx) fwk.Dim {
 	gtx.Constraints.Max.Y = gtx.Dp(56)
 	if p.btnMenuIcon.Clicked() {
 		p.menuVisibilityAnim.Appear(gtx.Now)
@@ -164,16 +164,16 @@ func (p *page) DrawAppBar(gtx Gtx) Dim {
 	}
 	return p.DrawNormalAppBar(gtx)
 }
-func (p *page) DrawNormalAppBar(gtx Gtx) Dim {
+func (p *page) DrawNormalAppBar(gtx fwk.Gtx) fwk.Dim {
 	th := p.Theme
 	if p.buttonNavigation.Clicked() {
 		p.PopUp()
 	}
-	return view2.DrawAppBarLayout(gtx, th, func(gtx Gtx) Dim {
+	return view2.DrawAppBarLayout(gtx, th, func(gtx fwk.Gtx) fwk.Dim {
 		return layout.Flex{Alignment: layout.Middle, Spacing: layout.SpaceBetween}.Layout(gtx,
-			layout.Rigid(func(gtx Gtx) Dim {
+			layout.Rigid(func(gtx fwk.Gtx) fwk.Dim {
 				return layout.Flex{Alignment: layout.Middle}.Layout(gtx,
-					layout.Rigid(func(gtx Gtx) Dim {
+					layout.Rigid(func(gtx fwk.Gtx) fwk.Dim {
 						navigationIcon := p.navigationIcon
 						button := material.IconButton(th, &p.buttonNavigation, navigationIcon, "Nav Icon Button")
 						button.Size = unit.Dp(40)
@@ -182,8 +182,8 @@ func (p *page) DrawNormalAppBar(gtx Gtx) Dim {
 						button.Inset = layout.UniformInset(unit.Dp(8))
 						return button.Layout(gtx)
 					}),
-					layout.Rigid(func(gtx Gtx) Dim {
-						return layout.Inset{Left: unit.Dp(16)}.Layout(gtx, func(gtx Gtx) Dim {
+					layout.Rigid(func(gtx fwk.Gtx) fwk.Dim {
+						return layout.Inset{Left: unit.Dp(16)}.Layout(gtx, func(gtx fwk.Gtx) fwk.Dim {
 							titleText := p.title
 							title := material.Body1(th, titleText)
 							title.Color = th.Palette.ContrastFg
@@ -193,7 +193,7 @@ func (p *page) DrawNormalAppBar(gtx Gtx) Dim {
 					}),
 				)
 			}),
-			layout.Rigid(func(gtx Gtx) Dim {
+			layout.Rigid(func(gtx fwk.Gtx) fwk.Dim {
 				button := material.IconButton(th, &p.btnMenuIcon, p.menuIcon, "Context Menu")
 				button.Size = unit.Dp(40)
 				button.Background = th.Palette.ContrastBg
@@ -205,18 +205,18 @@ func (p *page) DrawNormalAppBar(gtx Gtx) Dim {
 		)
 	})
 }
-func (p *page) DrawSelectionAppBar(gtx Gtx) Dim {
+func (p *page) DrawSelectionAppBar(gtx fwk.Gtx) fwk.Dim {
 	th := p.Theme
 	if p.btnCloseSelection.Clicked() {
 		p.clearAllSelection()
 		p.menuVisibilityAnim.Disappear(gtx.Now)
 	}
 
-	return view2.DrawAppBarLayout(gtx, th, func(gtx Gtx) Dim {
+	return view2.DrawAppBarLayout(gtx, th, func(gtx fwk.Gtx) fwk.Dim {
 		return layout.Flex{Alignment: layout.Middle, Spacing: layout.SpaceBetween}.Layout(gtx,
-			layout.Rigid(func(gtx Gtx) Dim {
+			layout.Rigid(func(gtx fwk.Gtx) fwk.Dim {
 				return layout.Flex{Alignment: layout.Middle}.Layout(gtx,
-					layout.Rigid(func(gtx Gtx) Dim {
+					layout.Rigid(func(gtx fwk.Gtx) fwk.Dim {
 						closeIcon := p.closeIcon
 						button := material.IconButton(th, &p.btnCloseSelection, closeIcon, "Close Selection Icon Button")
 						button.Size = unit.Dp(40)
@@ -225,8 +225,8 @@ func (p *page) DrawSelectionAppBar(gtx Gtx) Dim {
 						button.Inset = layout.UniformInset(unit.Dp(8))
 						return button.Layout(gtx)
 					}),
-					layout.Rigid(func(gtx Gtx) Dim {
-						return layout.Inset{Left: unit.Dp(16)}.Layout(gtx, func(gtx Gtx) Dim {
+					layout.Rigid(func(gtx fwk.Gtx) fwk.Dim {
+						return layout.Inset{Left: unit.Dp(16)}.Layout(gtx, func(gtx fwk.Gtx) fwk.Dim {
 							var txt string
 							count := p.getSelectionCount()
 							if count == 0 {
@@ -243,7 +243,7 @@ func (p *page) DrawSelectionAppBar(gtx Gtx) Dim {
 					}),
 				)
 			}),
-			layout.Rigid(func(gtx Gtx) Dim {
+			layout.Rigid(func(gtx fwk.Gtx) fwk.Dim {
 				button := material.IconButton(th, &p.btnMenuIcon, p.menuIcon, "Context Menu")
 				button.Size = unit.Dp(40)
 				button.Background = th.Palette.ContrastBg
@@ -256,31 +256,31 @@ func (p *page) DrawSelectionAppBar(gtx Gtx) Dim {
 	})
 }
 
-func (p *page) drawCustomersItems(gtx Gtx) Dim {
+func (p *page) drawCustomersItems(gtx fwk.Gtx) fwk.Dim {
 	if len(p.contactsView) == 0 {
 		return p.NoCustomer.Layout(gtx)
 	}
 
-	return p.List.Layout(gtx, len(p.contactsView), func(gtx Gtx, index int) (d Dim) {
+	return p.List.Layout(gtx, len(p.contactsView), func(gtx fwk.Gtx, index int) (d fwk.Dim) {
 		return p.contactsView[index].Layout(gtx)
 	})
 }
 
-func (p *page) drawMenuLayout(gtx Gtx) Dim {
+func (p *page) drawMenuLayout(gtx fwk.Gtx) fwk.Dim {
 	if p.btnBackdrop.Clicked() {
 		p.menuVisibilityAnim.Disappear(gtx.Now)
 	}
 
 	layout.Stack{Alignment: layout.NE}.Layout(gtx,
-		layout.Stacked(func(gtx Gtx) Dim {
-			return p.btnBackdrop.Layout(gtx, func(gtx Gtx) Dim {
+		layout.Stacked(func(gtx fwk.Gtx) fwk.Dim {
+			return p.btnBackdrop.Layout(gtx, func(gtx fwk.Gtx) fwk.Dim {
 				progress := p.menuVisibilityAnim.Revealed(gtx)
 				gtx.Constraints.Max.X = int(float32(gtx.Constraints.Max.X) * progress)
 				gtx.Constraints.Max.Y = int(float32(gtx.Constraints.Max.Y) * progress)
 				return component.Rect{Size: gtx.Constraints.Max, Color: color.NRGBA{A: 200}}.Layout(gtx)
 			})
 		}),
-		layout.Stacked(func(gtx Gtx) Dim {
+		layout.Stacked(func(gtx fwk.Gtx) fwk.Dim {
 			progress := p.menuVisibilityAnim.Revealed(gtx)
 			macro := op.Record(gtx.Ops)
 			d := p.btnMenuContent.Layout(gtx, p.drawMenuItems)
@@ -294,10 +294,10 @@ func (p *page) drawMenuLayout(gtx Gtx) Dim {
 			return d
 		}),
 	)
-	return Dim{}
+	return fwk.Dim{}
 }
 
-func (p *page) drawMenuItems(gtx Gtx) Dim {
+func (p *page) drawMenuItems(gtx fwk.Gtx) fwk.Dim {
 	gtx.Constraints.Max.X = int(float32(gtx.Constraints.Max.X) / 1.5)
 	gtx.Constraints.Min.X = gtx.Constraints.Max.X
 	if p.SelectionMode {
@@ -306,7 +306,7 @@ func (p *page) drawMenuItems(gtx Gtx) Dim {
 	return p.drawNormalMenuItems(gtx)
 }
 
-func (p *page) drawNormalMenuItems(gtx Gtx) Dim {
+func (p *page) drawNormalMenuItems(gtx fwk.Gtx) fwk.Dim {
 	if p.btnSelectAll.Clicked() {
 		p.selectAll()
 		p.menuVisibilityAnim.Disappear(gtx.Now)
@@ -317,7 +317,7 @@ func (p *page) drawNormalMenuItems(gtx Gtx) Dim {
 	}
 	if p.btnDeleteAll.Clicked() {
 		p.selectAll()
-		p.Modal().Show(p.drawDeleteCustomersModal, nil, Animation{
+		p.Modal().Show(p.drawDeleteCustomersModal, nil, fwk.Animation{
 			Duration: time.Millisecond * 250,
 			State:    component.Invisible,
 			Started:  time.Time{},
@@ -332,9 +332,9 @@ func (p *page) drawNormalMenuItems(gtx Gtx) Dim {
 		p.drawMenuItem("Delete All Customers", &p.btnDeleteAll),
 	)
 }
-func (p *page) drawSelectionMenuItems(gtx Gtx) Dim {
+func (p *page) drawSelectionMenuItems(gtx fwk.Gtx) fwk.Dim {
 	if p.btnDeleteSelection.Clicked() {
-		p.Modal().Show(p.drawDeleteCustomersModal, nil, Animation{
+		p.Modal().Show(p.drawDeleteCustomersModal, nil, fwk.Animation{
 			Duration: time.Millisecond * 250,
 			State:    component.Invisible,
 			Started:  time.Time{},
@@ -357,12 +357,12 @@ func (p *page) drawMenuItem(txt string, btn *widget.Clickable) layout.FlexChild 
 		btnStyle := material.ButtonLayoutStyle{Button: btn}
 		btnStyle.Background = color.NRGBA(colornames.White)
 		return btnStyle.Layout(gtx,
-			func(gtx Gtx) Dim {
+			func(gtx fwk.Gtx) fwk.Dim {
 				gtx.Constraints.Min.X = gtx.Constraints.Max.X
 				inset := inset
-				return inset.Layout(gtx, func(gtx Gtx) Dim {
+				return inset.Layout(gtx, func(gtx fwk.Gtx) fwk.Dim {
 					return layout.Flex{Spacing: layout.SpaceEnd}.Layout(gtx,
-						layout.Rigid(func(gtx Gtx) Dim {
+						layout.Rigid(func(gtx fwk.Gtx) fwk.Dim {
 							bd := material.Body1(p.Theme, txt)
 							bd.Color = color.NRGBA(colornames.Black)
 							bd.Alignment = text.Start
@@ -375,13 +375,13 @@ func (p *page) drawMenuItem(txt string, btn *widget.Clickable) layout.FlexChild 
 	})
 }
 
-func (p *page) drawAddCustomerModal(gtx Gtx) Dim {
+func (p *page) drawAddCustomerModal(gtx fwk.Gtx) fwk.Dim {
 	gtx.Constraints.Max.X = int(float32(gtx.Constraints.Max.X) * 0.85)
 	gtx.Constraints.Max.Y = int(float32(gtx.Constraints.Max.Y) * 0.85)
 	return p.ModalContent.DrawContent(gtx, p.Theme, p.CustomerForm.Layout)
 }
 
-func (p *page) drawDeleteCustomersModal(gtx Gtx) Dim {
+func (p *page) drawDeleteCustomersModal(gtx fwk.Gtx) fwk.Dim {
 	gtx.Constraints.Max.X = int(float32(gtx.Constraints.Max.X) * 0.85)
 	gtx.Constraints.Max.Y = int(float32(gtx.Constraints.Max.Y) * 0.85)
 	if p.btnYes.Clicked() {
@@ -464,7 +464,7 @@ func (p *page) selectAll() {
 	}
 }
 
-func (p *page) fetchCustomersOnScroll(_ Gtx) {
+func (p *page) fetchCustomersOnScroll(_ fwk.Gtx) {
 	p.listPosition = p.Position
 	shouldFetch := p.Position.First == 0 && !p.isFetchingCustomers && int64(len(p.contactsView)) < p.contactsCount
 	if shouldFetch {
@@ -561,6 +561,6 @@ func (p *page) OnDatabaseChange(event service2.Event) {
 	}
 }
 
-func (p *page) URL() URL {
-	return CustomersPageURL
+func (p *page) URL() fwk.URL {
+	return fwk.CustomersPageURL
 }

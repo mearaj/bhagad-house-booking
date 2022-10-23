@@ -96,7 +96,7 @@ func (q *Queries) ListCustomers(ctx context.Context, arg ListCustomersParams) ([
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Customer
+	items := []Customer{}
 	for rows.Next() {
 		var i Customer
 		if err := rows.Scan(

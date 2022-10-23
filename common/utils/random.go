@@ -1,4 +1,4 @@
-package util
+package utils
 
 import (
 	"fmt"
@@ -27,11 +27,11 @@ func RandomString(n int) string {
 	return sb.String()
 }
 
-func RandomCustomerName() string {
+func RandomName() string {
 	return RandomString(6)
 }
 
-func RandomCustomerAddr() string {
+func RandomAddress() string {
 	return RandomString(10) + " " + RandomString(5)
 }
 

@@ -8,7 +8,7 @@ import (
 	"gioui.org/widget"
 	"gioui.org/widget/material"
 	"gioui.org/x/component"
-	. "github.com/mearaj/bhagad-house-booking/frontend/ui/fwk"
+	"github.com/mearaj/bhagad-house-booking/frontend/ui/fwk"
 	"image"
 	"image/color"
 	"strings"
@@ -27,7 +27,7 @@ type snackBar struct {
 	duration     int64
 }
 
-func NewSnackBar(manager Manager) Snackbar {
+func NewSnackBar(manager Manager) fwk.Snackbar {
 	return &snackBar{manager: manager,
 		theme:    manager.Theme(),
 		duration: 3000,

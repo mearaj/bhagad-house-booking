@@ -5,22 +5,22 @@ import (
 	"gioui.org/unit"
 	"gioui.org/widget"
 	"gioui.org/widget/material"
-	. "github.com/mearaj/bhagad-house-booking/frontend/ui/fwk"
-	view2 "github.com/mearaj/bhagad-house-booking/frontend/ui/view"
+	"github.com/mearaj/bhagad-house-booking/frontend/ui/fwk"
+	view "github.com/mearaj/bhagad-house-booking/frontend/ui/view"
 	"golang.org/x/exp/shiny/materialdesign/colornames"
 	"golang.org/x/exp/shiny/materialdesign/icons"
 	"image/color"
 )
 
 type page struct {
-	Manager
+	fwk.Manager
 	Theme            *material.Theme
 	title            string
 	buttonNavigation widget.Clickable
 	navigationIcon   *widget.Icon
 }
 
-func New(manager Manager) Page {
+func New(manager fwk.Manager) fwk.Page {
 	navIcon, _ := widget.NewIcon(icons.NavigationArrowBack)
 	errorTh := *manager.Theme()
 	errorTh.ContrastBg = color.NRGBA(colornames.Red500)
@@ -32,7 +32,7 @@ func New(manager Manager) Page {
 	}
 }
 
-func (p *page) Layout(gtx Gtx) Dim {
+func (p *page) Layout(gtx fwk.Gtx) fwk.Dim {
 	if p.Theme == nil {
 		p.Theme = p.Manager.Theme()
 	}
@@ -40,7 +40,7 @@ func (p *page) Layout(gtx Gtx) Dim {
 		Spacing:   layout.SpaceEnd,
 		Alignment: layout.Start,
 	}
-	greetings := view2.Greetings{}
+	greetings := view.Greetings{}
 	d := flex.Layout(gtx,
 		layout.Rigid(p.DrawAppBar),
 		layout.Rigid(greetings.Layout),
@@ -48,18 +48,18 @@ func (p *page) Layout(gtx Gtx) Dim {
 	return d
 }
 
-func (p *page) DrawAppBar(gtx Gtx) Dim {
+func (p *page) DrawAppBar(gtx fwk.Gtx) fwk.Dim {
 	gtx.Constraints.Max.Y = gtx.Dp(56)
 	th := p.Theme
 	if p.buttonNavigation.Clicked() {
 		p.PopUp()
 	}
 
-	return view2.DrawAppBarLayout(gtx, th, func(gtx Gtx) Dim {
+	return view.DrawAppBarLayout(gtx, th, func(gtx fwk.Gtx) fwk.Dim {
 		return layout.Flex{Alignment: layout.Middle, Spacing: layout.SpaceBetween}.Layout(gtx,
-			layout.Rigid(func(gtx Gtx) Dim {
+			layout.Rigid(func(gtx fwk.Gtx) fwk.Dim {
 				return layout.Flex{Alignment: layout.Middle}.Layout(gtx,
-					layout.Rigid(func(gtx Gtx) Dim {
+					layout.Rigid(func(gtx fwk.Gtx) fwk.Dim {
 						navigationIcon := p.navigationIcon
 						button := material.IconButton(th, &p.buttonNavigation, navigationIcon, "Nav Icon Button")
 						button.Size = unit.Dp(40)
@@ -68,8 +68,8 @@ func (p *page) DrawAppBar(gtx Gtx) Dim {
 						button.Inset = layout.UniformInset(unit.Dp(8))
 						return button.Layout(gtx)
 					}),
-					layout.Rigid(func(gtx Gtx) Dim {
-						return layout.Inset{Left: unit.Dp(16)}.Layout(gtx, func(gtx Gtx) Dim {
+					layout.Rigid(func(gtx fwk.Gtx) fwk.Dim {
+						return layout.Inset{Left: unit.Dp(16)}.Layout(gtx, func(gtx fwk.Gtx) fwk.Dim {
 							titleText := p.title
 							title := material.Body1(th, titleText)
 							title.Color = th.Palette.ContrastFg
@@ -83,6 +83,6 @@ func (p *page) DrawAppBar(gtx Gtx) Dim {
 	})
 }
 
-func (p *page) URL() URL {
-	return HelpPageURL
+func (p *page) URL() fwk.URL {
+	return fwk.HelpPageURL
 }

@@ -6,7 +6,6 @@ import (
 	"gioui.org/widget"
 	"gioui.org/widget/material"
 	"github.com/mearaj/bhagad-house-booking/common/assets"
-	. "github.com/mearaj/bhagad-house-booking/frontend/ui/fwk"
 )
 
 func DrawAppIconImageCenter(gtx Gtx, theme *material.Theme) Dim {

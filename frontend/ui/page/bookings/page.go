@@ -13,7 +13,7 @@ import (
 	"gioui.org/x/component"
 	"github.com/mearaj/bhagad-house-booking/common/db/sqlc"
 	"github.com/mearaj/bhagad-house-booking/frontend/service"
-	. "github.com/mearaj/bhagad-house-booking/frontend/ui/fwk"
+	"github.com/mearaj/bhagad-house-booking/frontend/ui/fwk"
 	"github.com/mearaj/bhagad-house-booking/frontend/ui/page/add_edit_booking"
 	"github.com/mearaj/bhagad-house-booking/frontend/ui/view"
 	"golang.org/x/exp/shiny/materialdesign/colornames"
@@ -24,7 +24,7 @@ import (
 
 type page struct {
 	layout.List
-	Manager
+	fwk.Manager
 	Theme                   *material.Theme
 	title                   string
 	iconNewChat             *widget.Icon
@@ -45,7 +45,7 @@ type page struct {
 	menuVisibilityAnim      component.VisibilityAnimation
 	navigationIcon          *widget.Icon
 	bookingsView            []*pageItem
-	NoBooking               View
+	NoBooking               fwk.View
 	ModalContent            *view.ModalContent
 	SelectionMode           bool
 	isFetchingBookings      bool
@@ -57,7 +57,7 @@ type page struct {
 	bookingsCount           int64
 }
 
-func New(manager Manager) Page {
+func New(manager fwk.Manager) fwk.Page {
 	navIcon, _ := widget.NewIcon(icons.NavigationArrowBack)
 	closeIcon, _ := widget.NewIcon(icons.ContentClear)
 	iconNewChat, _ := widget.NewIcon(icons.ContentCreate)
@@ -91,7 +91,7 @@ func New(manager Manager) Page {
 	return &p
 }
 
-func (p *page) Layout(gtx Gtx) Dim {
+func (p *page) Layout(gtx fwk.Gtx) fwk.Dim {
 	if !p.initialized {
 		if p.Theme == nil {
 			p.Theme = p.Manager.Theme()
@@ -117,7 +117,7 @@ func (p *page) Layout(gtx Gtx) Dim {
 	return d
 }
 
-func (p *page) DrawAppBar(gtx Gtx) Dim {
+func (p *page) DrawAppBar(gtx fwk.Gtx) fwk.Dim {
 	gtx.Constraints.Max.Y = gtx.Dp(56)
 	if p.btnMenuIcon.Clicked() {
 		p.menuVisibilityAnim.Appear(gtx.Now)
@@ -127,18 +127,18 @@ func (p *page) DrawAppBar(gtx Gtx) Dim {
 	}
 	return p.DrawNormalAppBar(gtx)
 }
-func (p *page) DrawNormalAppBar(gtx Gtx) Dim {
+func (p *page) DrawNormalAppBar(gtx fwk.Gtx) fwk.Dim {
 	gtx.Constraints.Max.Y = gtx.Dp(56)
 	th := p.Theme
 	if p.buttonNavigation.Clicked() {
 		p.PopUp()
 	}
 
-	return view.DrawAppBarLayout(gtx, th, func(gtx Gtx) Dim {
+	return view.DrawAppBarLayout(gtx, th, func(gtx fwk.Gtx) fwk.Dim {
 		return layout.Flex{Alignment: layout.Middle, Spacing: layout.SpaceBetween}.Layout(gtx,
-			layout.Rigid(func(gtx Gtx) Dim {
+			layout.Rigid(func(gtx fwk.Gtx) fwk.Dim {
 				return layout.Flex{Alignment: layout.Middle}.Layout(gtx,
-					layout.Rigid(func(gtx Gtx) Dim {
+					layout.Rigid(func(gtx fwk.Gtx) fwk.Dim {
 						navigationIcon := p.navigationIcon
 						button := material.IconButton(th, &p.buttonNavigation, navigationIcon, "Nav Icon Button")
 						button.Size = unit.Dp(40)
@@ -147,8 +147,8 @@ func (p *page) DrawNormalAppBar(gtx Gtx) Dim {
 						button.Inset = layout.UniformInset(unit.Dp(8))
 						return button.Layout(gtx)
 					}),
-					layout.Rigid(func(gtx Gtx) Dim {
-						return layout.Inset{Left: unit.Dp(16)}.Layout(gtx, func(gtx Gtx) Dim {
+					layout.Rigid(func(gtx fwk.Gtx) fwk.Dim {
+						return layout.Inset{Left: unit.Dp(16)}.Layout(gtx, func(gtx fwk.Gtx) fwk.Dim {
 							titleText := p.title
 							title := material.Body1(th, titleText)
 							title.Color = th.Palette.ContrastFg
@@ -158,7 +158,7 @@ func (p *page) DrawNormalAppBar(gtx Gtx) Dim {
 					}),
 				)
 			}),
-			layout.Rigid(func(gtx Gtx) Dim {
+			layout.Rigid(func(gtx fwk.Gtx) fwk.Dim {
 				button := material.IconButton(th, &p.btnMenuIcon, p.menuIcon, "Context Menu")
 				button.Size = unit.Dp(40)
 				button.Background = th.Palette.ContrastBg
@@ -170,18 +170,18 @@ func (p *page) DrawNormalAppBar(gtx Gtx) Dim {
 		)
 	})
 }
-func (p *page) DrawSelectionAppBar(gtx Gtx) Dim {
+func (p *page) DrawSelectionAppBar(gtx fwk.Gtx) fwk.Dim {
 	gtx.Constraints.Max.Y = gtx.Dp(56)
 	th := p.Theme
 	if p.btnCloseSelection.Clicked() {
 		p.clearAllSelection()
 		p.menuVisibilityAnim.Disappear(gtx.Now)
 	}
-	return view.DrawAppBarLayout(gtx, th, func(gtx Gtx) Dim {
+	return view.DrawAppBarLayout(gtx, th, func(gtx fwk.Gtx) fwk.Dim {
 		return layout.Flex{Alignment: layout.Middle, Spacing: layout.SpaceBetween}.Layout(gtx,
-			layout.Rigid(func(gtx Gtx) Dim {
+			layout.Rigid(func(gtx fwk.Gtx) fwk.Dim {
 				return layout.Flex{Alignment: layout.Middle}.Layout(gtx,
-					layout.Rigid(func(gtx Gtx) Dim {
+					layout.Rigid(func(gtx fwk.Gtx) fwk.Dim {
 						closeIcon := p.closeIcon
 						button := material.IconButton(th, &p.btnCloseSelection, closeIcon, "Nav Icon Button")
 						button.Size = unit.Dp(40)
@@ -190,8 +190,8 @@ func (p *page) DrawSelectionAppBar(gtx Gtx) Dim {
 						button.Inset = layout.UniformInset(unit.Dp(8))
 						return button.Layout(gtx)
 					}),
-					layout.Rigid(func(gtx Gtx) Dim {
-						return layout.Inset{Left: unit.Dp(16)}.Layout(gtx, func(gtx Gtx) Dim {
+					layout.Rigid(func(gtx fwk.Gtx) fwk.Dim {
+						return layout.Inset{Left: unit.Dp(16)}.Layout(gtx, func(gtx fwk.Gtx) fwk.Dim {
 							var txt string
 							count := p.getSelectionCount()
 							if count == 0 {
@@ -207,7 +207,7 @@ func (p *page) DrawSelectionAppBar(gtx Gtx) Dim {
 					}),
 				)
 			}),
-			layout.Rigid(func(gtx Gtx) Dim {
+			layout.Rigid(func(gtx fwk.Gtx) fwk.Dim {
 				button := material.IconButton(th, &p.btnMenuIcon, p.menuIcon, "Context Menu")
 				button.Size = unit.Dp(40)
 				button.Background = th.Palette.ContrastBg
@@ -220,19 +220,19 @@ func (p *page) DrawSelectionAppBar(gtx Gtx) Dim {
 	})
 }
 
-func (p *page) drawIdentitiesItems(gtx Gtx) Dim {
+func (p *page) drawIdentitiesItems(gtx fwk.Gtx) fwk.Dim {
 	if len(p.bookingsView) == 0 {
 		return p.NoBooking.Layout(gtx)
 	}
-	return p.List.Layout(gtx, len(p.bookingsView), func(gtx Gtx, index int) (d Dim) {
+	return p.List.Layout(gtx, len(p.bookingsView), func(gtx fwk.Gtx, index int) (d fwk.Dim) {
 		inset := layout.Inset{Top: unit.Dp(0), Bottom: unit.Dp(0)}
-		return inset.Layout(gtx, func(gtx Gtx) Dim {
+		return inset.Layout(gtx, func(gtx fwk.Gtx) fwk.Dim {
 			return p.bookingsView[index].Layout(gtx)
 		})
 	})
 }
 
-func (p *page) drawMenuLayout(gtx Gtx) Dim {
+func (p *page) drawMenuLayout(gtx fwk.Gtx) fwk.Dim {
 	if p.btnBackdrop.Clicked() {
 		if !p.btnMenuContent.Pressed() {
 			p.menuVisibilityAnim.Disappear(gtx.Now)
@@ -244,7 +244,7 @@ func (p *page) drawMenuLayout(gtx Gtx) Dim {
 		}
 	}
 	layout.Stack{Alignment: layout.NE}.Layout(gtx,
-		layout.Stacked(func(gtx Gtx) Dim {
+		layout.Stacked(func(gtx fwk.Gtx) fwk.Dim {
 			return p.btnBackdrop.Layout(gtx,
 				func(gtx layout.Context) layout.Dimensions {
 					progress := p.menuVisibilityAnim.Revealed(gtx)
@@ -254,7 +254,7 @@ func (p *page) drawMenuLayout(gtx Gtx) Dim {
 				},
 			)
 		}),
-		layout.Stacked(func(gtx Gtx) Dim {
+		layout.Stacked(func(gtx fwk.Gtx) fwk.Dim {
 			progress := p.menuVisibilityAnim.Revealed(gtx)
 			macro := op.Record(gtx.Ops)
 			d := p.btnMenuContent.Layout(gtx, p.drawMenuItems)
@@ -268,10 +268,10 @@ func (p *page) drawMenuLayout(gtx Gtx) Dim {
 			return d
 		}),
 	)
-	return Dim{}
+	return fwk.Dim{}
 }
 
-func (p *page) drawMenuItems(gtx Gtx) Dim {
+func (p *page) drawMenuItems(gtx fwk.Gtx) fwk.Dim {
 	gtx.Constraints.Max.X = int(float32(gtx.Constraints.Max.X) / 1.5)
 	gtx.Constraints.Min.X = gtx.Constraints.Max.X
 	if p.SelectionMode {
@@ -280,7 +280,7 @@ func (p *page) drawMenuItems(gtx Gtx) Dim {
 	return p.drawNormalMenuItems(gtx)
 }
 
-func (p *page) drawNormalMenuItems(gtx Gtx) Dim {
+func (p *page) drawNormalMenuItems(gtx fwk.Gtx) fwk.Dim {
 	if p.btnSelectAll.Clicked() {
 		p.selectAll()
 		p.menuVisibilityAnim.Disappear(gtx.Now)
@@ -291,7 +291,7 @@ func (p *page) drawNormalMenuItems(gtx Gtx) Dim {
 	}
 	if p.btnDeleteAll.Clicked() {
 		p.selectAll()
-		p.Modal().Show(p.drawDeleteBookingsModal, nil, Animation{
+		p.Modal().Show(p.drawDeleteBookingsModal, nil, fwk.Animation{
 			Duration: time.Millisecond * 250,
 			State:    component.Invisible,
 			Started:  time.Time{},
@@ -306,9 +306,9 @@ func (p *page) drawNormalMenuItems(gtx Gtx) Dim {
 		p.drawMenuItem("Delete All Bookings", &p.btnDeleteAll),
 	)
 }
-func (p *page) drawSelectionMenuItems(gtx Gtx) Dim {
+func (p *page) drawSelectionMenuItems(gtx fwk.Gtx) fwk.Dim {
 	if p.btnDeleteBookings.Clicked() {
-		p.Modal().Show(p.drawDeleteBookingsModal, nil, Animation{
+		p.Modal().Show(p.drawDeleteBookingsModal, nil, fwk.Animation{
 			Duration: time.Millisecond * 250,
 			State:    component.Invisible,
 			Started:  time.Time{},
@@ -327,12 +327,12 @@ func (p *page) drawMenuItem(txt string, btn *widget.Clickable) layout.FlexChild 
 		btnStyle := material.ButtonLayoutStyle{Button: btn}
 		btnStyle.Background = color.NRGBA(colornames.White)
 		return btnStyle.Layout(gtx,
-			func(gtx Gtx) Dim {
+			func(gtx fwk.Gtx) fwk.Dim {
 				gtx.Constraints.Min.X = gtx.Constraints.Max.X
 				inset := inset
-				return inset.Layout(gtx, func(gtx Gtx) Dim {
+				return inset.Layout(gtx, func(gtx fwk.Gtx) fwk.Dim {
 					return layout.Flex{Spacing: layout.SpaceEnd}.Layout(gtx,
-						layout.Rigid(func(gtx Gtx) Dim {
+						layout.Rigid(func(gtx fwk.Gtx) fwk.Dim {
 							bd := material.Body1(p.Theme, txt)
 							bd.Color = color.NRGBA(colornames.Black)
 							bd.Alignment = text.Start
@@ -345,7 +345,7 @@ func (p *page) drawMenuItem(txt string, btn *widget.Clickable) layout.FlexChild 
 	})
 }
 
-func (p *page) drawDeleteBookingsModal(gtx Gtx) Dim {
+func (p *page) drawDeleteBookingsModal(gtx fwk.Gtx) fwk.Dim {
 	gtx.Constraints.Max.X = int(float32(gtx.Constraints.Max.X) * 0.85)
 	gtx.Constraints.Max.Y = int(float32(gtx.Constraints.Max.Y) * 0.85)
 	if p.btnYes.Clicked() {
@@ -513,7 +513,7 @@ func (p *page) handleSelectionMode() {
 	}
 }
 
-func (p *page) handleAddBookingClick(gtx Gtx) {
+func (p *page) handleAddBookingClick(gtx fwk.Gtx) {
 	if p.btnAddBooking.Clicked() {
 		addEditBookingPage := add_edit_booking.New(p.Manager, sqlc.Booking{})
 		p.Manager.NavigateToPage(addEditBookingPage, func() {
@@ -522,7 +522,7 @@ func (p *page) handleAddBookingClick(gtx Gtx) {
 	}
 }
 
-func (p *page) handleEvents(gtx Gtx) {
+func (p *page) handleEvents(gtx fwk.Gtx) {
 	for _, e := range gtx.Queue.Events(p) {
 		switch e := e.(type) {
 		case pointer.Event:
@@ -549,6 +549,6 @@ func (p *page) OnDatabaseChange(event service.Event) {
 		p.fetchBookingsCount()
 	}
 }
-func (p *page) URL() URL {
-	return BookingsPageURL
+func (p *page) URL() fwk.URL {
+	return fwk.BookingsPageURL
 }

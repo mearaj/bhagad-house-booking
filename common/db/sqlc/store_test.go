@@ -2,8 +2,7 @@ package sqlc
 
 import (
 	"context"
-	"database/sql"
-	"github.com/mearaj/bhagad-house-booking/common/db/util"
+	"github.com/mearaj/bhagad-house-booking/common/utils"
 	"github.com/stretchr/testify/require"
 	"testing"
 	"time"
@@ -12,24 +11,15 @@ import (
 func TestCreateBookingAndCustomer(t *testing.T) {
 	store := NewStore(testDB)
 	customerParams := CreateCustomerParams{
-		Name:    util.RandomCustomerName(),
-		Address: util.RandomCustomerAddr(),
-		Phone:   util.RandomPhone(),
-		Email:   util.RandomEmail(),
+		Name:    utils.RandomName(),
+		Address: utils.RandomAddress(),
+		Phone:   utils.RandomPhone(),
+		Email:   utils.RandomEmail(),
 	}
 	bookingParams := CreateBookingParams{
-		StartDate: sql.NullTime{
-			Time:  time.Now(),
-			Valid: true,
-		},
-		EndDate: sql.NullTime{
-			Time:  time.Now(),
-			Valid: true,
-		},
-		Rate: sql.NullFloat64{
-			Float64: 1,
-			Valid:   true,
-		},
+		StartDate:    time.Now(),
+		EndDate:      time.Now(),
+		Rate:         1,
 		RateTimeUnit: RateTimeUnitsDay,
 	}
 
@@ -54,7 +44,7 @@ func TestCreateBookingAndCustomer(t *testing.T) {
 		result := <-results
 		require.NotEmpty(t, result)
 		require.NotZero(t, result.CustomerID)
-		require.Equal(t, result.CustomerID.Int64, result.Customer.ID)
+		require.Equal(t, result.CustomerID, result.Customer.ID)
 		_, err = store.GetBooking(context.Background(), result.Booking.ID)
 		require.NoError(t, err)
 		_, err = store.GetCustomer(context.Background(), result.Customer.ID)

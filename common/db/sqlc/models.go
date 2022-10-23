@@ -5,9 +5,9 @@
 package sqlc
 
 import (
-	"database/sql"
 	"database/sql/driver"
 	"fmt"
+	"time"
 )
 
 type RateTimeUnits string
@@ -54,23 +54,76 @@ func (ns NullRateTimeUnits) Value() (driver.Value, error) {
 	return ns.RateTimeUnits, nil
 }
 
+type UserRoles string
+
+const (
+	UserRolesUser  UserRoles = "User"
+	UserRolesAdmin UserRoles = "Admin"
+)
+
+func (e *UserRoles) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = UserRoles(s)
+	case string:
+		*e = UserRoles(s)
+	default:
+		return fmt.Errorf("unsupported scan type for UserRoles: %T", src)
+	}
+	return nil
+}
+
+type NullUserRoles struct {
+	UserRoles UserRoles
+	Valid     bool // Valid is true if String is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullUserRoles) Scan(value interface{}) error {
+	if value == nil {
+		ns.UserRoles, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.UserRoles.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullUserRoles) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return ns.UserRoles, nil
+}
+
 type Booking struct {
-	ID           int64           `json:"id"`
-	CreatedAt    sql.NullTime    `json:"created_at"`
-	UpdatedAt    sql.NullTime    `json:"updated_at"`
-	StartDate    sql.NullTime    `json:"start_date"`
-	EndDate      sql.NullTime    `json:"end_date"`
-	CustomerID   sql.NullInt64   `json:"customer_id"`
-	Rate         sql.NullFloat64 `json:"rate"`
-	RateTimeUnit RateTimeUnits   `json:"rate_time_unit"`
+	ID           int64         `json:"id"`
+	CreatedAt    time.Time     `json:"created_at"`
+	UpdatedAt    time.Time     `json:"updated_at"`
+	StartDate    time.Time     `json:"start_date"`
+	EndDate      time.Time     `json:"end_date"`
+	CustomerID   int64         `json:"customer_id"`
+	Rate         float64       `json:"rate"`
+	RateTimeUnit RateTimeUnits `json:"rate_time_unit"`
 }
 
 type Customer struct {
-	ID        int64        `json:"id"`
-	CreatedAt sql.NullTime `json:"created_at"`
-	UpdatedAt sql.NullTime `json:"updated_at"`
-	Name      string       `json:"name"`
-	Address   string       `json:"address"`
-	Phone     string       `json:"phone"`
-	Email     string       `json:"email"`
+	ID        int64     `json:"id"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+	Name      string    `json:"name"`
+	Address   string    `json:"address"`
+	Phone     string    `json:"phone"`
+	Email     string    `json:"email"`
+}
+
+type User struct {
+	ID                int64       `json:"id"`
+	Password          string      `json:"password"`
+	Name              string      `json:"name"`
+	Email             string      `json:"email"`
+	EmailVerified     bool        `json:"email_verified"`
+	PasswordChangedAt time.Time   `json:"password_changed_at"`
+	CreatedAt         time.Time   `json:"created_at"`
+	Roles             []UserRoles `json:"roles"`
 }

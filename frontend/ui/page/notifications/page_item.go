@@ -10,7 +10,7 @@ import (
 	"gioui.org/widget/material"
 	"gioui.org/x/component"
 	"github.com/mearaj/bhagad-house-booking/common/db/sqlc"
-	. "github.com/mearaj/bhagad-house-booking/frontend/ui/fwk"
+	"github.com/mearaj/bhagad-house-booking/frontend/ui/fwk"
 	"github.com/mearaj/bhagad-house-booking/frontend/ui/view"
 	"golang.org/x/exp/shiny/materialdesign/colornames"
 	"golang.org/x/exp/shiny/materialdesign/icons"
@@ -26,8 +26,8 @@ type pageItem struct {
 	buttonIconMore        widget.Clickable
 	btnSetCurrentIdentity widget.Clickable
 	shouldCloseMenuItems  bool
-	buttonIconMoreDim     Dim
-	Manager
+	buttonIconMoreDim     fwk.Dim
+	fwk.Manager
 	sqlc.Customer
 	PressedStamp int64
 	view.AvatarView
@@ -36,13 +36,13 @@ type pageItem struct {
 	settingAsPrimaryBooking bool
 }
 
-func (i *pageItem) Layout(gtx Gtx) Dim {
+func (i *pageItem) Layout(gtx fwk.Gtx) fwk.Dim {
 	if i.Theme == nil {
 		i.Theme = i.Manager.Theme()
 	}
 	return i.layoutContent(gtx)
 }
-func (i *pageItem) layoutContent(gtx Gtx) Dim {
+func (i *pageItem) layoutContent(gtx fwk.Gtx) fwk.Dim {
 	if i.menuVisibilityAnim == (component.VisibilityAnimation{}) {
 		i.menuVisibilityAnim = component.VisibilityAnimation{
 			Duration: time.Millisecond * 250,
@@ -82,7 +82,7 @@ func (i *pageItem) layoutContent(gtx Gtx) Dim {
 				i.Manager.Modal().Show(func(gtx layout.Context) layout.Dimensions {
 					loader := view.Loader{}
 					return loader.Layout(gtx)
-				}, nil, Animation{
+				}, nil, fwk.Animation{
 					Duration: time.Millisecond * 250,
 					State:    component.Invisible,
 					Started:  time.Time{},
@@ -134,29 +134,29 @@ func (i *pageItem) layoutContent(gtx Gtx) Dim {
 	}
 
 	gtx.Constraints.Min.X = gtx.Constraints.Max.X
-	d := btnStyle.Layout(gtx, func(gtx Gtx) Dim {
+	d := btnStyle.Layout(gtx, func(gtx fwk.Gtx) fwk.Dim {
 		inset := layout.Inset{Top: unit.Dp(16), Bottom: unit.Dp(16), Left: unit.Dp(16), Right: unit.Dp(8)}
-		d := inset.Layout(gtx, func(gtx Gtx) Dim {
+		d := inset.Layout(gtx, func(gtx fwk.Gtx) fwk.Dim {
 			flex := layout.Flex{Spacing: layout.SpaceEnd, Alignment: layout.Start}
 			d := flex.Layout(gtx,
-				layout.Rigid(func(gtx Gtx) Dim {
+				layout.Rigid(func(gtx fwk.Gtx) fwk.Dim {
 					flex := layout.Flex{Spacing: layout.SpaceSides, Alignment: layout.Start, Axis: layout.Vertical}
 					d := flex.Layout(gtx, layout.Rigid(i.AvatarView.Layout))
 					return d
 				}),
-				layout.Rigid(func(gtx Gtx) Dim {
+				layout.Rigid(func(gtx fwk.Gtx) fwk.Dim {
 					gtx.Constraints.Max.X = gtx.Constraints.Max.X - gtx.Dp(80)
 					gtx.Constraints.Min.X = gtx.Constraints.Max.X
 					flex := layout.Flex{Spacing: layout.SpaceSides, Alignment: layout.Start, Axis: layout.Vertical}
 					inset := layout.Inset{Right: unit.Dp(16), Left: unit.Dp(16)}
-					d := inset.Layout(gtx, func(gtx Gtx) Dim {
+					d := inset.Layout(gtx, func(gtx fwk.Gtx) fwk.Dim {
 						d := flex.Layout(gtx,
-							layout.Rigid(func(gtx Gtx) Dim {
+							layout.Rigid(func(gtx fwk.Gtx) fwk.Dim {
 								b := material.Body1(i.Theme, i.Customer.Name)
 								b.Font.Weight = text.Bold
 								return b.Layout(gtx)
 							}),
-							layout.Rigid(func(gtx Gtx) Dim {
+							layout.Rigid(func(gtx fwk.Gtx) fwk.Dim {
 								b := material.Body1(i.Theme, strings.Trim(string(i.Customer.Name), "\n"))
 								b.Color = color.NRGBA(colornames.Grey600)
 								return b.Layout(gtx)
@@ -166,7 +166,7 @@ func (i *pageItem) layoutContent(gtx Gtx) Dim {
 					})
 					return d
 				}),
-				layout.Rigid(func(gtx Gtx) Dim {
+				layout.Rigid(func(gtx fwk.Gtx) fwk.Dim {
 					flex := layout.Flex{Axis: layout.Vertical, Spacing: layout.SpaceBetween, Alignment: layout.Middle}
 					return flex.Layout(gtx, layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 						if i.iconMore == nil {
@@ -180,7 +180,7 @@ func (i *pageItem) layoutContent(gtx Gtx) Dim {
 						button.Inset = layout.UniformInset(unit.Dp(16))
 						i.buttonIconMoreDim = button.Layout(gtx)
 						layout.Stack{Alignment: layout.NE}.Layout(gtx,
-							layout.Stacked(func(gtx Gtx) Dim {
+							layout.Stacked(func(gtx fwk.Gtx) fwk.Dim {
 								progress := i.menuVisibilityAnim.Revealed(gtx)
 								gtx.Constraints.Max.X = int(float32(gtx.Dp(300)) * progress)
 								gtx.Constraints.Min.X = gtx.Constraints.Max.X
@@ -206,7 +206,7 @@ func (i *pageItem) layoutContent(gtx Gtx) Dim {
 							//	icon, _ := widget.NewIcon(icons.ActionCheckCircle)
 							//	return icon.Layout(gtx, i.Theme.ContrastBg)
 							//}
-							return Dim{}
+							return fwk.Dim{}
 						}),
 					)
 				}),
@@ -219,19 +219,19 @@ func (i *pageItem) layoutContent(gtx Gtx) Dim {
 	return d
 }
 
-func (i *pageItem) drawMenuItems(gtx Gtx) Dim {
+func (i *pageItem) drawMenuItems(gtx fwk.Gtx) fwk.Dim {
 	inset := layout.UniformInset(unit.Dp(12))
 	return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
-		layout.Rigid(func(gtx Gtx) Dim {
+		layout.Rigid(func(gtx fwk.Gtx) fwk.Dim {
 			btnStyle := material.ButtonLayoutStyle{Button: &i.btnSetCurrentIdentity}
 			return btnStyle.Layout(gtx,
-				func(gtx Gtx) Dim {
+				func(gtx fwk.Gtx) fwk.Dim {
 					inset := inset
-					return inset.Layout(gtx, func(gtx Gtx) Dim {
+					return inset.Layout(gtx, func(gtx fwk.Gtx) fwk.Dim {
 						return layout.Flex{Spacing: layout.SpaceEnd}.Layout(gtx,
-							layout.Flexed(1, func(gtx Gtx) Dim {
+							layout.Flexed(1, func(gtx fwk.Gtx) fwk.Dim {
 								if i.menuVisibilityAnim.Animating() {
-									return Dim{}
+									return fwk.Dim{}
 								}
 								bd := material.Body1(i.Theme, "Set as current booking")
 								bd.Color = i.Theme.ContrastFg

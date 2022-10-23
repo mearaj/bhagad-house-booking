@@ -1,7 +1,6 @@
 package view
 
 import (
-	"database/sql"
 	"fmt"
 	"gioui.org/layout"
 	"gioui.org/text"
@@ -10,8 +9,7 @@ import (
 	"gioui.org/widget/material"
 	"gioui.org/x/component"
 	"github.com/mearaj/bhagad-house-booking/common/assets/fonts"
-	. "github.com/mearaj/bhagad-house-booking/common/db/sqlc"
-	. "github.com/mearaj/bhagad-house-booking/frontend/ui/fwk"
+	"github.com/mearaj/bhagad-house-booking/common/db/sqlc"
 	"github.com/mearaj/giowidgets/calendar"
 	"golang.org/x/exp/shiny/materialdesign/colornames"
 	"golang.org/x/exp/shiny/materialdesign/icons"
@@ -22,7 +20,7 @@ import (
 type BookingForm struct {
 	Manager
 	Theme              *material.Theme
-	Booking            Booking
+	Booking            sqlc.Booking
 	btnStartDate       widget.Clickable
 	btnEndDate         widget.Clickable
 	btnClearStartDate  IconButton
@@ -33,7 +31,7 @@ type BookingForm struct {
 }
 
 // NewBookingForm Always call this function to create BookingForm
-func NewBookingForm(manager Manager, booking Booking) BookingForm {
+func NewBookingForm(manager Manager, booking sqlc.Booking) BookingForm {
 	clearIcon, _ := widget.NewIcon(icons.ContentClear)
 	inActiveTheme := fonts.NewTheme()
 	inActiveTheme.ContrastBg = color.NRGBA(colornames.Grey500)
@@ -76,9 +74,9 @@ func (bf *BookingForm) Layout(gtx Gtx) Dim {
 				})
 			}
 			if bf.btnClearStartDate.Button.Clicked() {
-				bf.Booking.StartDate = sql.NullTime{Time: time.Time{}, Valid: false}
+				bf.Booking.StartDate = time.Time{}
 			}
-			return bf.drawDateField(gtx, "Start Date", &bf.btnStartDate, &bf.btnClearStartDate, bf.Booking.StartDate.Time)
+			return bf.drawDateField(gtx, "Start Date", &bf.btnStartDate, &bf.btnClearStartDate, bf.Booking.StartDate)
 		}),
 		layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 			if bf.btnEndDate.Clicked() {
@@ -89,9 +87,9 @@ func (bf *BookingForm) Layout(gtx Gtx) Dim {
 				})
 			}
 			if bf.btnClearEndDate.Button.Clicked() {
-				bf.Booking.EndDate = sql.NullTime{Time: time.Time{}, Valid: false}
+				bf.Booking.EndDate = time.Time{}
 			}
-			return bf.drawDateField(gtx, "End Date", &bf.btnEndDate, &bf.btnClearEndDate, bf.Booking.EndDate.Time)
+			return bf.drawDateField(gtx, "End Date", &bf.btnEndDate, &bf.btnClearEndDate, bf.Booking.EndDate)
 		}),
 	)
 }
@@ -164,10 +162,10 @@ func (bf *BookingForm) showEndFieldCalendar(gtx Gtx) Dim {
 }
 func (bf *BookingForm) onCalendarStartDateFieldClick(t time.Time) {
 	bf.Modal().Dismiss(nil)
-	bf.Booking.StartDate = sql.NullTime{Time: t, Valid: true}
+	bf.Booking.StartDate = t
 }
 
 func (bf *BookingForm) onCalendarEndDateFieldClick(t time.Time) {
 	bf.Modal().Dismiss(nil)
-	bf.Booking.EndDate = sql.NullTime{Time: t, Valid: true}
+	bf.Booking.EndDate = t
 }

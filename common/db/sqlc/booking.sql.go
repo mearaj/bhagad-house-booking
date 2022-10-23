@@ -7,7 +7,7 @@ package sqlc
 
 import (
 	"context"
-	"database/sql"
+	"time"
 )
 
 const createBooking = `-- name: CreateBooking :one
@@ -21,11 +21,11 @@ RETURNING id, created_at, updated_at, start_date, end_date, customer_id, rate, r
 `
 
 type CreateBookingParams struct {
-	StartDate    sql.NullTime    `json:"start_date"`
-	EndDate      sql.NullTime    `json:"end_date"`
-	CustomerID   sql.NullInt64   `json:"customer_id"`
-	Rate         sql.NullFloat64 `json:"rate"`
-	RateTimeUnit RateTimeUnits   `json:"rate_time_unit"`
+	StartDate    time.Time     `json:"start_date"`
+	EndDate      time.Time     `json:"end_date"`
+	CustomerID   int64         `json:"customer_id"`
+	Rate         float64       `json:"rate"`
+	RateTimeUnit RateTimeUnits `json:"rate_time_unit"`
 }
 
 func (q *Queries) CreateBooking(ctx context.Context, arg CreateBookingParams) (Booking, error) {
@@ -98,7 +98,7 @@ func (q *Queries) ListBookings(ctx context.Context, arg ListBookingsParams) ([]B
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Booking
+	items := []Booking{}
 	for rows.Next() {
 		var i Booking
 		if err := rows.Scan(
@@ -131,12 +131,12 @@ RETURNING id, created_at, updated_at, start_date, end_date, customer_id, rate, r
 `
 
 type UpdateBookingParams struct {
-	ID           int64           `json:"id"`
-	StartDate    sql.NullTime    `json:"start_date"`
-	EndDate      sql.NullTime    `json:"end_date"`
-	CustomerID   sql.NullInt64   `json:"customer_id"`
-	Rate         sql.NullFloat64 `json:"rate"`
-	RateTimeUnit RateTimeUnits   `json:"rate_time_unit"`
+	ID           int64         `json:"id"`
+	StartDate    time.Time     `json:"start_date"`
+	EndDate      time.Time     `json:"end_date"`
+	CustomerID   int64         `json:"customer_id"`
+	Rate         float64       `json:"rate"`
+	RateTimeUnit RateTimeUnits `json:"rate_time_unit"`
 }
 
 func (q *Queries) UpdateBooking(ctx context.Context, arg UpdateBookingParams) (Booking, error) {

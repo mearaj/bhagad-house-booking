@@ -2,28 +2,18 @@ package sqlc
 
 import (
 	"context"
-	"database/sql"
 	"github.com/stretchr/testify/require"
 	"testing"
+	"time"
 )
 
 func TestCreateBooking(t *testing.T) {
 	cust := createRandomCustomer(t)
 	arg := CreateBookingParams{
-		StartDate: sql.NullTime{
-			Valid: true,
-		},
-		EndDate: sql.NullTime{
-			Valid: true,
-		},
-		CustomerID: sql.NullInt64{
-			Int64: cust.ID,
-			Valid: true,
-		},
-		Rate: sql.NullFloat64{
-			Float64: 1,
-			Valid:   true,
-		},
+		StartDate:    time.Time{},
+		EndDate:      time.Time{},
+		CustomerID:   cust.ID,
+		Rate:         1,
 		RateTimeUnit: RateTimeUnitsDay,
 	}
 	bkg, err := testQueries.CreateBooking(context.Background(), arg)
