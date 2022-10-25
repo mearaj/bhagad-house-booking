@@ -7,7 +7,6 @@ import (
 	"github.com/lib/pq"
 	"github.com/mearaj/bhagad-house-booking/common/db/sqlc"
 	"github.com/mearaj/bhagad-house-booking/common/utils"
-	"log"
 	"net/http"
 	"time"
 )
@@ -121,7 +120,6 @@ type loginUserResponse struct {
 }
 
 func (s *Server) loginUser(ctx *gin.Context) {
-	log.Println("called?")
 	var req loginUserRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
