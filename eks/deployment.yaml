@@ -16,6 +16,6 @@ spec:
     spec:
       containers:
         - name: bhagad-house-booking-api
-          image: 846889921282.dkr.ecr.ap-south-1.amazonaws.com/bhagad_house_booking:0090c5fba2992e718da081baec5338f7b66ed629
+          image: 846889921282.dkr.ecr.ap-south-1.amazonaws.com/bhagad_house_booking:ebeba3d64d8b68e6a4ebf6063767065b25789b52
           ports:
           - containerPort: 8080
