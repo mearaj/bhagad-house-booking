@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bhagad-house-booking-api-deployment
+  labels:
+    app: bhagad-house-booking-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bhagad-house-booking-api
+  template:
+    metadata:
+      labels:
+        app: bhagad-house-booking-api
+    spec:
+      containers:
+        - name: bhagad-house-booking-api
+          image: 846889921282.dkr.ecr.ap-south-1.amazonaws.com/bhagad_house_booking:9e5fe1fc2140722745f2e74f1f3dd04f2d80bcc0
+          ports:
+          - containerPort: 8080
