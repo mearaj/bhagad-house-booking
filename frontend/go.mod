@@ -2,8 +2,6 @@ module frontend
 
 go 1.19
 
-replace github.com/mearaj/giowidgets => ./ui/view/third-party/giowidgets
-
 require (
 	gioui.org v0.0.0-20221023001956-9f62230c380f
 	gioui.org/x v0.0.0-20220919203322-ce11c01a7117
@@ -11,6 +9,11 @@ require (
 	github.com/mearaj/giowidgets v0.0.0-20220904074149-98ae4abd9760
 	github.com/sirupsen/logrus v1.9.0
 	golang.org/x/exp/shiny v0.0.0-20221023144134-a1e5550cf13e
+)
+
+replace (
+   github.com/mearaj/bhagad-house-booking/frontend => ./
+   github.com/mearaj/bhagad-house-booking/common => ../common
 )
 
 require (

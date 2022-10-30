@@ -6,25 +6,23 @@ import (
 	"github.com/mearaj/bhagad-house-booking/common/utils"
 	"log"
 	"os"
-	"path/filepath"
-	"runtime"
 	"testing"
 )
 
 var testQueries *Queries
 var testDB *sql.DB
 
+const defaultDatabaseDriver = "postgres"
+const defaultDatabaseURL = "postgresql://root:secret@localhost:5432/bhagad_house_booking?sslmode=disable"
+const defaultServerAddress = "0.0.0.0:8080"
+const defaultTokenSymmetricKey = "12345678901234567890123456789012"
+const defaultAccessTokenDuration = "15m"
+
 func TestMain(m *testing.M) {
-	_, p, _, ok := runtime.Caller(0) // provides path of this main file
-	if !ok {
-		log.Fatalln("error in runtime.Caller, cannot load path")
-	}
-	p = filepath.Join(p, filepath.FromSlash("../../.."))
-	config, err := utils.LoadConfig(p)
-	if err != nil {
-		log.Fatalln("cannot load config:", err)
-	}
-	testDB, err = sql.Open(config.DBDriver, config.DBSource)
+	config := utils.LoadConfig()
+	config.DBSource = defaultDatabaseURL
+	config.DBDriver = defaultDatabaseDriver
+	testDB, err := sql.Open(config.DBDriver, config.DBSource)
 	if err != nil {
 		log.Fatalln("cannot connect to db:", err)
 	}

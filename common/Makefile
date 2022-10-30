@@ -1,4 +1,9 @@
 DB_URL=postgresql://root:secret@localhost:5432/bhagad_house_booking?sslmode=disable
+POSTGRES_PASSWORD=secret
+POSTGRES_USER=root
+
+network:
+	docker network create bhagad_house_network
 
 postgres:
 	docker run --name postgres15 --network bhagad_house_network -p 5432:5432 -e POSTGRES_USER=root -e POSTGRES_PASSWORD=secret -d postgres:15-alpine
