@@ -2,10 +2,14 @@ package api
 
 import (
 	"fmt"
+	"github.com/gin-contrib/static"
 	"github.com/gin-gonic/gin"
 	"github.com/mearaj/bhagad-house-booking/common/db/sqlc"
 	"github.com/mearaj/bhagad-house-booking/common/token"
 	"github.com/mearaj/bhagad-house-booking/common/utils"
+	log "github.com/sirupsen/logrus"
+	"path/filepath"
+	"runtime"
 )
 
 type Server struct {
@@ -25,16 +29,21 @@ func NewServer(config utils.Config, store sqlc.Store) (*Server, error) {
 		store:      store,
 		tokenMaker: tokenMaker,
 	}
-
 	server.setupRouter()
 	return server, nil
 }
 
 func (s *Server) setupRouter() {
+	_, p, _, ok := runtime.Caller(0) // provides path of this main file
+	if !ok {
+		log.Fatalln("error in runtime.Caller, cannot load path")
+	}
+	p = filepath.Join(p, filepath.FromSlash("../../dist/index.html"))
 	router := gin.Default()
-	router.POST("/users", s.createUser)
-	router.POST("/users/login", s.loginUser)
-	authRoutes := router.Group("/").Use(authMiddleWare(s.tokenMaker))
+	router.Use(static.Serve("/", static.LocalFile("dist", false)))
+	router.POST("/api/users", s.createUser)
+	router.POST("/api/users/login", s.loginUser)
+	authRoutes := router.Group("/api").Use(authMiddleWare(s.tokenMaker))
 
 	authRoutes.GET("/users/:id", s.getUser)
 

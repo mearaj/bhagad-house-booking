@@ -13,6 +13,3 @@
 
 # Jetbrains IDE
 *.idea
-giowidgets
-
-/.production_credentials*
