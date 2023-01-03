@@ -3,252 +3,162 @@ package bookings
 import (
 	"fmt"
 	"gioui.org/layout"
-	"gioui.org/op"
-	"gioui.org/op/clip"
 	"gioui.org/text"
-	"gioui.org/unit"
 	"gioui.org/widget"
 	"gioui.org/widget/material"
 	"gioui.org/x/component"
 	"github.com/mearaj/bhagad-house-booking/common/db/sqlc"
+	"github.com/mearaj/bhagad-house-booking/frontend/service"
 	"github.com/mearaj/bhagad-house-booking/frontend/ui/fwk"
+	"github.com/mearaj/bhagad-house-booking/frontend/ui/page/add_edit_booking"
 	"github.com/mearaj/bhagad-house-booking/frontend/ui/view"
 	"golang.org/x/exp/shiny/materialdesign/colornames"
 	"golang.org/x/exp/shiny/materialdesign/icons"
-	"image/color"
+	color2 "image/color"
 	"time"
 )
 
 type pageItem struct {
 	*material.Theme
-	widget.Clickable
-	buttonIconMore        widget.Clickable
-	btnSetCurrentIdentity widget.Clickable
-	btnBookingDetails     widget.Clickable
-	btnMenuContent        widget.Clickable
-	listBookingDetails    layout.List
-	buttonIconMoreDim     fwk.Dim
+	btnRow    widget.Clickable
+	btnDelete widget.Clickable
+	btnYes    widget.Clickable
+	btnNo     widget.Clickable
 	fwk.Manager
+	time.Time
 	sqlc.Booking
-	PressedStamp int64
-	view.AvatarView
-	iconMore           *widget.Icon
-	menuVisibilityAnim component.VisibilityAnimation
-	BookingDetails     *view.BookingDetails
-	ModalContent       *view.ModalContent
+	LoginUserResponse service.UserResponse
+	ModalContent      *view.ModalContent
+	parentPage        *page
 }
 
 func (i *pageItem) Layout(gtx fwk.Gtx) fwk.Dim {
 	if i.Theme == nil {
 		i.Theme = i.Manager.Theme()
 	}
+
+	if i.ModalContent == nil {
+		i.ModalContent = view.NewModalContent(func() {
+			i.Modal().Dismiss(nil)
+		})
+	}
 	return i.layoutContent(gtx)
 }
 func (i *pageItem) layoutContent(gtx fwk.Gtx) fwk.Dim {
-	if i.menuVisibilityAnim == (component.VisibilityAnimation{}) {
-		i.menuVisibilityAnim = component.VisibilityAnimation{
-			Duration: time.Millisecond * 250,
-			State:    component.Invisible,
-			Started:  time.Time{},
+	inset := layout.UniformInset(16)
+	isAuthorized := i.LoginUserResponse.IsLoggedIn() && i.LoginUserResponse.IsAdmin()
+	if isAuthorized && i.btnDelete.Clicked() {
+		i.btnRow.Clicked() // discard row click
+		if i.Booking.ID != 0 {
+			i.Modal().Show(i.drawDeleteBookingsModal, nil, fwk.Animation{
+				Duration: time.Millisecond * 250,
+				State:    component.Invisible,
+				Started:  time.Time{},
+			})
 		}
 	}
-
-	if i.buttonIconMore.Clicked() {
-		i.Clickable.Clicked()
-		i.menuVisibilityAnim.Appear(gtx.Now)
+	adminClicked := isAuthorized && i.btnRow.Clicked()
+	if adminClicked {
+		i.Manager.NavigateToPage(add_edit_booking.New(i.Manager, i.Booking), nil)
+		i.Window().Invalidate()
 	}
-
-	if i.btnSetCurrentIdentity.Clicked() {
-		i.Manager.Service().SetAsCurrentBooking(i.Booking)
-		i.menuVisibilityAnim.Disappear(gtx.Now)
-	}
-	if i.btnBookingDetails.Clicked() {
-		i.menuVisibilityAnim.Disappear(gtx.Now)
-		if i.BookingDetails == nil {
-			i.BookingDetails = view.NewBookingDetails(i.Manager, i.Booking)
-		}
-		i.Modal().Show(i.drawBookingDetailsModal, nil, fwk.Animation{
-			Duration: time.Millisecond * 250,
-			State:    component.Invisible,
-			Started:  time.Time{},
-		})
-	}
-
-	if i.Clickable.Clicked() {
-		if !i.menuVisibilityAnim.Visible() {
-			if i.SelectionMode {
-				i.Selected = !i.Selected
-			}
-			if i.PressedStamp != 0 {
-				diff := time.Now().UnixMilli() - i.PressedStamp
-				if diff < 350 {
-					i.SelectionMode = !i.SelectionMode
-					i.Selected = !i.Selected
-				}
-			}
-		}
-		if !i.btnMenuContent.Pressed() {
-			i.menuVisibilityAnim.Disappear(gtx.Now)
-		}
-		i.PressedStamp = time.Now().UnixMilli()
-	}
-
-	btnStyle := material.ButtonLayoutStyle{Background: i.Theme.ContrastBg, Button: &i.Clickable}
-
-	if i.Selected || i.Clickable.Hovered() {
-		btnStyle.Background.A = 50
-	} else {
-		btnStyle.Background.A = 10
-	}
-	if i.AvatarView.Theme == nil {
-		i.AvatarView.Theme = i.Theme
-	}
-
-	gtx.Constraints.Min.X = gtx.Constraints.Max.X
-	d := btnStyle.Layout(gtx, func(gtx fwk.Gtx) fwk.Dim {
-		inset := layout.Inset{Top: unit.Dp(16), Bottom: unit.Dp(16), Left: unit.Dp(8), Right: unit.Dp(8)}
+	d := i.btnRow.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
 		d := inset.Layout(gtx, func(gtx fwk.Gtx) fwk.Dim {
 			flex := layout.Flex{Spacing: layout.SpaceEnd, Alignment: layout.Middle}
+			bookingTime := i.Time
+			layoutRatio := flexUserLayoutRatio
+			if isAuthorized {
+				layoutRatio = flexAdminLayoutRatio
+			}
 			d := flex.Layout(gtx,
-				layout.Rigid(func(gtx fwk.Gtx) fwk.Dim {
-					flex := layout.Flex{Spacing: layout.SpaceSides, Alignment: layout.Start, Axis: layout.Vertical}
-					d := flex.Layout(gtx, layout.Rigid(i.AvatarView.Layout))
-					return d
+				layout.Flexed(layoutRatio[0], func(gtx fwk.Gtx) fwk.Dim {
+					bookingID := fmt.Sprintf("%d", i.Booking.ID)
+					if bookingID == "0" {
+						bookingID = "N/A"
+					}
+					b := material.Body1(i.Theme, bookingID)
+					b.Font.Weight = text.Normal
+					return b.Layout(gtx)
 				}),
-				layout.Rigid(layout.Spacer{Width: unit.Dp(8)}.Layout),
-				layout.Rigid(func(gtx fwk.Gtx) fwk.Dim {
-					gtx.Constraints.Max.X = gtx.Constraints.Max.X - gtx.Dp(80)
-					gtx.Constraints.Min.X = gtx.Constraints.Max.X
-					return i.listBookingDetails.Layout(gtx, 1, func(gtx layout.Context, index int) layout.Dimensions {
-						flex := layout.Flex{Spacing: layout.SpaceSides, Alignment: layout.Start, Axis: layout.Vertical}
-						inset := layout.Inset{Right: unit.Dp(16), Left: unit.Dp(16)}
-						d := inset.Layout(gtx, func(gtx fwk.Gtx) fwk.Dim {
-							d := flex.Layout(gtx,
-								layout.Rigid(func(gtx fwk.Gtx) fwk.Dim {
-									b := material.Body1(i.Theme, fmt.Sprintf("%d", i.Booking.ID))
-									b.Font.Weight = text.Bold
-									return b.Layout(gtx)
-								}),
-								layout.Rigid(func(gtx fwk.Gtx) fwk.Dim {
-									b := material.Body1(i.Theme, fmt.Sprintf("%d\n", i.Booking.ID))
-									b.Color = color.NRGBA(colornames.Grey600)
-									return b.Layout(gtx)
-								}),
-							)
-							return d
-						})
-						return d
+				layout.Flexed(layoutRatio[1], func(gtx fwk.Gtx) fwk.Dim {
+					var bookingDate string
+					switch bookingTime.Day() {
+					case 1, 21, 31:
+						bookingDate = fmt.Sprintf("%dst", bookingTime.Day())
+					case 2, 22:
+						bookingDate = fmt.Sprintf("%dnd", bookingTime.Day())
+					case 3, 23:
+						bookingDate = fmt.Sprintf("%drd", bookingTime.Day())
+					default:
+						bookingDate = fmt.Sprintf("%dth", bookingTime.Day())
+					}
+					b := material.Body1(i.Theme, fmt.Sprintf("%s", bookingDate))
+					b.Font.Weight = text.Medium
+					return b.Layout(gtx)
+				}),
+				layout.Flexed(layoutRatio[2], func(gtx fwk.Gtx) fwk.Dim {
+					b := material.Body1(i.Theme, fmt.Sprintf("%s", bookingTime.Weekday()))
+					b.Font.Weight = text.Normal
+					return b.Layout(gtx)
+				}),
+				layout.Flexed(layoutRatio[3], func(gtx fwk.Gtx) fwk.Dim {
+					icon, _ := widget.NewIcon(icons.NotificationEventBusy)
+					color := color2.NRGBA(colornames.Red500)
+					isAvailable := i.Booking.ID == 0
+					gtx.Constraints.Max.X = 24
+					gtx.Constraints.Max.Y = 24
+					if isAvailable {
+						icon, _ = widget.NewIcon(icons.NotificationEventAvailable)
+						color = color2.NRGBA(colornames.Green500)
+					}
+					return layout.Center.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
+						return icon.Layout(gtx, color)
 					})
 				}),
-				layout.Rigid(func(gtx fwk.Gtx) fwk.Dim {
-					flex := layout.Flex{Axis: layout.Vertical, Spacing: layout.SpaceBetween, Alignment: layout.Middle}
-					return flex.Layout(gtx,
-						layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-							if i.iconMore == nil {
-								i.iconMore, _ = widget.NewIcon(icons.NavigationMoreVert)
-							}
-							button := material.IconButton(i.Theme, &i.buttonIconMore, i.iconMore, "Vertical Icon For Options")
-							button.Size = unit.Dp(24)
-							button.Background = color.NRGBA{}
-							button.Color = i.Theme.ContrastBg
-							button.Inset = layout.UniformInset(unit.Dp(16))
-							i.buttonIconMoreDim = button.Layout(gtx)
-							return i.buttonIconMoreDim
-						}),
-						layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-							//a := i.Manager.Service().Booking()
-							//if a.PublicKey == i.Booking.PublicKey {
-							//	icon, _ := widget.NewIcon(icons.ActionCheckCircle)
-							//	return icon.Layout(gtx, i.Theme.ContrastBg)
-							//}
-							return fwk.Dim{}
-						}),
-					)
+				layout.Flexed(layoutRatio[4], func(gtx fwk.Gtx) fwk.Dim {
+					if !isAuthorized {
+						return fwk.Dim{}
+					}
+					icon, _ := widget.NewIcon(icons.ActionDelete)
+					color := color2.NRGBA(colornames.Red500)
+					gtx.Constraints.Max.X = 24
+					gtx.Constraints.Max.Y = 24
+					return layout.Center.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
+						if i.Booking.ID == 0 {
+							icon, _ = widget.NewIcon(icons.ContentBlock)
+							color = i.Theme.ContrastBg
+						}
+						return i.btnDelete.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
+							return icon.Layout(gtx, color)
+						})
+					})
 				}),
 			)
 			return d
 		})
 		return d
 	})
-
 	gtx.Constraints.Max.Y = d.Size.Y
-	i.drawMenuLayout(gtx)
 	return d
 }
-
-func (i *pageItem) drawMenuLayout(gtx fwk.Gtx) fwk.Dim {
-	layout.Stack{Alignment: layout.NE}.Layout(gtx,
-		layout.Stacked(func(gtx fwk.Gtx) fwk.Dim {
-			progress := i.menuVisibilityAnim.Revealed(gtx)
-			gtx.Constraints.Max.X = int(float32(gtx.Constraints.Max.X) * progress)
-			gtx.Constraints.Max.Y = int(float32(gtx.Constraints.Max.Y) * progress)
-			return component.Rect{Size: gtx.Constraints.Max, Color: color.NRGBA{A: 200}}.Layout(gtx)
-		}),
-		layout.Stacked(func(gtx fwk.Gtx) fwk.Dim {
-			progress := i.menuVisibilityAnim.Revealed(gtx)
-			macro := op.Record(gtx.Ops)
-			d := i.btnMenuContent.Layout(gtx, i.drawMenuItems)
-			call := macro.Stop()
-			d.Size.X = int(float32(d.Size.X) * progress)
-			d.Size.Y = int(float32(d.Size.Y) * progress)
-			component.Rect{Size: d.Size, Color: color.NRGBA(colornames.White)}.Layout(gtx)
-			clipOp := clip.Rect{Max: d.Size}.Push(gtx.Ops)
-			call.Add(gtx.Ops)
-			clipOp.Pop()
-			return d
-		}),
-	)
-	return fwk.Dim{}
-}
-
-func (i *pageItem) drawMenuItems(gtx fwk.Gtx) fwk.Dim {
-	inset := layout.UniformInset(unit.Dp(12))
-	gtx.Constraints.Max.X = int(float32(gtx.Constraints.Max.X) / 1.5)
-	gtx.Constraints.Min.X = gtx.Constraints.Max.X
-	return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
-		layout.Rigid(func(gtx fwk.Gtx) fwk.Dim {
-			btnStyle := material.ButtonLayoutStyle{Button: &i.btnSetCurrentIdentity}
-			btnStyle.Background = color.NRGBA(colornames.White)
-			return btnStyle.Layout(gtx,
-				func(gtx fwk.Gtx) fwk.Dim {
-					inset := inset
-					return inset.Layout(gtx, func(gtx fwk.Gtx) fwk.Dim {
-						return layout.Flex{Spacing: layout.SpaceEnd}.Layout(gtx,
-							layout.Flexed(1, func(gtx fwk.Gtx) fwk.Dim {
-								bd := material.Body1(i.Theme, "Set As Current Booking")
-								bd.Color = color.NRGBA(colornames.Black)
-								bd.Alignment = text.Start
-								return bd.Layout(gtx)
-							}),
-						)
-					})
-				},
-			)
-		}),
-		layout.Rigid(func(gtx fwk.Gtx) fwk.Dim {
-			btnStyle := material.ButtonLayoutStyle{Button: &i.btnBookingDetails}
-			btnStyle.Background = color.NRGBA(colornames.White)
-			return btnStyle.Layout(gtx,
-				func(gtx fwk.Gtx) fwk.Dim {
-					inset := inset
-					return inset.Layout(gtx, func(gtx fwk.Gtx) fwk.Dim {
-						return layout.Flex{Spacing: layout.SpaceEnd}.Layout(gtx,
-							layout.Flexed(1, func(gtx fwk.Gtx) fwk.Dim {
-								bd := material.Body1(i.Theme, "Booking Details")
-								bd.Color = color.NRGBA(colornames.Black)
-								bd.Alignment = text.Start
-								return bd.Layout(gtx)
-							}),
-						)
-					})
-				},
-			)
-		}),
-	)
-}
-
-func (i *pageItem) drawBookingDetailsModal(gtx fwk.Gtx) fwk.Dim {
+func (p *pageItem) drawDeleteBookingsModal(gtx fwk.Gtx) fwk.Dim {
 	gtx.Constraints.Max.X = int(float32(gtx.Constraints.Max.X) * 0.85)
 	gtx.Constraints.Max.Y = int(float32(gtx.Constraints.Max.Y) * 0.85)
-	return i.ModalContent.DrawContent(gtx, i.Theme, i.BookingDetails.Layout)
+	isAuthorized := p.LoginUserResponse.IsLoggedIn() && p.LoginUserResponse.IsAdmin()
+	if p.btnYes.Clicked() && isAuthorized {
+		p.parentPage.isDeletingBooking = true
+		p.Service().DeleteBooking(p.Booking.ID)
+		p.Modal().Dismiss(func() { p.Window().Invalidate() })
+	}
+	if p.btnNo.Clicked() {
+		p.Modal().Dismiss(func() {})
+	}
+
+	promptContent := view.NewPromptContent(p.Theme,
+		"Booking Deletion!",
+		fmt.Sprintf("Are you sure you want to delete Booking %d\n StartDate :- %s.\n EndDate:- %s.\n",
+			p.Booking.ID, p.Booking.StartDate.Format("2006-01-02"),
+			p.Booking.EndDate.Format("2006-01-02")),
+		&p.btnYes, &p.btnNo)
+	return p.ModalContent.DrawContent(gtx, p.Theme, promptContent.Layout)
 }

@@ -8,11 +8,14 @@ import (
 	"gioui.org/widget/material"
 	"github.com/mearaj/bhagad-house-booking/common/assets/fonts"
 	"github.com/mearaj/bhagad-house-booking/common/db/sqlc"
+	"github.com/mearaj/bhagad-house-booking/common/utils"
+	"github.com/mearaj/bhagad-house-booking/frontend/service"
 	"github.com/mearaj/bhagad-house-booking/frontend/ui/fwk"
 	"github.com/mearaj/bhagad-house-booking/frontend/ui/view"
 	"golang.org/x/exp/shiny/materialdesign/colornames"
 	"golang.org/x/exp/shiny/materialdesign/icons"
 	"image/color"
+	"time"
 )
 
 type page struct {
@@ -22,6 +25,10 @@ type page struct {
 	buttonNavigation widget.Clickable
 	initialized      bool
 	bookingForm      view.BookingForm
+	service.Booking
+	subscription service.Subscriber
+	isCreating   bool
+	isUpdating   bool
 }
 
 func New(manager fwk.Manager, booking sqlc.Booking) fwk.Page {
@@ -35,8 +42,11 @@ func New(manager fwk.Manager, booking sqlc.Booking) fwk.Page {
 		Manager:        manager,
 		Theme:          th,
 		navigationIcon: navIcon,
-		bookingForm:    view.NewBookingForm(manager, booking),
+		Booking:        booking,
+		bookingForm:    view.NewBookingForm(manager, booking, true),
 	}
+	s.subscription = manager.Service().Subscribe()
+	s.subscription.SubscribeWithCallback(s.OnServiceStateChange)
 	return &s
 }
 
@@ -46,6 +56,33 @@ func (p *page) Layout(gtx fwk.Gtx) fwk.Dim {
 	}
 
 	flex := layout.Flex{Axis: layout.Vertical, Alignment: layout.Start}
+	p.bookingForm.ButtonText = "Create New Booking"
+	if p.Booking.ID != 0 {
+		p.bookingForm.ButtonText = "Update Current Booking"
+	}
+	if p.bookingForm.ButtonSubmit.Clicked() {
+		isValid := !p.bookingForm.StartDate.IsZero() && !p.bookingForm.EndDate.IsZero() &&
+			(p.bookingForm.StartDate.Before(p.bookingForm.EndDate) || p.bookingForm.StartDate.Equal(p.bookingForm.EndDate))
+		if isValid {
+			if p.Booking.ID == 0 {
+				p.Service().CreateBooking(sqlc.CreateBookingParams{
+					StartDate: p.bookingForm.StartDate,
+					EndDate:   p.bookingForm.EndDate,
+					Details:   p.bookingForm.Details.Text(),
+				})
+				p.isCreating = true
+			}
+			if p.Booking.ID != 0 {
+				p.Service().UpdateBooking(sqlc.UpdateBookingParams{
+					ID:        p.Booking.ID,
+					StartDate: p.bookingForm.StartDate,
+					EndDate:   p.bookingForm.EndDate,
+					Details:   p.bookingForm.Details.Text(),
+				})
+				p.isUpdating = true
+			}
+		}
+	}
 	d := flex.Layout(gtx,
 		layout.Rigid(p.DrawAppBar),
 		layout.Rigid(p.bookingForm.Layout),
@@ -73,8 +110,8 @@ func (p *page) DrawAppBar(gtx fwk.Gtx) fwk.Dim {
 					}),
 					layout.Rigid(func(gtx fwk.Gtx) fwk.Dim {
 						return layout.Inset{Left: unit.Dp(16)}.Layout(gtx, func(gtx fwk.Gtx) fwk.Dim {
-							titleText := fmt.Sprintf("Edit Booking %d", p.bookingForm.Booking.ID)
-							if p.bookingForm.Booking.ID == 0 {
+							titleText := fmt.Sprintf("Edit Booking %d", p.Booking.ID)
+							if p.Booking.ID == 0 {
 								titleText = "Add New Booking"
 							}
 							title := material.Body1(th, titleText)
@@ -89,5 +126,55 @@ func (p *page) DrawAppBar(gtx fwk.Gtx) fwk.Dim {
 	})
 }
 func (p *page) URL() fwk.URL {
-	return fwk.AddEditBookingPageURL(p.bookingForm.Booking.ID)
+	return fwk.AddEditBookingPageURL(p.Booking.ID)
+}
+func (p *page) OnServiceStateChange(event service.Event) {
+	startDate := utils.GetFirstDayOfMonth(time.Now().Local())
+	endDate := utils.GetLastDayOfMonth(time.Now().Local().AddDate(0, 5, 0))
+	bookingParams := service.BookingParams{
+		StartDate: startDate,
+		EndDate:   endDate,
+	}
+	switch eventData := event.Data.(type) {
+	case service.CreateBookingResponse:
+		if !p.isCreating {
+			return
+		}
+		var txt string
+		p.isCreating = false
+		evErr := eventData.Error
+		if evErr != "" {
+			txt = fmt.Sprintf("Couldn't create booking, error: %s", evErr)
+		}
+		if evErr == "" {
+			txt = fmt.Sprintf("Successfully created booking %d\n StartDate :- %s.\n EndDate:- %s.\n",
+				eventData.Booking.ID, eventData.Booking.StartDate.Format("2006-01-02"),
+				p.Booking.EndDate.Format("2006-01-02"))
+		}
+		if evErr == "" {
+			p.Service().Bookings(bookingParams)
+			p.PopUp()
+		}
+		p.Snackbar().Show(txt, nil, color.NRGBA(colornames.White), "CLOSE")
+	case service.UpdateBookingResponse:
+		if !p.isUpdating {
+			return
+		}
+		var txt string
+		p.isUpdating = false
+		evErr := eventData.Error
+		if evErr != "" {
+			txt = fmt.Sprintf("Couldn't update booking %d, error: %s", eventData.Booking.ID, evErr)
+		}
+		if evErr == "" {
+			txt = fmt.Sprintf("Successfully updated booking %d\n StartDate :- %s.\n EndDate:- %s.\n",
+				eventData.Booking.ID, eventData.Booking.StartDate.Format("2006-01-02"),
+				p.Booking.EndDate.Format("2006-01-02"))
+		}
+		if evErr == "" {
+			p.Service().Bookings(bookingParams)
+			p.PopUp()
+		}
+		p.Snackbar().Show(txt, nil, color.NRGBA(colornames.White), "CLOSE")
+	}
 }

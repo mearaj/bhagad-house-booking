@@ -10,7 +10,7 @@ import (
 	"gioui.org/widget/material"
 	"gioui.org/x/component"
 	"gioui.org/x/notify"
-	service2 "github.com/mearaj/bhagad-house-booking/frontend/service"
+	"github.com/mearaj/bhagad-house-booking/frontend/service"
 	"image/color"
 )
 
@@ -25,7 +25,7 @@ type Manager interface {
 	GetWindowHeightInPx() int
 	IsStageRunning() bool
 	Theme() *material.Theme
-	Service() service2.Service
+	Service() service.Service
 	Window() *app.Window
 	Notifier() notify.Notifier
 	Modal() Modal
@@ -58,33 +58,23 @@ type Page interface {
 	URL() URL
 }
 
-type DatabaseListener interface {
-	OnDatabaseChange(event service2.Event)
-}
-
-type ViewWithDBListener interface {
-	View
-	DatabaseListener
-}
+//type ServiceListener interface {
+//	OnServiceStateChange(event service.Event)
+//}
 
 type URL string
 
 const (
 	SettingsPageURL      URL = "/settings"
-	BookingsPageURL          = SettingsPageURL + "/bookings"
-	CustomersPageURL         = SettingsPageURL + "/customers"
-	ThemePageURL             = SettingsPageURL + "/theme"
-	NotificationsPageURL     = SettingsPageURL + "/notifications"
-	HelpPageURL              = SettingsPageURL + "/help"
-	AboutPageURL             = SettingsPageURL + "/about"
+	BookingsPageURL      URL = "/bookings"
+	ThemePageURL         URL = "/theme"
+	NotificationsPageURL URL = "/notifications"
+	HelpPageURL          URL = "/help"
+	AboutPageURL         URL = "/about"
 )
 
 func AddEditBookingPageURL(bookingID int64) URL {
 	return URL(fmt.Sprintf("%s/%d", BookingsPageURL, bookingID))
-}
-
-func AddEditCustomerPageURL(customerID int64) URL {
-	return URL(fmt.Sprintf("%s/%d", CustomersPageURL, customerID))
 }
 
 type (

@@ -13,3 +13,5 @@
 
 # Jetbrains IDE
 *.idea
+
+frontend/dist

@@ -1,0 +1,41 @@
+#Build stage
+FROM golang:1.19-alpine3.16 AS buildstage
+
+ENV CGO_ENABLED=0
+
+WORKDIR /app
+
+COPY common ./common
+COPY frontend ./frontend
+
+RUN go install git.mills.io/prologic/static@latest
+RUN cd frontend && go install gioui.org/cmd/gogio@latest
+
+RUN cd common && go mod tidy
+
+RUN cd frontend && go mod tidy
+
+RUN cd frontend && gogio -target js -o dist cmd/main.go
+
+COPY index.html frontend/dist
+COPY wasm.js frontend/dist/wasm.js
+
+ARG API_URL=http://localhost:8001
+ENV API_URL ${API_URL}
+
+RUN echo "window.API_URL = '${API_URL}';" >> frontend/dist/wasm.js
+
+# Runtime
+FROM scratch
+
+EXPOSE 8000
+
+VOLUME /data
+
+WORKDIR /
+
+COPY --from=buildstage /app/frontend/dist /dist
+COPY --from=buildstage /go/bin/static /static
+
+ENTRYPOINT ["/static"]
+CMD ["-r", "/dist"]

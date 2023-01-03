@@ -1,10 +1,3 @@
-CREATE TYPE "rate_time_units" AS ENUM (
-    'Day',
-    'Hour',
-    'Week',
-    'Month'
-    );
-
 CREATE TYPE "user_roles" AS ENUM (
     'User',
     'Admin'
@@ -12,37 +5,25 @@ CREATE TYPE "user_roles" AS ENUM (
 
 CREATE TABLE "bookings"
 (
-    "id"             bigserial PRIMARY KEY,
-    "created_at"     timestamptz      NOT NULL DEFAULT (now()),
-    "updated_at"     timestamptz      NOT NULL DEFAULT (now()),
+    "id"             BIGSERIAL PRIMARY KEY,
+    "created_at"     timestamptz     DEFAULT (now()),
+    "updated_at"     timestamptz     DEFAULT (now()),
     "start_date"     timestamptz      NOT NULL,
     "end_date"       timestamptz      NOT NULL,
-    "customer_id"    bigint           NOT NULL,
-    "rate"           double precision NOT NULL,
-    "rate_time_unit" rate_time_units  NOT NULL DEFAULT 'Day'
-);
-
-CREATE TABLE "customers"
-(
-    "id"         bigserial PRIMARY KEY,
-    "created_at" timestamptz NOT NULL DEFAULT (now()),
-    "updated_at" timestamptz NOT NULL DEFAULT (now()),
-    "name"       varchar     NOT NULL,
-    "address"    varchar     NOT NULL,
-    "phone"      varchar     NOT NULL,
-    "email"      varchar     NOT NULL
+    "details"    varchar NOT NULL DEFAULT ('')
 );
 
 CREATE TABLE "users"
 (
-    "id"                  bigserial PRIMARY KEY,
+    "id"                  BIGSERIAL PRIMARY KEY,
     "password"            varchar        NOT NULL,
-    "name"                varchar        NOT NULL,
+    "name"                varchar     NOT NULL   DEFAULT (''),
     "email"               varchar UNIQUE NOT NULL,
-    "email_verified"      boolean        NOT NULL DEFAULT false,
-    "password_changed_at" timestamptz    NOT NULL DEFAULT ('0001-01-01 00:00:00Z'),
-    "created_at"          timestamptz    NOT NULL DEFAULT (now()),
-    "roles"               user_roles[]   NOT NULL DEFAULT ('{User}')::user_roles[]
+    "email_verified"      boolean            NOT NULL     DEFAULT false,
+    "password_changed_at" timestamptz NOT NULL            DEFAULT ('0001-01-01 00:00:00Z'),
+    "created_at"          timestamptz  NOT NULL  DEFAULT (now()),
+    /* "roles" user_roles[] DEFAULT '{user_roles.User}'*/
+    "roles"               user_roles[]  NOT NULL DEFAULT ('{User}')::user_roles[]
 );
 
 CREATE INDEX ON "bookings" ("start_date");
@@ -51,15 +32,9 @@ CREATE INDEX ON "bookings" ("end_date");
 
 CREATE INDEX ON "bookings" ("start_date", "end_date");
 
-CREATE INDEX ON "bookings" ("customer_id");
-
-CREATE INDEX ON "customers" ("name");
-
-CREATE INDEX ON "customers" ("address");
-
-CREATE INDEX ON "customers" ("phone");
-
-CREATE INDEX ON "customers" ("email");
+ALTER TABLE "bookings"
+    ADD CONSTRAINT CheckEndLaterThanStart CHECK (end_date >= start_date);
 
 ALTER TABLE "bookings"
-    ADD FOREIGN KEY ("customer_id") REFERENCES "customers" ("id");
+    ADD CONSTRAINT NoOverlappingTimeRanges
+    EXCLUDE USING gist (tstzrange(start_date,end_date,'[]') WITH &&);

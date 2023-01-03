@@ -18,7 +18,7 @@ func (m *Map[key, val]) Value(k key) (val, bool) {
 	return v, ok
 }
 
-func (m *Map[key, val]) Add(k key, v val) {
+func (m *Map[key, val]) Set(k key, v val) {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 	m.mapped[k] = v

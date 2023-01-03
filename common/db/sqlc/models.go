@@ -5,54 +5,11 @@
 package sqlc
 
 import (
+	"database/sql"
 	"database/sql/driver"
 	"fmt"
 	"time"
 )
-
-type RateTimeUnits string
-
-const (
-	RateTimeUnitsDay   RateTimeUnits = "Day"
-	RateTimeUnitsHour  RateTimeUnits = "Hour"
-	RateTimeUnitsWeek  RateTimeUnits = "Week"
-	RateTimeUnitsMonth RateTimeUnits = "Month"
-)
-
-func (e *RateTimeUnits) Scan(src interface{}) error {
-	switch s := src.(type) {
-	case []byte:
-		*e = RateTimeUnits(s)
-	case string:
-		*e = RateTimeUnits(s)
-	default:
-		return fmt.Errorf("unsupported scan type for RateTimeUnits: %T", src)
-	}
-	return nil
-}
-
-type NullRateTimeUnits struct {
-	RateTimeUnits RateTimeUnits
-	Valid         bool // Valid is true if String is not NULL
-}
-
-// Scan implements the Scanner interface.
-func (ns *NullRateTimeUnits) Scan(value interface{}) error {
-	if value == nil {
-		ns.RateTimeUnits, ns.Valid = "", false
-		return nil
-	}
-	ns.Valid = true
-	return ns.RateTimeUnits.Scan(value)
-}
-
-// Value implements the driver Valuer interface.
-func (ns NullRateTimeUnits) Value() (driver.Value, error) {
-	if !ns.Valid {
-		return nil, nil
-	}
-	return ns.RateTimeUnits, nil
-}
 
 type UserRoles string
 
@@ -97,24 +54,12 @@ func (ns NullUserRoles) Value() (driver.Value, error) {
 }
 
 type Booking struct {
-	ID           int64         `json:"id"`
-	CreatedAt    time.Time     `json:"created_at"`
-	UpdatedAt    time.Time     `json:"updated_at"`
-	StartDate    time.Time     `json:"start_date"`
-	EndDate      time.Time     `json:"end_date"`
-	CustomerID   int64         `json:"customer_id"`
-	Rate         float64       `json:"rate"`
-	RateTimeUnit RateTimeUnits `json:"rate_time_unit"`
-}
-
-type Customer struct {
-	ID        int64     `json:"id"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-	Name      string    `json:"name"`
-	Address   string    `json:"address"`
-	Phone     string    `json:"phone"`
-	Email     string    `json:"email"`
+	ID        int64        `json:"id"`
+	CreatedAt sql.NullTime `json:"created_at"`
+	UpdatedAt sql.NullTime `json:"updated_at"`
+	StartDate time.Time    `json:"start_date"`
+	EndDate   time.Time    `json:"end_date"`
+	Details   string       `json:"details"`
 }
 
 type User struct {

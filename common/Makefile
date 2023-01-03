@@ -12,7 +12,7 @@ createdb:
 	docker exec -it postgres15 createdb --username=root --owner=root bhagad_house_booking
 
 dropdb:
-	docker exec  -it postgres15 dropdb bhagad_house_booking
+	docker exec -it postgres15 dropdb bhagad_house_booking
 
 migrateup:
 	migrate -path ./db/migration -database "$(DB_URL)" -verbose up

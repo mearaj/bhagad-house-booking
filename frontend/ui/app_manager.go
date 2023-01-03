@@ -14,13 +14,11 @@ import (
 	"github.com/mearaj/bhagad-house-booking/common/alog"
 	"github.com/mearaj/bhagad-house-booking/common/assets/fonts"
 	"github.com/mearaj/bhagad-house-booking/common/db/sqlc"
-	service2 "github.com/mearaj/bhagad-house-booking/frontend/service"
+	"github.com/mearaj/bhagad-house-booking/frontend/service"
 	. "github.com/mearaj/bhagad-house-booking/frontend/ui/fwk"
 	"github.com/mearaj/bhagad-house-booking/frontend/ui/page/about"
 	"github.com/mearaj/bhagad-house-booking/frontend/ui/page/add_edit_booking"
-	"github.com/mearaj/bhagad-house-booking/frontend/ui/page/add_edit_customer"
 	"github.com/mearaj/bhagad-house-booking/frontend/ui/page/bookings"
-	"github.com/mearaj/bhagad-house-booking/frontend/ui/page/customers"
 	"github.com/mearaj/bhagad-house-booking/frontend/ui/page/help"
 	"github.com/mearaj/bhagad-house-booking/frontend/ui/page/notifications"
 	"github.com/mearaj/bhagad-house-booking/frontend/ui/page/settings"
@@ -39,7 +37,7 @@ type AppManager struct {
 	view2.Greetings
 	settingsSideBar Page
 	theme           *material.Theme
-	service         service2.Service
+	service         service.Service
 	Constraints     layout.Constraints
 	Metric          unit.Metric
 	notifier        notify.Notifier
@@ -62,7 +60,7 @@ func (m *AppManager) Theme() *material.Theme {
 	return m.theme
 }
 
-func (m *AppManager) Service() service2.Service {
+func (m *AppManager) Service() service.Service {
 	return m.service
 }
 func (m *AppManager) SystemInsets() system.Insets {
@@ -85,7 +83,7 @@ func (m *AppManager) Initialized() bool {
 	m.initializedMutex.RLock()
 	initialized := m.initialized
 	m.initializedMutex.RUnlock()
-	return initialized && m.Service().Initialized()
+	return initialized
 }
 func (m *AppManager) setInitialized(initialized bool) {
 	m.initializedMutex.Lock()
@@ -354,12 +352,12 @@ func (m *AppManager) NavigateToUrl(pageURL URL, AfterNavCallback func()) {
 	}
 	var page Page
 	lastSegment := strings.Split(string(pageURL), "/")
-	var bookingOrCustomerID uint
+	var bookingID uint
 	if len(lastSegment) > 0 {
 		bookingIDStr := lastSegment[len(lastSegment)-1]
 		bookingIDUint64, err := strconv.ParseUint(bookingIDStr, 10, 64)
 		if err == nil {
-			bookingOrCustomerID = uint(bookingIDUint64)
+			bookingID = uint(bookingIDUint64)
 		}
 	}
 	switch pageURL {
@@ -367,16 +365,10 @@ func (m *AppManager) NavigateToUrl(pageURL URL, AfterNavCallback func()) {
 		m.pagesStack = []Page{m.settingsSideBar}
 	case BookingsPageURL:
 		page = bookings.New(m)
-	case AddEditBookingPageURL(int64(bookingOrCustomerID)):
+	case AddEditBookingPageURL(int64(bookingID)):
 		booking := sqlc.Booking{}
-		booking.ID = int64(bookingOrCustomerID)
+		booking.ID = int64(bookingID)
 		page = add_edit_booking.New(m, booking)
-	case AddEditCustomerPageURL(int64(bookingOrCustomerID)):
-		customer := sqlc.Customer{}
-		customer.ID = int64(bookingOrCustomerID)
-		page = add_edit_customer.New(m, customer)
-	case CustomersPageURL:
-		page = customers.New(m)
 	case ThemePageURL:
 		page = theme.New(m)
 	case NotificationsPageURL:

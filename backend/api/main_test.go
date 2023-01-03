@@ -2,6 +2,7 @@ package api
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/mearaj/bhagad-house-booking/backend"
 	"github.com/mearaj/bhagad-house-booking/common/db/sqlc"
 	"github.com/mearaj/bhagad-house-booking/common/utils"
 	"github.com/stretchr/testify/require"
@@ -11,7 +12,7 @@ import (
 )
 
 func newTestServer(t *testing.T, store sqlc.Store) *Server {
-	config := utils.Config{
+	config := backend.Config{
 		TokenSymmetricKey:   utils.RandomString(32),
 		AccessTokenDuration: time.Minute,
 	}

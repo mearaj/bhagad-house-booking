@@ -1,26 +1,40 @@
 -- name: CreateBooking :one
 INSERT INTO bookings (start_date,
                       end_date,
-                      customer_id,
-                      rate,
-                      rate_time_unit)
-VALUES ($1, $2, $3,$4,$5)
+                      details)
+VALUES ($1, $2, $3)
 RETURNING *;
 
 -- name: GetBooking :one
-SELECT * FROM bookings
-WHERE id = $1 LIMIT 1;
+SELECT *
+FROM bookings
+WHERE id = $1
+LIMIT 1;
 
 -- name: ListBookings :many
-SELECT * FROM bookings
-ORDER BY start_date desc
-LIMIT $1
-OFFSET $2;
+SELECT *
+FROM bookings
+WHERE (start_date <= $1 AND end_date >= $2) OR
+    (start_date >= $1 AND end_date >= $2) OR
+    (start_date <= $1 AND end_date <= $2) OR
+    (start_date >= $1 AND end_date <= $2)
+ORDER BY start_date;
 
 -- name: UpdateBooking :one
-UPDATE bookings SET start_date = $2, end_date = $3,customer_id = $4, rate = $5, rate_time_unit = $6
+UPDATE bookings
+SET start_date     = $2,
+    end_date       = $3,
+    details    = $4
 WHERE id = $1
 RETURNING *;
 
+-- name: GetConflictingBookings :many
+SELECT *
+FROM bookings
+WHERE (start_date <= $1 AND end_date >= $1) OR
+    (end_date >= $2 AND start_date <= $2);
+
 -- name: DeleteBooking :exec
-DELETE FROM bookings WHERE id = $1;
+DELETE
+FROM bookings
+WHERE id = $1;
