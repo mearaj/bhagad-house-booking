@@ -19,5 +19,5 @@ COPY start.sh .
 COPY wait-for.sh .
 COPY common/db/migration ./migration
 
-EXPOSE 8000
+EXPOSE 8080
 CMD ["/app/main"]

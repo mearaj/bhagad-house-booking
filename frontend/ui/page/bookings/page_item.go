@@ -105,13 +105,15 @@ func (i *pageItem) layoutContent(gtx fwk.Gtx) fwk.Dim {
 					icon, _ := widget.NewIcon(icons.NotificationEventBusy)
 					color := color2.NRGBA(colornames.Red500)
 					isAvailable := i.Booking.ID == 0
-					gtx.Constraints.Max.X = 24
-					gtx.Constraints.Max.Y = 24
 					if isAvailable {
 						icon, _ = widget.NewIcon(icons.NotificationEventAvailable)
 						color = color2.NRGBA(colornames.Green500)
 					}
 					return layout.Center.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
+						gtx.Constraints.Max.X = gtx.Dp(24)
+						gtx.Constraints.Max.Y = gtx.Dp(24)
+						gtx.Constraints.Min.X = gtx.Dp(24)
+						gtx.Constraints.Min.Y = gtx.Dp(24)
 						return icon.Layout(gtx, color)
 					})
 				}),
@@ -121,9 +123,11 @@ func (i *pageItem) layoutContent(gtx fwk.Gtx) fwk.Dim {
 					}
 					icon, _ := widget.NewIcon(icons.ActionDelete)
 					color := color2.NRGBA(colornames.Red500)
-					gtx.Constraints.Max.X = 24
-					gtx.Constraints.Max.Y = 24
 					return layout.Center.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
+						gtx.Constraints.Max.X = gtx.Dp(24)
+						gtx.Constraints.Max.Y = gtx.Dp(24)
+						gtx.Constraints.Min.X = gtx.Dp(24)
+						gtx.Constraints.Min.Y = gtx.Dp(24)
 						if i.Booking.ID == 0 {
 							icon, _ = widget.NewIcon(icons.ContentBlock)
 							color = i.Theme.ContrastBg

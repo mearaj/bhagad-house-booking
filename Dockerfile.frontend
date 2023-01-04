@@ -28,7 +28,7 @@ RUN echo "window.API_URL = '${API_URL}';" >> frontend/dist/wasm.js
 # Runtime
 FROM scratch
 
-EXPOSE 8000
+EXPOSE 8080
 
 VOLUME /data
 
@@ -38,4 +38,4 @@ COPY --from=buildstage /app/frontend/dist /dist
 COPY --from=buildstage /go/bin/static /static
 
 ENTRYPOINT ["/static"]
-CMD ["-r", "/dist"]
+CMD ["-r", "/dist","-b",":8080"]
