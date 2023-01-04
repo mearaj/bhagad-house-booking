@@ -3,15 +3,15 @@ package main
 import (
 	"database/sql"
 	_ "github.com/lib/pq"
+	"github.com/mearaj/bhagad-house-booking/backend"
 	"github.com/mearaj/bhagad-house-booking/backend/api"
 	"github.com/mearaj/bhagad-house-booking/common/db/sqlc"
-	"github.com/mearaj/bhagad-house-booking/common/utils"
 	log "github.com/sirupsen/logrus"
 )
 
 func main() {
-	config := utils.LoadConfig()
-	conn, err := sql.Open(config.DBDriver, config.DBSource)
+	config := backend.LoadConfig()
+	conn, err := sql.Open(config.DatabaseDriver, config.DatabaseURL)
 	if err != nil {
 		log.Fatalln("cannot connect to db:", err)
 	}
@@ -20,7 +20,7 @@ func main() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	err = server.Start(config.ServerAddress)
+	err = server.Start()
 	if err != nil {
 		log.Fatalln("cannot start server:", err)
 	}

@@ -9,7 +9,7 @@ import (
 	"gioui.org/widget/material"
 	"gioui.org/x/component"
 	"github.com/mearaj/bhagad-house-booking/common/assets/fonts"
-	"github.com/mearaj/bhagad-house-booking/common/db/sqlc"
+	"github.com/mearaj/bhagad-house-booking/frontend/service"
 	"github.com/mearaj/giowidgets/calendar"
 	"golang.org/x/exp/shiny/materialdesign/colornames"
 	"golang.org/x/exp/shiny/materialdesign/icons"
@@ -20,7 +20,6 @@ import (
 type BookingForm struct {
 	Manager
 	Theme              *material.Theme
-	Booking            sqlc.Booking
 	btnStartDate       widget.Clickable
 	btnEndDate         widget.Clickable
 	btnClearStartDate  IconButton
@@ -28,17 +27,24 @@ type BookingForm struct {
 	startFieldCalendar calendar.Calendar
 	endFieldCalendar   calendar.Calendar
 	initialized        bool
+	StartDate          time.Time
+	EndDate            time.Time
+	ButtonSubmit       widget.Clickable
+	Details            component.TextField
+	ShowDetails        bool
+	ButtonText         string
 }
 
 // NewBookingForm Always call this function to create BookingForm
-func NewBookingForm(manager Manager, booking sqlc.Booking) BookingForm {
+func NewBookingForm(manager Manager, booking service.Booking, showDetails bool) BookingForm {
 	clearIcon, _ := widget.NewIcon(icons.ContentClear)
 	inActiveTheme := fonts.NewTheme()
 	inActiveTheme.ContrastBg = color.NRGBA(colornames.Grey500)
 	contForm := BookingForm{
-		Manager: manager,
-		Theme:   manager.Theme(),
-		Booking: booking,
+		Manager:   manager,
+		Theme:     manager.Theme(),
+		StartDate: booking.StartDate,
+		EndDate:   booking.EndDate,
 		btnClearStartDate: IconButton{
 			Theme: manager.Theme(),
 			Icon:  clearIcon,
@@ -49,7 +55,9 @@ func NewBookingForm(manager Manager, booking sqlc.Booking) BookingForm {
 			Icon:  clearIcon,
 			Text:  "",
 		},
+		ShowDetails: showDetails,
 	}
+	contForm.Details.SetText(booking.Details)
 	return contForm
 }
 
@@ -74,9 +82,9 @@ func (bf *BookingForm) Layout(gtx Gtx) Dim {
 				})
 			}
 			if bf.btnClearStartDate.Button.Clicked() {
-				bf.Booking.StartDate = time.Time{}
+				bf.StartDate = time.Time{}
 			}
-			return bf.drawDateField(gtx, "Start Date", &bf.btnStartDate, &bf.btnClearStartDate, bf.Booking.StartDate)
+			return bf.drawDateField(gtx, "Start Date", &bf.btnStartDate, &bf.btnClearStartDate, bf.StartDate)
 		}),
 		layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 			if bf.btnEndDate.Clicked() {
@@ -87,9 +95,28 @@ func (bf *BookingForm) Layout(gtx Gtx) Dim {
 				})
 			}
 			if bf.btnClearEndDate.Button.Clicked() {
-				bf.Booking.EndDate = time.Time{}
+				bf.EndDate = time.Time{}
 			}
-			return bf.drawDateField(gtx, "End Date", &bf.btnEndDate, &bf.btnClearEndDate, bf.Booking.EndDate)
+			return bf.drawDateField(gtx, "End Date", &bf.btnEndDate, &bf.btnClearEndDate, bf.EndDate)
+		}),
+		layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+			if !bf.ShowDetails {
+				return Dim{}
+			}
+			inset := layout.UniformInset(16)
+			return inset.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
+				return DrawFormFieldRowWithLabel(gtx, bf.Theme, "Details", "Details", &bf.Details, nil)
+			})
+		}),
+		layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+			inset := layout.UniformInset(16)
+			return inset.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
+				if bf.ButtonText == "" {
+					bf.ButtonText = "Apply"
+				}
+				btn := material.Button(bf.Theme, &bf.ButtonSubmit, bf.ButtonText)
+				return btn.Layout(gtx)
+			})
 		}),
 	)
 }
@@ -162,10 +189,10 @@ func (bf *BookingForm) showEndFieldCalendar(gtx Gtx) Dim {
 }
 func (bf *BookingForm) onCalendarStartDateFieldClick(t time.Time) {
 	bf.Modal().Dismiss(nil)
-	bf.Booking.StartDate = t
+	bf.StartDate = t
 }
 
 func (bf *BookingForm) onCalendarEndDateFieldClick(t time.Time) {
 	bf.Modal().Dismiss(nil)
-	bf.Booking.EndDate = t
+	bf.EndDate = t
 }

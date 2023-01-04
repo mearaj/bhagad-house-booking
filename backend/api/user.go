@@ -8,7 +8,6 @@ import (
 	"github.com/mearaj/bhagad-house-booking/common/db/sqlc"
 	"github.com/mearaj/bhagad-house-booking/common/utils"
 	"net/http"
-	"time"
 )
 
 type createUserRequest struct {
@@ -16,33 +15,19 @@ type createUserRequest struct {
 	Email    string `json:"email" binding:"required,email"`
 	Password string `json:"password" binding:"required,min=6"`
 }
-type userResponse struct {
-	Name              string    `json:"name"`
-	Email             string    `json:"email"`
-	EmailVerified     bool      `json:"email_verified"`
-	PasswordChangedAt time.Time `json:"password_changed_at"`
-	CreatedAt         time.Time `json:"created_at"`
-}
-
-func newUserResponse(user sqlc.User) userResponse {
-	return userResponse{
-		Name:              user.Name,
-		Email:             user.Email,
-		EmailVerified:     user.EmailVerified,
-		PasswordChangedAt: user.PasswordChangedAt,
-		CreatedAt:         user.CreatedAt,
-	}
-}
 
 func (s *Server) createUser(ctx *gin.Context) {
 	var req createUserRequest
+	var resp sqlc.NewUserResponse
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		resp.Error = err.Error()
+		ctx.JSON(http.StatusBadRequest, resp)
 		return
 	}
 	hashedPassword, err := utils.HashPassword(req.Password)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		resp.Error = err.Error()
+		ctx.JSON(http.StatusInternalServerError, resp)
 		return
 	}
 	arg := sqlc.CreateUserParams{
@@ -52,17 +37,19 @@ func (s *Server) createUser(ctx *gin.Context) {
 	}
 	user, err := s.store.CreateUser(ctx, arg)
 	if err != nil {
+		resp.Error = err.Error()
 		if pqErr, ok := err.(*pq.Error); ok {
 			switch pqErr.Code.Name() {
 			case "unique_violation":
-				ctx.JSON(http.StatusForbidden, errorResponse(err))
+				ctx.JSON(http.StatusForbidden, resp)
 				return
 			}
 		}
-		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		ctx.JSON(http.StatusInternalServerError, resp)
 		return
 	}
-	resp := newUserResponse(user)
+	user.Password = ""
+	resp.User = user
 	ctx.JSON(http.StatusOK, resp)
 }
 
@@ -72,19 +59,24 @@ type getUserRequest struct {
 
 func (s *Server) getUser(ctx *gin.Context) {
 	var req getUserRequest
+	var resp sqlc.UserResponse
 	if err := ctx.ShouldBindUri(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		resp.Error = err.Error()
+		ctx.JSON(http.StatusBadRequest, resp)
 		return
 	}
-	customer, err := s.store.GetUserByID(ctx, req.ID)
+	user, err := s.store.GetUserByID(ctx, req.ID)
 	if err != nil {
+		resp.Error = err.Error()
 		if errors.Is(err, sql.ErrNoRows) {
-			ctx.JSON(http.StatusNotFound, errorResponse(err))
+			ctx.JSON(http.StatusNotFound, resp)
 		}
-		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		ctx.JSON(http.StatusInternalServerError, resp)
 		return
 	}
-	ctx.JSON(http.StatusOK, customer)
+	user.Password = ""
+	resp.User = user
+	ctx.JSON(http.StatusOK, resp)
 }
 
 type listUsersRequest struct {
@@ -94,60 +86,67 @@ type listUsersRequest struct {
 
 func (s *Server) listUsers(ctx *gin.Context) {
 	var req listUsersRequest
+	var resp sqlc.UsersResponse
 	if err := ctx.ShouldBindQuery(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		resp.Error = err.Error()
+		ctx.JSON(http.StatusBadRequest, resp)
 		return
 	}
 	arg := sqlc.ListUsersParams{
 		Limit:  req.PageSize,
 		Offset: (req.PageID - 1) * req.PageSize,
 	}
-	customers, err := s.store.ListUsers(ctx, arg)
+	users, err := s.store.ListUsers(ctx, arg)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		resp.Error = err.Error()
+		ctx.JSON(http.StatusInternalServerError, resp)
 		return
 	}
-	ctx.JSON(http.StatusOK, customers)
+	for _, user := range users {
+		user.Password = ""
+	}
+	resp.Users = users
+	ctx.JSON(http.StatusOK, resp)
 }
 
 type loginUserRequest struct {
 	Email    string `json:"email" binding:"required,email"`
 	Password string `json:"password" binding:"required,min=6"`
 }
-type loginUserResponse struct {
-	AccessToken string       `json:"access_token"`
-	User        userResponse `json:"user"`
-}
 
 func (s *Server) loginUser(ctx *gin.Context) {
 	var req loginUserRequest
+	var resp sqlc.LoginUserResponse
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		resp.Error = err.Error()
+		ctx.JSON(http.StatusBadRequest, resp)
 		return
 	}
 	user, err := s.store.GetUserByEmail(ctx, req.Email)
 	if err != nil {
+		resp.Error = err.Error()
 		if err == sql.ErrNoRows {
-			ctx.JSON(http.StatusNotFound, errorResponse(err))
+			ctx.JSON(http.StatusNotFound, resp)
 			return
 		}
-		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		ctx.JSON(http.StatusInternalServerError, resp)
 		return
 	}
 	err = utils.CheckPassword(req.Password, user.Password)
 	if err != nil {
-		ctx.JSON(http.StatusUnauthorized, errorResponse(err))
+		resp.Error = err.Error()
+		ctx.JSON(http.StatusInternalServerError, resp)
 		return
 	}
 
 	accessToken, err := s.tokenMaker.CreateToken(user.Email, s.config.AccessTokenDuration)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		resp.Error = err.Error()
+		ctx.JSON(http.StatusInternalServerError, resp)
 		return
 	}
-	resp := loginUserResponse{
-		AccessToken: accessToken,
-		User:        newUserResponse(user),
-	}
+	user.Password = ""
+	resp.User = user
+	resp.AccessToken = accessToken
 	ctx.JSON(http.StatusOK, resp)
 }

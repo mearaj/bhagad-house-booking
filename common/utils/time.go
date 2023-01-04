@@ -38,3 +38,12 @@ func LastSeenRelTime(a, b time.Time, albl, blbl string) string {
 func LastSeenTime(then time.Time) string {
 	return LastSeenRelTime(then, time.Now(), "ago", "from now")
 }
+
+func GetFirstDayOfMonth(t time.Time) time.Time {
+	return t.AddDate(0, 0, -t.Day()+1)
+}
+func GetLastDayOfMonth(t time.Time) time.Time {
+	return t.AddDate(0, 1, -t.Day())
+}
+
+// IsAfterOrEqual compares timeStart with timeEnd, considering only year-month-day

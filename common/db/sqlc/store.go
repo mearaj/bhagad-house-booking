@@ -9,7 +9,6 @@ import (
 // Store provides all functions to execute db queries and transactions
 type Store interface {
 	Querier
-	CreateBookingAndCustomer(ctx context.Context, arg CreateBookingAndCustomerParams) (result CreateBookingAndCustomerResult, err error)
 }
 
 // SQLStore provides all functions to execute SQL queries and transactions
@@ -40,35 +39,4 @@ func (store *SQLStore) execTx(ctx context.Context, fn func(*Queries) error) erro
 		}
 	}
 	return tx.Commit()
-}
-
-type CreateBookingAndCustomerParams struct {
-	CreateBookingParams
-	CreateCustomerParams
-}
-
-type CreateBookingAndCustomerResult struct {
-	Booking
-	Customer
-}
-
-// CreateBookingAndCustomer
-func (store *SQLStore) CreateBookingAndCustomer(ctx context.Context, arg CreateBookingAndCustomerParams) (result CreateBookingAndCustomerResult, err error) {
-	err = store.execTx(ctx, func(q *Queries) (err error) {
-		var customer Customer
-		customer, err = q.CreateCustomer(ctx, arg.CreateCustomerParams)
-		if err != nil {
-			return err
-		}
-		result.Customer = customer
-		arg.CreateBookingParams.CustomerID = customer.ID
-		var booking Booking
-		booking, err = q.CreateBooking(ctx, arg.CreateBookingParams)
-		if err != nil {
-			return err
-		}
-		result.Booking = booking
-		return nil
-	})
-	return result, err
 }

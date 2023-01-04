@@ -31,7 +31,7 @@ func FixTimezone() {
 	time.Local = z
 }
 
-var appManager = AppManager{service: service.GetServiceInstance()}
+var appManager = AppManager{service: service.NewService()}
 
 func init() {
 	go FixTimezone()
@@ -45,7 +45,7 @@ func Loop(w *app.Window) error {
 	// backClickTag is meant for tracking user's backClick action, specially on mobile
 	var backClickTag struct{}
 
-	subscription := appManager.Service().Subscribe()
+	//subscription := appManager.Service().Subscribe()
 
 	for {
 		select {
@@ -105,17 +105,17 @@ func Loop(w *app.Window) error {
 					appManager.isStageRunning = true
 				}
 			}
-		case event := <-subscription.Events():
-			var settingsBarFound bool
-			for _, eachPage := range appManager.pagesStack {
-				if l, ok := eachPage.(DatabaseListener); ok {
-					l.OnDatabaseChange(event)
-				}
-				settingsBarFound = eachPage == appManager.settingsSideBar
-			}
-			if l, ok := appManager.settingsSideBar.(DatabaseListener); ok && !settingsBarFound {
-				l.OnDatabaseChange(event)
-			}
+			//case event := <-subscription.Events():
+			//	var settingsBarFound bool
+			//	for _, eachPage := range appManager.pagesStack {
+			//		if l, ok := eachPage.(ServiceListener); ok {
+			//			l.OnServiceStateChange(event)
+			//		}
+			//		settingsBarFound = eachPage == appManager.settingsSideBar
+			//	}
+			//	if l, ok := appManager.settingsSideBar.(ServiceListener); ok && !settingsBarFound {
+			//		l.OnServiceStateChange(event)
+			//	}
 		}
 	}
 }

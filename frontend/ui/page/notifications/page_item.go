@@ -9,7 +9,6 @@ import (
 	"gioui.org/widget"
 	"gioui.org/widget/material"
 	"gioui.org/x/component"
-	"github.com/mearaj/bhagad-house-booking/common/db/sqlc"
 	"github.com/mearaj/bhagad-house-booking/frontend/ui/fwk"
 	"github.com/mearaj/bhagad-house-booking/frontend/ui/view"
 	"golang.org/x/exp/shiny/materialdesign/colornames"
@@ -28,7 +27,6 @@ type pageItem struct {
 	shouldCloseMenuItems  bool
 	buttonIconMoreDim     fwk.Dim
 	fwk.Manager
-	sqlc.Customer
 	PressedStamp int64
 	view.AvatarView
 	iconMore                *widget.Icon
@@ -152,12 +150,12 @@ func (i *pageItem) layoutContent(gtx fwk.Gtx) fwk.Dim {
 					d := inset.Layout(gtx, func(gtx fwk.Gtx) fwk.Dim {
 						d := flex.Layout(gtx,
 							layout.Rigid(func(gtx fwk.Gtx) fwk.Dim {
-								b := material.Body1(i.Theme, i.Customer.Name)
+								b := material.Body1(i.Theme, "It was customer name")
 								b.Font.Weight = text.Bold
 								return b.Layout(gtx)
 							}),
 							layout.Rigid(func(gtx fwk.Gtx) fwk.Dim {
-								b := material.Body1(i.Theme, strings.Trim(string(i.Customer.Name), "\n"))
+								b := material.Body1(i.Theme, strings.Trim("It was customer name", "\n"))
 								b.Color = color.NRGBA(colornames.Grey600)
 								return b.Layout(gtx)
 							}),

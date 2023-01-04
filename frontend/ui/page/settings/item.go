@@ -83,7 +83,7 @@ func (c *pageItem) drawIcon(gtx fwk.Gtx) fwk.Dim {
 	iconButton.Size = unit.Dp(24)
 	iconButton.Background = c.Theme.ContrastBg
 	iconButton.Color = c.Theme.Bg
-	iconButton.Inset = layout.UniformInset(unit.Dp(8))
+	iconButton.Inset = layout.UniformInset(8)
 	return iconButton.Layout(gtx)
 }
 

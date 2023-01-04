@@ -47,7 +47,6 @@ func (s *snackBar) Show(txt string, actionButton *widget.Clickable, actionColor 
 	if actionColor == (color.NRGBA{}) {
 		s.actionColor = s.theme.ContrastBg
 	}
-	s.actionColor = s.theme.ContrastBg
 	s.Animation.Appear(time.Now())
 	s.manager.Window().Invalidate()
 }
@@ -88,6 +87,9 @@ func (s *snackBar) Layout(gtx Gtx) (d Dim) {
 					layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 						if s.actionTxt == "" || s.actionButton == nil {
 							return Dim{}
+						}
+						if s.actionButton != nil && s.actionButton.Clicked() {
+							s.Animation.Disappear(gtx.Now)
 						}
 						actionTxt := strings.ToUpper(s.actionTxt)
 						actionColor := s.actionColor

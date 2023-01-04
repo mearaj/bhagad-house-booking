@@ -1,22 +1,18 @@
-module backend
+module github.com/mearaj/bhagad-house-booking/backend
 
 go 1.19
 
 require (
-	github.com/gin-contrib/static v0.0.1
+	github.com/gin-contrib/cors v1.4.0
 	github.com/gin-gonic/gin v1.8.1
 	github.com/golang/mock v1.6.0
 	github.com/lib/pq v1.10.7
-	github.com/mearaj/bhagad-house-booking/backend v0.0.0-00010101000000-000000000000
-	github.com/mearaj/bhagad-house-booking/common v0.0.0-00010101000000-000000000000
+	github.com/mearaj/bhagad-house-booking/common v0.0.0-20221030045753-4d768dbceae8
 	github.com/sirupsen/logrus v1.9.0
 	github.com/stretchr/testify v1.8.0
 )
 
-replace (
-	github.com/mearaj/bhagad-house-booking/backend => ./
-	github.com/mearaj/bhagad-house-booking/common => ../common
-)
+replace github.com/mearaj/bhagad-house-booking/common v0.0.0-20221030045753-4d768dbceae8 => ../common
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
