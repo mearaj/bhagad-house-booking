@@ -1,5 +1,5 @@
 # Bhagad-House-Booking
-Bhagad House Booking[https://bhagadhouse.com] is a private app created in golang with [gioui](https://gioui.org/) and other libraries. 
+[Bhagad House Booking](https://bhagadhouse.com) is a private app created in golang with [gioui](https://gioui.org/) and other libraries. 
 It's a private app but it's code are open sourced and MIT-Licensed. You are free to use it.
 
 ## Prerequisites
