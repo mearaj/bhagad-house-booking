@@ -17,13 +17,19 @@ RUN cd frontend && go mod tidy
 
 RUN cd frontend && gogio -target js -o dist cmd/main.go
 
-COPY index.html frontend/dist
-COPY wasm.js frontend/dist/wasm.js
+RUN cd frontend && go build -o static cmd/static/main.go
+
+COPY frontend/cmd/static/dist/index.html frontend/dist
+COPY frontend/cmd/static/dist/wasm.js frontend/dist/wasm.js
 
 ARG API_URL=http://localhost:8001
 ENV API_URL ${API_URL}
 
+ARG STATIC_FOLDER=/dist
+ENV STATIC_FOLDER ${STATIC_FOLDER}
+
 RUN echo "window.API_URL = '${API_URL}';" >> frontend/dist/wasm.js
+RUN echo "window.STATIC_FOLDER = '${STATIC_FOLDER}';" >> frontend/dist/wasm.js
 
 # Runtime
 FROM scratch
@@ -35,7 +41,7 @@ VOLUME /data
 WORKDIR /
 
 COPY --from=buildstage /app/frontend/dist /dist
-COPY --from=buildstage /go/bin/static /static
+COPY --from=buildstage /app/frontend/static /static
 
 ENTRYPOINT ["/static"]
-CMD ["-r", "/dist","-b",":8080"]
+CMD []

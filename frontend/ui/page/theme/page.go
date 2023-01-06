@@ -14,7 +14,7 @@ import (
 	"gioui.org/x/colorpicker"
 	"gioui.org/x/component"
 	"github.com/mearaj/bhagad-house-booking/common/alog"
-	"github.com/mearaj/bhagad-house-booking/common/assets/fonts"
+	"github.com/mearaj/bhagad-house-booking/frontend/assets/fonts"
 	. "github.com/mearaj/bhagad-house-booking/frontend/ui/fwk"
 	"github.com/mearaj/bhagad-house-booking/frontend/ui/view"
 	"golang.org/x/exp/shiny/materialdesign/colornames"

@@ -5,7 +5,7 @@ import (
 	"gioui.org/text"
 	"gioui.org/unit"
 	"gioui.org/widget/material"
-	"github.com/mearaj/bhagad-house-booking/common/assets/fonts"
+	"github.com/mearaj/bhagad-house-booking/frontend/assets/fonts"
 )
 
 type Greetings struct {
