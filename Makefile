@@ -18,21 +18,9 @@ dep-tools:
 	# gio cmd
 	go install gioui.org/cmd/gogio@latest
 
-mod-fix:
-	# copy the giowidgets in into correct file system location. See the go-mod !
-	rm -rf giowidgets
-	git clone git@github.com:mearaj/giowidgets.git
-	@echo giowidgets >> .gitignore
-
-	rm -rf $(REPO_NAME)/frontend/ui/view/third-party
-	mkdir -p $(REPO_NAME)/frontend/ui/view/third-party
-	cp -r ./giowidgets $(REPO_NAME)/frontend/ui/view/third-party/giowidgets
 
 mod-upgrade:
 	# go mod update
-	go install github.com/oligot/go-mod-upgrade@latest
-	cd ./giowidgets && go-mod-upgrade
-	cd ./giowidgets && go mod tidy
 	cd ./$(REPO_NAME) && go-mod-upgrade
 	cd ./$(REPO_NAME) && go mod tidy
 

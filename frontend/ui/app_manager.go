@@ -4,7 +4,6 @@ import (
 	"gioui.org/app"
 	"gioui.org/io/system"
 	"gioui.org/layout"
-	"gioui.org/op"
 	"gioui.org/op/clip"
 	"gioui.org/op/paint"
 	"gioui.org/unit"
@@ -12,8 +11,8 @@ import (
 	"gioui.org/x/component"
 	"gioui.org/x/notify"
 	"github.com/mearaj/bhagad-house-booking/common/alog"
-	"github.com/mearaj/bhagad-house-booking/common/assets/fonts"
 	"github.com/mearaj/bhagad-house-booking/common/db/sqlc"
+	"github.com/mearaj/bhagad-house-booking/frontend/assets/fonts"
 	"github.com/mearaj/bhagad-house-booking/frontend/service"
 	. "github.com/mearaj/bhagad-house-booking/frontend/ui/fwk"
 	"github.com/mearaj/bhagad-house-booking/frontend/ui/page/about"
@@ -23,18 +22,17 @@ import (
 	"github.com/mearaj/bhagad-house-booking/frontend/ui/page/notifications"
 	"github.com/mearaj/bhagad-house-booking/frontend/ui/page/settings"
 	"github.com/mearaj/bhagad-house-booking/frontend/ui/page/theme"
-	view2 "github.com/mearaj/bhagad-house-booking/frontend/ui/view"
+	"github.com/mearaj/bhagad-house-booking/frontend/ui/view"
 	"image"
 	"strconv"
 	"strings"
 	"sync"
-	"time"
 )
 
 // AppManager Always call NewAppManager function to create AppManager instance
 type AppManager struct {
 	window *app.Window
-	view2.Greetings
+	view.Greetings
 	settingsSideBar Page
 	theme           *material.Theme
 	service         service.Service
@@ -47,10 +45,7 @@ type AppManager struct {
 	isStageRunning   bool
 	modal            Modal
 	pagesStack       []Page
-	prePushedView    Page
-	poppedUpView     Page
-	pageAnimation    Animation
-	afterPageChange  func()
+	pageAnimation    view.Slider
 	snackbar         Snackbar
 	initialized      bool
 	initializedMutex sync.RWMutex
@@ -100,13 +95,8 @@ func (m *AppManager) init() {
 	if err != nil {
 		alog.Logger().Errorln(err)
 	}
-	m.SetModal(view2.NewModalStack())
-	m.snackbar = view2.NewSnackBar(m)
-	m.pageAnimation = component.VisibilityAnimation{
-		Duration: time.Millisecond * 250,
-		State:    component.Invisible,
-		Started:  time.Time{},
-	}
+	m.SetModal(view.NewModalStack())
+	m.snackbar = view.NewSnackBar(m)
 	m.setInitialized(true)
 }
 
@@ -207,147 +197,40 @@ func (m *AppManager) drawPage(gtx Gtx) Dim {
 			if m.ShouldDrawSidebar() {
 				gtx.Constraints.Max.X = int(float32(maxDim.X) * 0.60)
 			}
-			gtx.Constraints.Min = gtx.Constraints.Max
 			maxDim := gtx.Constraints.Max
 			gtx.Constraints.Min = maxDim
 			currentPage := m.CurrentPage()
-			prePushedPage := m.prePushedView
-			poppedUpPage := m.poppedUpView
-			switch {
-			case prePushedPage != nil:
-				progress := m.pageAnimation.Revealed(gtx)
-				if m.pageAnimation.Animating() || m.pageAnimation.State == component.Invisible {
-					m.pageAnimation.Appear(gtx.Now)
+			areaStack := clip.Rect(image.Rectangle{Max: gtx.Constraints.Max}).Push(gtx.Ops)
+			d := m.pageAnimation.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
+				if currentPage.URL() == SettingsPageURL && m.ShouldDrawSidebar() {
+					m.Greetings.Layout(gtx)
+					return Dim{Size: maxDim}
 				}
-				if progress == 1 {
-					m.prePushedView = nil
-					m.pageAnimation.State = component.Invisible
-				}
-
-				cl := clip.Rect{Max: maxDim}.Push(gtx.Ops)
-				layout.Stack{Alignment: layout.NW}.Layout(gtx,
-					layout.Stacked(func(gtx Gtx) Dim {
-						gtx.Constraints.Min = maxDim
-						offsetOperation := op.Offset(image.Point{
-							X: -int(float32(maxDim.X) * progress),
-							Y: 0,
-						}).Push(gtx.Ops)
-						defer offsetOperation.Pop()
-						if prePushedPage.URL() == SettingsPageURL && m.ShouldDrawSidebar() {
-							m.Greetings.Layout(gtx)
-							return Dim{Size: maxDim}
-						}
-						prePushedPage.Layout(gtx)
-						return Dim{Size: maxDim}
-					}),
-					layout.Stacked(func(gtx Gtx) Dim {
-						gtx.Constraints.Min = maxDim
-						offsetOperation := op.Offset(image.Point{
-							X: int(float32(maxDim.X) * (1 - progress)),
-							Y: 0,
-						}).Push(gtx.Ops)
-						defer offsetOperation.Pop()
-						if currentPage.URL() == SettingsPageURL && m.ShouldDrawSidebar() {
-							m.Greetings.Layout(gtx)
-							return Dim{Size: maxDim}
-						}
-						currentPage.Layout(gtx)
-						return Dim{Size: maxDim}
-					}),
-				)
-				cl.Pop()
-				return Dim{Size: maxDim}
-			case poppedUpPage != nil:
-				progress := m.pageAnimation.Revealed(gtx)
-				if m.pageAnimation.Animating() || m.pageAnimation.State == component.Invisible {
-					m.pageAnimation.Appear(gtx.Now)
-				}
-				if progress == 1 {
-					m.poppedUpView = nil
-					m.pageAnimation.State = component.Invisible
-				}
-
-				cl := clip.Rect{Max: maxDim}.Push(gtx.Ops)
-				layout.Stack{Alignment: layout.NW}.Layout(gtx,
-					layout.Stacked(func(gtx Gtx) Dim {
-						offsetOperation := op.Offset(image.Point{
-							X: -int(float32(maxDim.X) * (1 - progress)),
-							Y: 0,
-						}).Push(gtx.Ops)
-						defer offsetOperation.Pop()
-						gtx.Constraints.Min = maxDim
-						if currentPage.URL() == SettingsPageURL && m.ShouldDrawSidebar() {
-							m.Greetings.Layout(gtx)
-							return Dim{Size: maxDim}
-						}
-						currentPage.Layout(gtx)
-						return Dim{Size: maxDim}
-					}),
-					layout.Stacked(func(gtx Gtx) Dim {
-						offsetOperation := op.Offset(image.Point{
-							X: int(float32(maxDim.X) * progress),
-							Y: 0,
-						}).Push(gtx.Ops)
-						defer offsetOperation.Pop()
-						gtx.Constraints.Min = maxDim
-						if poppedUpPage.URL() == SettingsPageURL && m.ShouldDrawSidebar() {
-							m.Greetings.Layout(gtx)
-							return Dim{Size: maxDim}
-						}
-						poppedUpPage.Layout(gtx)
-						return Dim{Size: maxDim}
-					}),
-				)
-				cl.Pop()
-				return Dim{Size: maxDim}
-			default:
-
-			}
-			if currentPage.URL() == SettingsPageURL && m.ShouldDrawSidebar() {
-				m.Greetings.Layout(gtx)
-				return Dim{Size: maxDim}
-			}
-			return currentPage.Layout(gtx)
+				return currentPage.Layout(gtx)
+			})
+			areaStack.Pop()
+			return d
 		}),
 	)
-	state := m.pageAnimation.State
-	progress := m.pageAnimation.Revealed(gtx)
-	shouldCall := state == component.Invisible && progress == 0 && m.afterPageChange != nil &&
-		!m.pageAnimation.Animating()
-	if shouldCall {
-		m.afterPageChange()
-		m.afterPageChange = nil
-	}
 	return d
 }
 
-func (m *AppManager) NavigateToPage(page Page, AfterNavCallback func()) {
+func (m *AppManager) NavigateToPage(page Page) {
 	pageURL := page.URL()
-	m.afterPageChange = AfterNavCallback
 	if pageURL == m.CurrentPage().URL() {
-		if m.afterPageChange != nil {
-			m.afterPageChange()
-		}
-		m.afterPageChange = nil
 		return
 	}
 	switch pageURL {
 	case SettingsPageURL:
 		m.pagesStack = []Page{m.settingsSideBar}
 	default:
-		m.prePushedView = m.CurrentPage()
 		m.pagesStack = append(m.pagesStack, page)
 	}
-	m.pageAnimation.Disappear(time.Now())
+	m.pageAnimation.PushLeft()
 }
 
-func (m *AppManager) NavigateToUrl(pageURL URL, AfterNavCallback func()) {
-	m.afterPageChange = AfterNavCallback
+func (m *AppManager) NavigateToUrl(pageURL URL) {
 	if pageURL == m.CurrentPage().URL() {
-		if m.afterPageChange != nil {
-			m.afterPageChange()
-		}
-		m.afterPageChange = nil
 		return
 	}
 	var page Page
@@ -379,17 +262,15 @@ func (m *AppManager) NavigateToUrl(pageURL URL, AfterNavCallback func()) {
 		page = about.New(m)
 	}
 	if page != nil {
-		m.prePushedView = m.CurrentPage()
 		m.pagesStack = append(m.pagesStack, page)
 	}
-	m.pageAnimation.Disappear(time.Now())
+	m.pageAnimation.PushLeft()
 }
 
 func (m *AppManager) PopUp() {
 	stackLength := len(m.pagesStack)
 	if stackLength > 1 {
-		m.poppedUpView = m.pagesStack[stackLength-1]
 		m.pagesStack = m.pagesStack[0 : stackLength-1]
 	}
-	m.pageAnimation.Disappear(time.Now())
+	m.pageAnimation.PushRight()
 }

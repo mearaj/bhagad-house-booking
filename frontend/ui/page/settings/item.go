@@ -29,9 +29,8 @@ func (c *pageItem) layoutContent(gtx fwk.Gtx) fwk.Dim {
 	gtx.Constraints.Min.X = gtx.Constraints.Max.X
 	btnStyle := material.ButtonLayoutStyle{Background: c.Theme.ContrastBg, Button: &c.Clickable}
 	if c.Clicked() {
-		c.NavigateToUrl(fwk.SettingsPageURL, func() {
-			c.NavigateToUrl(c.URL(), nil)
-		})
+		c.PopUp()
+		c.NavigateToUrl(c.URL())
 	}
 	if c.Hovered() || c.URL() == c.CurrentPage().URL() {
 		btnStyle.Background.A = 50

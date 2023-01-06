@@ -24,7 +24,8 @@ import (
 )
 
 type page struct {
-	layout.List
+	ViewList         layout.List
+	ViewListPosition layout.Position
 	fwk.Manager
 	Theme              *material.Theme
 	title              string
@@ -70,7 +71,7 @@ func New(manager fwk.Manager) fwk.Page {
 		Theme:              &theme,
 		title:              "Bookings",
 		navigationIcon:     navIcon,
-		List:               layout.List{Axis: layout.Vertical},
+		ViewList:           layout.List{Axis: layout.Vertical},
 		bookingItems:       []*pageItem{},
 		menuIcon:           iconMenu,
 		closeIcon:          closeIcon,
@@ -112,9 +113,29 @@ func (p *page) Layout(gtx fwk.Gtx) fwk.Dim {
 	flex := layout.Flex{Axis: layout.Vertical, Spacing: layout.SpaceEnd, Alignment: layout.Start}
 	d := flex.Layout(gtx,
 		layout.Rigid(p.DrawAppBar),
-		layout.Rigid(p.bookingForm.Layout),
-		layout.Rigid(p.drawBookingItems),
+		layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+			return layout.Stack{}.Layout(gtx, layout.Stacked(func(gtx layout.Context) layout.Dimensions {
+				position := p.ViewListPosition.First
+				if position >= 1 && len(p.bookingItems) >= position {
+					currItemTime := p.bookingItems[position-1].Time
+					currStartMonth := currItemTime.Month()
+					currStartYear := currItemTime.Year()
+					flex := layout.Flex{Axis: layout.Vertical}
+					return flex.Layout(gtx, p.drawBookingItemHeader(gtx, currStartMonth, currStartYear)...)
+				}
+				return fwk.Dim{}
+			}))
+		}),
+		layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+			return p.ViewList.Layout(gtx, len(p.bookingItems)+1, func(gtx layout.Context, index int) layout.Dimensions {
+				if index == 0 {
+					return p.bookingForm.Layout(gtx)
+				}
+				return p.drawBookingItem(gtx, index-1)
+			})
+		}),
 	)
+	p.ViewListPosition = p.ViewList.Position
 	p.drawMenuLayout(gtx)
 	return d
 }
@@ -209,7 +230,7 @@ func (p *page) drawMenuItems(gtx fwk.Gtx) fwk.Dim {
 		p.menuVisibilityAnim.Disappear(gtx.Now)
 		p.Manager.NavigateToPage(add_edit_booking.New(p.Manager, sqlc.Booking{
 			ID: 0,
-		}), nil)
+		}))
 	}
 	return layout.Flex{Axis: layout.Vertical, Alignment: layout.Start}.Layout(gtx,
 		p.drawMenuItem("New Booking", &p.btnAddBooking),
@@ -240,92 +261,101 @@ func (p *page) drawMenuItem(txt string, btn *widget.Clickable) layout.FlexChild 
 	})
 }
 
-func (p *page) drawBookingItems(gtx fwk.Gtx) fwk.Dim {
+func (p *page) drawBookingItem(gtx fwk.Gtx, index int) fwk.Dim {
 	if len(p.bookingItems) == 0 {
 		return view.Dim{}
 	}
-	return p.List.Layout(gtx, len(p.bookingItems), func(gtx fwk.Gtx, index int) (d fwk.Dim) {
-		showHeader := true
-		currItemTime := p.bookingItems[index].Time
-		currStartMonth := currItemTime.Month()
-		currStartYear := currItemTime.Year()
-		if index > 0 {
-			prevItemTime := p.bookingItems[index-1].Time
-			prevStartMonth := prevItemTime.Month()
-			prevStartYear := prevItemTime.Year()
-			showHeader = currStartMonth != prevStartMonth || currStartYear != prevStartYear
-		}
-		if showHeader {
-			flex := layout.Flex{Axis: layout.Vertical}
+	showHeader := true
+	currItemTime := p.bookingItems[index].Time
+	currStartMonth := currItemTime.Month()
+	currStartYear := currItemTime.Year()
+	position := p.ViewListPosition.First
+	if index > 0 {
+		prevItemTime := p.bookingItems[index-1].Time
+		prevStartMonth := prevItemTime.Month()
+		prevStartYear := prevItemTime.Year()
+		showHeader = currStartMonth != prevStartMonth || currStartYear != prevStartYear
+	}
+	if position >= 1 {
+		bookingItemTime := p.bookingItems[position-1].Time
+		showHeader = showHeader &&
+			(bookingItemTime.Month() != currStartMonth || bookingItemTime.Year() != currStartYear) &&
+			position != 1
+	}
+	if showHeader {
+		flex := layout.Flex{Axis: layout.Vertical}
+		return flex.Layout(gtx,
+			p.drawBookingItemHeader(gtx, currStartMonth, currStartYear)[0],
+			p.drawBookingItemHeader(gtx, currStartMonth, currStartYear)[1],
+			layout.Rigid(p.bookingItems[index].Layout),
+		)
+	}
+	return p.bookingItems[index].Layout(gtx)
+}
+
+func (p *page) drawBookingItemHeader(gtx fwk.Gtx, month time.Month, year int) []layout.FlexChild {
+	dateHeader := layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+		inset := layout.UniformInset(16)
+		return inset.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
+			val := fmt.Sprintf("%s  %d", month, year)
+			b := material.Body1(p.Theme, val)
+			b.Font.Weight = text.ExtraBlack
+			b.TextSize = unit.Sp(24)
+			d := b.Layout(gtx)
+			return d
+		})
+	})
+	columnHeader := layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+		inset := layout.Inset{Left: 16, Right: 16, Top: 8, Bottom: 8}
+		return inset.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
+			flex := layout.Flex{}
+			layoutRatio := flexUserLayoutRatio
+			isAuthorized := p.loginUserResponse.IsLoggedIn() && p.loginUserResponse.IsAdmin()
+			if isAuthorized {
+				layoutRatio = flexAdminLayoutRatio
+			}
 			return flex.Layout(gtx,
-				layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-					inset := layout.UniformInset(16)
-					return inset.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
-						val := fmt.Sprintf("%s  %d", currStartMonth, currStartYear)
-						b := material.Body1(p.Theme, val)
-						b.Font.Weight = text.ExtraBlack
-						b.TextSize = unit.Sp(24)
-						d := b.Layout(gtx)
-						return d
+				layout.Flexed(layoutRatio[0], func(gtx layout.Context) layout.Dimensions {
+					b := material.Body1(p.Theme, "ID")
+					b.Font.Weight = text.Black
+					b.TextSize = unit.Sp(20)
+					return b.Layout(gtx)
+				}),
+				layout.Flexed(layoutRatio[1], func(gtx layout.Context) layout.Dimensions {
+					b := material.Body1(p.Theme, "Day")
+					b.Font.Weight = text.Black
+					b.TextSize = unit.Sp(20)
+					return b.Layout(gtx)
+				}),
+				layout.Flexed(layoutRatio[2], func(gtx layout.Context) layout.Dimensions {
+					b := material.Body1(p.Theme, "Weekday")
+					b.Font.Weight = text.Black
+					b.TextSize = unit.Sp(20)
+					return b.Layout(gtx)
+				}),
+				layout.Flexed(layoutRatio[3], func(gtx layout.Context) layout.Dimensions {
+					return layout.Center.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
+						b := material.Body1(p.Theme, "Availability")
+						b.Font.Weight = text.Black
+						b.TextSize = unit.Sp(20)
+						return b.Layout(gtx)
 					})
 				}),
-				layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-					inset := layout.Inset{Left: 16, Right: 16, Top: 8, Bottom: 8}
-					return inset.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
-						flex := layout.Flex{}
-						layoutRatio := flexUserLayoutRatio
-						isAuthorized := p.loginUserResponse.IsLoggedIn() && p.loginUserResponse.IsAdmin()
-						if isAuthorized {
-							layoutRatio = flexAdminLayoutRatio
-						}
-						return flex.Layout(gtx,
-							layout.Flexed(layoutRatio[0], func(gtx layout.Context) layout.Dimensions {
-								b := material.Body1(p.Theme, "ID")
-								b.Font.Weight = text.Black
-								b.TextSize = unit.Sp(20)
-								return b.Layout(gtx)
-							}),
-							layout.Flexed(layoutRatio[1], func(gtx layout.Context) layout.Dimensions {
-								b := material.Body1(p.Theme, "Day")
-								b.Font.Weight = text.Black
-								b.TextSize = unit.Sp(20)
-								return b.Layout(gtx)
-							}),
-							layout.Flexed(layoutRatio[2], func(gtx layout.Context) layout.Dimensions {
-								b := material.Body1(p.Theme, "Weekday")
-								b.Font.Weight = text.Black
-								b.TextSize = unit.Sp(20)
-								return b.Layout(gtx)
-							}),
-							layout.Flexed(layoutRatio[3], func(gtx layout.Context) layout.Dimensions {
-								return layout.Center.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
-									b := material.Body1(p.Theme, "Availability")
-									b.Font.Weight = text.Black
-									b.TextSize = unit.Sp(20)
-									return b.Layout(gtx)
-								})
-							}),
-							layout.Flexed(layoutRatio[4], func(gtx layout.Context) layout.Dimensions {
-								if !isAuthorized {
-									return fwk.Dim{}
-								}
-								return layout.Center.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
-									b := material.Body1(p.Theme, "Delete")
-									b.Font.Weight = text.Black
-									b.TextSize = unit.Sp(20)
-									return b.Layout(gtx)
-								})
-							}),
-						)
+				layout.Flexed(layoutRatio[4], func(gtx layout.Context) layout.Dimensions {
+					if !isAuthorized {
+						return fwk.Dim{}
+					}
+					return layout.Center.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
+						b := material.Body1(p.Theme, "Delete")
+						b.Font.Weight = text.Black
+						b.TextSize = unit.Sp(20)
+						return b.Layout(gtx)
 					})
-				}),
-				layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-					return p.bookingItems[index].Layout(gtx)
 				}),
 			)
-		}
-		return p.bookingItems[index].Layout(gtx)
+		})
 	})
+	return []layout.FlexChild{dateHeader, columnHeader}
 }
 
 func (p *page) fetchBookings() {

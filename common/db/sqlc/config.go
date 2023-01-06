@@ -27,9 +27,9 @@ const (
 const DefaultDatabaseDriver = "postgres"
 const DefaultDatabaseURL = "postgresql://root:secret@localhost:5432/bhagad_house_booking?sslmode=disable"
 const DefaultServerHost = "0.0.0.0"
-const DefaultServerPort = "0"
+const DefaultServerPort = "80"
 const DefaultTokenSymmetricKey = "12345678901234567890123456789012"
-const DefaultAccessTokenDuration = "15m"
+const DefaultAccessTokenDuration = "24h"
 
 func LoadConfig() (config Config) {
 	if config.DatabaseDriver = os.Getenv(DatabaseDriver); config.DatabaseDriver == "" {

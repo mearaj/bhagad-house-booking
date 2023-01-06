@@ -45,7 +45,7 @@ func (p *page) Layout(gtx fwk.Gtx) (d fwk.Dim) {
 	adminClicked := p.loginUserResponse.IsLoggedIn() && p.loginUserResponse.IsAdmin() && p.btnAddBooking.Clicked()
 	if adminClicked {
 		addEditBookingPage := add_edit_booking.New(p.Manager, sqlc.Booking{})
-		p.Manager.NavigateToPage(addEditBookingPage, func() {})
+		p.Manager.NavigateToPage(addEditBookingPage)
 	}
 
 	flex := layout.Flex{Axis: layout.Vertical,
@@ -62,7 +62,7 @@ func (p *page) Layout(gtx fwk.Gtx) (d fwk.Dim) {
 }
 func (p *page) DrawAppBar(gtx fwk.Gtx) fwk.Dim {
 	if p.buttonNavIcon.Clicked() {
-		p.Manager.NavigateToUrl(fwk.SettingsPageURL, nil)
+		p.Manager.NavigateToUrl(fwk.SettingsPageURL)
 	}
 
 	return view.DrawAppBarLayout(gtx, p.Manager.Theme(), func(gtx fwk.Gtx) fwk.Dim {
@@ -110,7 +110,7 @@ func (p *page) DrawAppBar(gtx fwk.Gtx) fwk.Dim {
 
 func (p *page) onAddBookingSuccess() {
 	p.Modal().Dismiss(func() {
-		p.NavigateToUrl(fwk.SettingsPageURL, nil)
+		p.NavigateToUrl(fwk.SettingsPageURL)
 	})
 }
 

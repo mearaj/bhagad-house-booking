@@ -8,7 +8,7 @@ import (
 	"gioui.org/widget"
 	"gioui.org/widget/material"
 	"gioui.org/x/component"
-	"github.com/mearaj/bhagad-house-booking/common/assets/fonts"
+	"github.com/mearaj/bhagad-house-booking/frontend/assets/fonts"
 	"github.com/mearaj/bhagad-house-booking/frontend/service"
 	"github.com/mearaj/giowidgets/calendar"
 	"golang.org/x/exp/shiny/materialdesign/colornames"

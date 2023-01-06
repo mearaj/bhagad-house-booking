@@ -25,7 +25,7 @@ const (
 
 const DefaultDatabaseDriver = "postgres"
 const DefaultDatabaseURL = "postgresql://root:secret@localhost:5432/bhagad_house_booking?sslmode=disable"
-const DefaultServerPort = "8001"
+const DefaultServerPort = "8080"
 const DefaultTokenSymmetricKey = "12345678901234567890123456789012"
 const DefaultAccessTokenDuration = "24h"
 

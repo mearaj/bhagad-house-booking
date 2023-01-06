@@ -59,7 +59,7 @@ func (i *pageItem) layoutContent(gtx fwk.Gtx) fwk.Dim {
 	}
 	adminClicked := isAuthorized && i.btnRow.Clicked()
 	if adminClicked {
-		i.Manager.NavigateToPage(add_edit_booking.New(i.Manager, i.Booking), nil)
+		i.Manager.NavigateToPage(add_edit_booking.New(i.Manager, i.Booking))
 		i.Window().Invalidate()
 	}
 	d := i.btnRow.Layout(gtx, func(gtx layout.Context) layout.Dimensions {

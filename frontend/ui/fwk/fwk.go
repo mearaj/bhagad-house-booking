@@ -15,8 +15,8 @@ import (
 )
 
 type Manager interface {
-	NavigateToPage(page Page, AfterNavCallback func())
-	NavigateToUrl(pageURL URL, AfterNavCallback func())
+	NavigateToPage(page Page)
+	NavigateToUrl(pageURL URL)
 	PopUp()
 	CurrentPage() Page
 	GetWindowWidthInDp() int

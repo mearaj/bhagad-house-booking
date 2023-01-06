@@ -9,8 +9,9 @@ import (
 )
 
 func main() {
-	//fmt.Print("API_URL IS:  ")
-	//fmt.Println(frontend.LoadConfig().ApiURL)
+	// fmt.Print("API_URL IS:  ")
+	// fmt.Println(frontend.LoadConfig().ApiURL)
+
 	go func() {
 		title := app.Title("Bhagad House Booking")
 		w := app.NewWindow(title)
