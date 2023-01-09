@@ -7,6 +7,8 @@ import (
 	"gioui.org/widget"
 	"gioui.org/widget/material"
 	"gioui.org/x/component"
+	"github.com/mearaj/bhagad-house-booking/frontend/i18n"
+	"github.com/mearaj/bhagad-house-booking/frontend/i18n/key"
 	"golang.org/x/exp/shiny/materialdesign/colornames"
 	"image/color"
 )
@@ -46,6 +48,7 @@ func (p *PromptContent) Layout(gtx Gtx) Dim {
 				if p.HeaderTxt == "" {
 					return Dim{}
 				}
+				p.HeaderTxt = i18n.Get(key.Key(p.HeaderTxt))
 				bd := material.Body1(p.Theme, p.HeaderTxt)
 				bd.Font.Weight = text.Bold
 				bd.Alignment = text.Middle
@@ -58,6 +61,7 @@ func (p *PromptContent) Layout(gtx Gtx) Dim {
 				if p.ContentText == "" {
 					return Dim{}
 				}
+				p.ContentText = i18n.Get(key.Key(p.ContentText))
 				bd := material.Body1(p.Theme, p.ContentText)
 				bd.Alignment = text.Middle
 				return bd.Layout(gtx)
@@ -66,13 +70,15 @@ func (p *PromptContent) Layout(gtx Gtx) Dim {
 			layout.Rigid(func(gtx Gtx) Dim {
 				return layout.Flex{Spacing: layout.SpaceSides, Alignment: layout.Middle}.Layout(gtx,
 					layout.Rigid(func(gtx Gtx) Dim {
-						btn := material.Button(p.Theme, p.btnYes, "Yes")
+						yes := i18n.Get(key.Yes)
+						btn := material.Button(p.Theme, p.btnYes, yes)
 						btn.Background = color.NRGBA(colornames.Red500)
 						return btn.Layout(gtx)
 					}),
 					layout.Rigid(layout.Spacer{Width: unit.Dp(16)}.Layout),
 					layout.Rigid(func(gtx Gtx) Dim {
-						btn := material.Button(p.Theme, p.btnNo, "No")
+						no := i18n.Get(key.No)
+						btn := material.Button(p.Theme, p.btnNo, no)
 						btn.Background = color.NRGBA(colornames.Green500)
 						return btn.Layout(gtx)
 					}),

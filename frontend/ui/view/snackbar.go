@@ -9,6 +9,7 @@ import (
 	"gioui.org/widget/material"
 	"gioui.org/x/component"
 	"github.com/mearaj/bhagad-house-booking/frontend/ui/fwk"
+	"github.com/mearaj/bhagad-house-booking/frontend/user"
 	"image"
 	"image/color"
 	"strings"
@@ -29,7 +30,7 @@ type snackBar struct {
 
 func NewSnackBar(manager Manager) fwk.Snackbar {
 	return &snackBar{manager: manager,
-		theme:    manager.Theme(),
+		theme:    user.Theme(),
 		duration: 3000,
 		Animation: component.VisibilityAnimation{
 			Duration: time.Millisecond * 500,

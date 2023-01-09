@@ -11,6 +11,11 @@ import (
 	"strings"
 )
 
+type FormField struct {
+	FieldName string
+	component.TextField
+}
+
 func DrawFormFieldRowWithLabel(gtx Gtx, th *material.Theme, labelText string, labelHintText string, textField *component.TextField, button *IconButton) Dim {
 	flex := layout.Flex{Axis: layout.Vertical, Spacing: layout.SpaceStart, Alignment: layout.Baseline}
 	return flex.Layout(gtx,
@@ -45,7 +50,8 @@ func DrawFormFieldRowWithLabel(gtx Gtx, th *material.Theme, labelText string, la
 							} else {
 								th.TextSize = origSize
 							}
-							return textField.Layout(gtx, &th, labelHintText)
+							d := textField.Layout(gtx, &th, labelHintText)
+							return d
 						})
 				}),
 				layout.Rigid(func(gtx Gtx) Dim {

@@ -10,6 +10,7 @@ type Topic int
 
 const (
 	TopicBookingsFetched Topic = iota
+	TopicSearchBookings
 	TopicUserLoggedInOut
 	TopicCreateBooking
 	TopicUpdateBooking
@@ -18,6 +19,7 @@ const (
 
 var AllTopicsArr = [...]Topic{
 	TopicBookingsFetched,
+	TopicSearchBookings,
 	TopicUserLoggedInOut,
 	TopicCreateBooking,
 	TopicUpdateBooking,
@@ -108,7 +110,7 @@ func (s *subscriber) IsSubscribedTo(topic Topic) (ok bool, err error) {
 	if err = s.isError(); err != nil {
 		return ok, err
 	}
-	_, ok = s.topics.Value(topic)
+	_, ok = s.topics.Get(topic)
 	return ok, err
 }
 

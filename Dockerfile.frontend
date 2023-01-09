@@ -8,7 +8,6 @@ WORKDIR /app
 COPY common ./common
 COPY frontend ./frontend
 
-RUN go install git.mills.io/prologic/static@latest
 RUN cd frontend && go install gioui.org/cmd/gogio@latest
 
 RUN cd common && go mod tidy

@@ -7,22 +7,22 @@ import (
 	"gioui.org/op/clip"
 	"gioui.org/op/paint"
 	"gioui.org/unit"
-	"gioui.org/widget/material"
 	"gioui.org/x/component"
 	"gioui.org/x/notify"
 	"github.com/mearaj/bhagad-house-booking/common/alog"
 	"github.com/mearaj/bhagad-house-booking/common/db/sqlc"
-	"github.com/mearaj/bhagad-house-booking/frontend/assets/fonts"
 	"github.com/mearaj/bhagad-house-booking/frontend/service"
 	. "github.com/mearaj/bhagad-house-booking/frontend/ui/fwk"
 	"github.com/mearaj/bhagad-house-booking/frontend/ui/page/about"
 	"github.com/mearaj/bhagad-house-booking/frontend/ui/page/add_edit_booking"
 	"github.com/mearaj/bhagad-house-booking/frontend/ui/page/bookings"
 	"github.com/mearaj/bhagad-house-booking/frontend/ui/page/help"
+	"github.com/mearaj/bhagad-house-booking/frontend/ui/page/nav"
 	"github.com/mearaj/bhagad-house-booking/frontend/ui/page/notifications"
+	"github.com/mearaj/bhagad-house-booking/frontend/ui/page/search_bookings"
 	"github.com/mearaj/bhagad-house-booking/frontend/ui/page/settings"
-	"github.com/mearaj/bhagad-house-booking/frontend/ui/page/theme"
 	"github.com/mearaj/bhagad-house-booking/frontend/ui/view"
+	"github.com/mearaj/bhagad-house-booking/frontend/user"
 	"image"
 	"strconv"
 	"strings"
@@ -34,7 +34,6 @@ type AppManager struct {
 	window *app.Window
 	view.Greetings
 	settingsSideBar Page
-	theme           *material.Theme
 	service         service.Service
 	Constraints     layout.Constraints
 	Metric          unit.Metric
@@ -49,10 +48,6 @@ type AppManager struct {
 	snackbar         Snackbar
 	initialized      bool
 	initializedMutex sync.RWMutex
-}
-
-func (m *AppManager) Theme() *material.Theme {
-	return m.theme
 }
 
 func (m *AppManager) Service() service.Service {
@@ -87,8 +82,7 @@ func (m *AppManager) setInitialized(initialized bool) {
 }
 
 func (m *AppManager) init() {
-	m.theme = fonts.NewTheme()
-	settingsPage := settings.New(m)
+	settingsPage := nav.New(m)
 	m.settingsSideBar = settingsPage
 	var err error
 	m.notifier, err = notify.NewNotifier()
@@ -104,7 +98,7 @@ func (m *AppManager) Layout(gtx Gtx) Dim {
 	d := layout.Flex{Axis: layout.Vertical}.Layout(gtx,
 		layout.Rigid(func(gtx Gtx) Dim {
 			return component.Rect{
-				Color: m.Theme().ContrastBg,
+				Color: user.Theme().ContrastBg,
 				Size:  image.Point{X: gtx.Constraints.Max.X, Y: gtx.Dp(m.Insets.Top)},
 				Radii: 0,
 			}.Layout(gtx)
@@ -112,7 +106,7 @@ func (m *AppManager) Layout(gtx Gtx) Dim {
 		layout.Flexed(1, func(gtx Gtx) Dim {
 			size := image.Point{X: gtx.Constraints.Max.X, Y: gtx.Constraints.Max.Y - gtx.Dp(m.Insets.Bottom)}
 			bounds := image.Rectangle{Max: size}
-			paint.FillShape(gtx.Ops, m.Theme().Bg, clip.UniformRRect(bounds, 0).Op(gtx.Ops))
+			paint.FillShape(gtx.Ops, user.Theme().Bg, clip.UniformRRect(bounds, 0).Op(gtx.Ops))
 			d := m.drawPage(gtx)
 			m.Snackbar().Layout(gtx)
 			m.Modal().Layout(gtx)
@@ -120,7 +114,7 @@ func (m *AppManager) Layout(gtx Gtx) Dim {
 		}),
 		layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 			return component.Rect{
-				Color: m.Theme().ContrastBg,
+				Color: user.Theme().ContrastBg,
 				Size:  image.Point{X: gtx.Constraints.Max.X, Y: gtx.Dp(m.Insets.Bottom)},
 				Radii: 0,
 			}.Layout(gtx)
@@ -134,7 +128,7 @@ func (m *AppManager) CurrentPage() Page {
 	if stackSize > 0 {
 		return m.pagesStack[stackSize-1]
 	}
-	m.pagesStack = []Page{settings.New(m)}
+	m.pagesStack = []Page{nav.New(m)}
 	return m.settingsSideBar
 }
 func (m *AppManager) GetWindowWidthInDp() int {
@@ -173,7 +167,7 @@ func (m *AppManager) SetModal(modal Modal) {
 
 func (m *AppManager) PageFromUrl(url URL) Page {
 	switch url {
-	case SettingsPageURL:
+	case NavPageUrl:
 		return m.settingsSideBar
 	default:
 		return m.settingsSideBar
@@ -202,7 +196,7 @@ func (m *AppManager) drawPage(gtx Gtx) Dim {
 			currentPage := m.CurrentPage()
 			areaStack := clip.Rect(image.Rectangle{Max: gtx.Constraints.Max}).Push(gtx.Ops)
 			d := m.pageAnimation.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
-				if currentPage.URL() == SettingsPageURL && m.ShouldDrawSidebar() {
+				if currentPage.URL() == NavPageUrl && m.ShouldDrawSidebar() {
 					m.Greetings.Layout(gtx)
 					return Dim{Size: maxDim}
 				}
@@ -221,7 +215,7 @@ func (m *AppManager) NavigateToPage(page Page) {
 		return
 	}
 	switch pageURL {
-	case SettingsPageURL:
+	case NavPageUrl:
 		m.pagesStack = []Page{m.settingsSideBar}
 	default:
 		m.pagesStack = append(m.pagesStack, page)
@@ -244,7 +238,7 @@ func (m *AppManager) NavigateToUrl(pageURL URL) {
 		}
 	}
 	switch pageURL {
-	case SettingsPageURL:
+	case NavPageUrl:
 		m.pagesStack = []Page{m.settingsSideBar}
 	case BookingsPageURL:
 		page = bookings.New(m)
@@ -252,8 +246,10 @@ func (m *AppManager) NavigateToUrl(pageURL URL) {
 		booking := sqlc.Booking{}
 		booking.ID = int64(bookingID)
 		page = add_edit_booking.New(m, booking)
-	case ThemePageURL:
-		page = theme.New(m)
+	case SearchBookingsPageURL:
+		page = search_bookings.New(m)
+	case SettingsPageURL:
+		page = settings.New(m)
 	case NotificationsPageURL:
 		page = notifications.New(m)
 	case HelpPageURL:

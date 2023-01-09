@@ -10,6 +10,7 @@ import (
 )
 
 func main() {
+	gin.SetMode("release")
 	config := frontend.LoadConfig()
 	r := gin.Default()
 	r.Use(gzip.Gzip(gzip.DefaultCompression))

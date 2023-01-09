@@ -54,12 +54,14 @@ func (ns NullUserRoles) Value() (driver.Value, error) {
 }
 
 type Booking struct {
-	ID        int64        `json:"id"`
-	CreatedAt sql.NullTime `json:"created_at"`
-	UpdatedAt sql.NullTime `json:"updated_at"`
-	StartDate time.Time    `json:"start_date"`
-	EndDate   time.Time    `json:"end_date"`
-	Details   string       `json:"details"`
+	ID           int64        `json:"id"`
+	CreatedAt    sql.NullTime `json:"created_at"`
+	UpdatedAt    sql.NullTime `json:"updated_at"`
+	StartDate    time.Time    `json:"start_date"`
+	EndDate      time.Time    `json:"end_date"`
+	Details      string       `json:"details"`
+	CustomerName string       `json:"customer_name"`
+	TotalPrice   float64      `json:"total_price"`
 }
 
 type User struct {

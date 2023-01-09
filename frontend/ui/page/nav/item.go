@@ -1,4 +1,4 @@
-package settings
+package nav
 
 import (
 	"gioui.org/layout"
@@ -6,22 +6,32 @@ import (
 	"gioui.org/unit"
 	"gioui.org/widget"
 	"gioui.org/widget/material"
+	"github.com/mearaj/bhagad-house-booking/frontend/i18n"
+	"github.com/mearaj/bhagad-house-booking/frontend/i18n/key"
 	"github.com/mearaj/bhagad-house-booking/frontend/ui/fwk"
+	"github.com/mearaj/bhagad-house-booking/frontend/user"
 )
 
 type pageItem struct {
 	fwk.Manager
 	*material.Theme
 	widget.Clickable
-	Title string
+	Title key.Key
 	*widget.Icon
-	url fwk.URL
+	url        fwk.URL
+	parentPage *items
 }
 
 func (c *pageItem) Layout(gtx fwk.Gtx) fwk.Dim {
 	if c.Theme == nil {
-		c.Theme = c.Manager.Theme()
+		c.Theme = user.Theme()
 	}
+	shouldReturn := c.URL() == fwk.SearchBookingsPageURL && !(c.parentPage.loginUserResponse.IsLoggedIn() &&
+		c.parentPage.loginUserResponse.IsAdmin())
+	if shouldReturn {
+		return fwk.Dim{}
+	}
+
 	return c.layoutContent(gtx)
 }
 
@@ -54,7 +64,8 @@ func (c *pageItem) layoutContent(gtx fwk.Gtx) fwk.Dim {
 					d := inset.Layout(gtx, func(gtx fwk.Gtx) fwk.Dim {
 						d := flex.Layout(gtx,
 							layout.Rigid(func(gtx fwk.Gtx) fwk.Dim {
-								bd := material.Body1(c.Theme, c.Title)
+								title := i18n.Get(c.Title)
+								bd := material.Body1(c.Theme, title)
 								bd.Font.Weight = text.Bold
 								return bd.Layout(gtx)
 							}))

@@ -1,27 +1,21 @@
 package view
 
 import (
+	key2 "gioui.org/io/key"
 	"gioui.org/layout"
 	"gioui.org/unit"
 	"gioui.org/widget"
 	"gioui.org/widget/material"
-	"gioui.org/x/component"
 	"github.com/mearaj/bhagad-house-booking/frontend/assets/fonts"
+	"github.com/mearaj/bhagad-house-booking/frontend/i18n"
+	"github.com/mearaj/bhagad-house-booking/frontend/i18n/key"
 	"github.com/mearaj/bhagad-house-booking/frontend/service"
+	"github.com/mearaj/bhagad-house-booking/frontend/user"
 	"golang.org/x/exp/shiny/materialdesign/colornames"
 	"image"
 	"image/color"
+	"strings"
 )
-
-const UserFieldEmail = "Email"
-const UserFieldPassword = "Password"
-const loginTitle = "Log In"
-const logoutTitle = "Log Out"
-
-type FormField struct {
-	FieldName string
-	component.TextField
-}
 
 type UserForm struct {
 	Manager
@@ -39,11 +33,12 @@ func NewUserForm(manager Manager) *UserForm {
 	inActiveTheme.ContrastBg = color.NRGBA(colornames.Grey500)
 	contForm := UserForm{
 		Manager:      manager,
-		Theme:        manager.Theme(),
-		email:        FormField{FieldName: UserFieldEmail},
-		password:     FormField{FieldName: UserFieldPassword},
+		Theme:        user.Theme(),
+		email:        FormField{FieldName: i18n.Get(key.Email)},
+		password:     FormField{FieldName: i18n.Get(key.Password)},
 		subscription: manager.Service().Subscribe(service.TopicUserLoggedInOut),
 	}
+	contForm.email.InputHint = key2.HintEmail
 	contForm.subscription.SubscribeWithCallback(contForm.OnServiceStateChange)
 	return &contForm
 }
@@ -59,7 +54,7 @@ func (p *UserForm) Layout(gtx Gtx) Dim {
 		return flex.Layout(gtx,
 			layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 				return layout.Center.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
-					title := "Admin Login"
+					title := i18n.Get(key.AdminLogin)
 					isAuthorized := p.loginUserResponse.IsLoggedIn() && p.loginUserResponse.IsAdmin()
 					if isAuthorized {
 						title = p.loginUserResponse.User.Name
@@ -95,16 +90,22 @@ func (p *UserForm) inputField(gtx Gtx, field *FormField) Dim {
 }
 
 func (p *UserForm) logInOut(gtx Gtx) Dim {
-	title := loginTitle
+	title := i18n.Get(key.LogIn)
 	isAuthorized := p.loginUserResponse.IsLoggedIn() && p.loginUserResponse.IsAdmin()
 	if isAuthorized {
-		title = logoutTitle
+		title = i18n.Get(key.LogOut)
 	}
 	if !p.isLoggingInOut {
 		if p.btnLogInOut.Clicked() {
 			p.isLoggingInOut = true
 			if !isAuthorized {
-				p.Service().LogInUser(p.email.Text(), p.password.Text())
+				email := strings.TrimSpace(p.email.Text())
+				password := strings.TrimSpace(p.password.Text())
+				if email != "" && password != "" {
+					p.Service().LogInUser(p.email.Text(), p.password.Text())
+				} else {
+					p.isLoggingInOut = false
+				}
 			}
 			if isAuthorized {
 				p.Service().LogOutUser()
@@ -120,8 +121,7 @@ func (p *UserForm) logInOut(gtx Gtx) Dim {
 	return loader.Layout(gtx)
 }
 func (p *UserForm) OnServiceStateChange(event service.Event) {
-	switch userResponse := event.Data.(type) {
-	case service.UserResponse:
+	if userResponse, ok := event.Data.(service.UserResponse); ok {
 		p.isLoggingInOut = false
 		p.loginUserResponse = userResponse
 	}

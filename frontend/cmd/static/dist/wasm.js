@@ -577,8 +577,18 @@
     }
     WebAssembly.instantiateStreaming(fetch("main.wasm"), go.importObject).then((result) => {
 		const loader = document.getElementById("app-loader")
-		loader.remove()
-        go.run(result.instance);
+		loader.remove();
+
+		// Ref:- https://www.edureka.co/community/71646/find-event-listeners-node-when-debugging-from-javascript-code
+		HTMLInputElement.prototype.realAddEventListener = HTMLInputElement.prototype.addEventListener;
+
+		HTMLInputElement.prototype.addEventListener = function(a,b,c){
+			if (a === "compositionstart") {
+				return
+			}
+			this.realAddEventListener(a,b,c);
+		};
+		go.run(result.instance);
     });
 })();
 window.API_URL = 'http://localhost:8001';

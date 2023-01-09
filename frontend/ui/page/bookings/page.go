@@ -3,19 +3,18 @@ package bookings
 import (
 	"fmt"
 	"gioui.org/layout"
-	"gioui.org/op"
-	"gioui.org/op/clip"
 	"gioui.org/text"
 	"gioui.org/unit"
 	"gioui.org/widget"
 	"gioui.org/widget/material"
-	"gioui.org/x/component"
 	"github.com/mearaj/bhagad-house-booking/common/db/sqlc"
 	"github.com/mearaj/bhagad-house-booking/common/utils"
+	"github.com/mearaj/bhagad-house-booking/frontend/i18n"
+	"github.com/mearaj/bhagad-house-booking/frontend/i18n/key"
 	"github.com/mearaj/bhagad-house-booking/frontend/service"
 	"github.com/mearaj/bhagad-house-booking/frontend/ui/fwk"
-	"github.com/mearaj/bhagad-house-booking/frontend/ui/page/add_edit_booking"
 	"github.com/mearaj/bhagad-house-booking/frontend/ui/view"
+	"github.com/mearaj/bhagad-house-booking/frontend/user"
 	"golang.org/x/exp/shiny/materialdesign/colornames"
 	"golang.org/x/exp/shiny/materialdesign/icons"
 	"image/color"
@@ -30,15 +29,11 @@ type page struct {
 	Theme              *material.Theme
 	title              string
 	buttonNavigation   widget.Clickable
-	btnBackdrop        widget.Clickable
 	btnAddBooking      widget.Clickable
 	btnMenuContent     widget.Clickable
 	btnYes             widget.Clickable
 	btnNo              widget.Clickable
-	btnMenuIcon        widget.Clickable
-	menuIcon           *widget.Icon
 	closeIcon          *widget.Icon
-	menuVisibilityAnim component.VisibilityAnimation
 	navigationIcon     *widget.Icon
 	bookingItems       []*pageItem
 	isFetchingBookings bool
@@ -60,30 +55,23 @@ var flexAdminLayoutRatio = [5]float32{0.16, 0.21, 0.21, 0.21, 0.21}
 func New(manager fwk.Manager) fwk.Page {
 	navIcon, _ := widget.NewIcon(icons.NavigationArrowBack)
 	closeIcon, _ := widget.NewIcon(icons.ContentClear)
-	iconMenu, _ := widget.NewIcon(icons.NavigationMoreVert)
-	errorTh := *manager.Theme()
+	errorTh := *user.Theme()
 	errorTh.ContrastBg = color.NRGBA(colornames.Red500)
 	startDate := utils.GetFirstDayOfMonth(time.Now().Local())
 	endDate := utils.GetLastDayOfMonth(time.Now().Local().AddDate(0, 5, 0))
-	theme := *manager.Theme()
+	theme := *user.Theme()
 	p := page{
 		Manager:            manager,
 		Theme:              &theme,
-		title:              "Bookings",
+		title:              i18n.Get(key.Bookings),
 		navigationIcon:     navIcon,
 		ViewList:           layout.List{Axis: layout.Vertical},
 		bookingItems:       []*pageItem{},
-		menuIcon:           iconMenu,
 		closeIcon:          closeIcon,
 		fetchingBookingsCh: make(chan service.BookingsResponse, 1),
-		menuVisibilityAnim: component.VisibilityAnimation{
-			Duration: time.Millisecond * 250,
-			State:    component.Invisible,
-			Started:  time.Time{},
-		},
-		limit:       1000,
-		offset:      0,
-		bookingForm: view.NewBookingForm(manager, service.Booking{StartDate: startDate, EndDate: endDate}, false),
+		limit:              1000,
+		offset:             0,
+		bookingForm:        view.NewBookingForm(manager, service.Booking{StartDate: startDate, EndDate: endDate}, view.BookingFormParams{}),
 	}
 	p.subscription = manager.Service().Subscribe(service.TopicBookingsFetched, service.TopicUserLoggedInOut, service.TopicDeleteBooking)
 	p.subscription.SubscribeWithCallback(p.OnServiceStateChange)
@@ -93,11 +81,12 @@ func New(manager fwk.Manager) fwk.Page {
 func (p *page) Layout(gtx fwk.Gtx) fwk.Dim {
 	if !p.initialized {
 		if p.Theme == nil {
-			p.Theme = p.Manager.Theme()
+			p.Theme = user.Theme()
 		}
 		p.fetchBookings()
 		p.initialized = true
 	}
+	p.title = i18n.Get(key.Bookings)
 
 	if p.bookingForm.ButtonSubmit.Clicked() {
 		shouldFetch := !p.isFetchingBookings &&
@@ -136,16 +125,12 @@ func (p *page) Layout(gtx fwk.Gtx) fwk.Dim {
 		}),
 	)
 	p.ViewListPosition = p.ViewList.Position
-	p.drawMenuLayout(gtx)
 	return d
 }
 
 func (p *page) DrawAppBar(gtx fwk.Gtx) fwk.Dim {
 	gtx.Constraints.Max.Y = gtx.Dp(56)
 	th := p.Theme
-	if p.btnMenuIcon.Clicked() {
-		p.menuVisibilityAnim.Appear(gtx.Now)
-	}
 	if p.buttonNavigation.Clicked() {
 		p.PopUp()
 	}
@@ -174,67 +159,8 @@ func (p *page) DrawAppBar(gtx fwk.Gtx) fwk.Dim {
 					}),
 				)
 			}),
-			layout.Rigid(func(gtx fwk.Gtx) fwk.Dim {
-				if !p.loginUserResponse.IsLoggedIn() || !p.loginUserResponse.IsAdmin() {
-					return fwk.Dim{}
-				}
-				button := material.IconButton(th, &p.btnMenuIcon, p.menuIcon, "Context Menu")
-				button.Size = unit.Dp(40)
-				button.Background = th.Palette.ContrastBg
-				button.Color = th.Palette.ContrastFg
-				button.Inset = layout.UniformInset(unit.Dp(8))
-				d := button.Layout(gtx)
-				return d
-			}),
 		)
 	})
-}
-
-func (p *page) drawMenuLayout(gtx fwk.Gtx) fwk.Dim {
-	if p.btnBackdrop.Clicked() {
-		if !p.btnMenuContent.Pressed() {
-			p.menuVisibilityAnim.Disappear(gtx.Now)
-		}
-	}
-	layout.Stack{Alignment: layout.NE}.Layout(gtx,
-		layout.Stacked(func(gtx fwk.Gtx) fwk.Dim {
-			return p.btnBackdrop.Layout(gtx,
-				func(gtx layout.Context) layout.Dimensions {
-					progress := p.menuVisibilityAnim.Revealed(gtx)
-					gtx.Constraints.Max.X = int(float32(gtx.Constraints.Max.X) * progress)
-					gtx.Constraints.Max.Y = int(float32(gtx.Constraints.Max.Y) * progress)
-					return component.Rect{Size: gtx.Constraints.Max, Color: color.NRGBA{A: 200}}.Layout(gtx)
-				},
-			)
-		}),
-		layout.Stacked(func(gtx fwk.Gtx) fwk.Dim {
-			progress := p.menuVisibilityAnim.Revealed(gtx)
-			macro := op.Record(gtx.Ops)
-			d := p.btnMenuContent.Layout(gtx, p.drawMenuItems)
-			call := macro.Stop()
-			d.Size.X = int(float32(d.Size.X) * progress)
-			d.Size.Y = int(float32(d.Size.Y) * progress)
-			component.Rect{Size: d.Size, Color: color.NRGBA(colornames.White)}.Layout(gtx)
-			clipOp := clip.Rect{Max: d.Size}.Push(gtx.Ops)
-			call.Add(gtx.Ops)
-			clipOp.Pop()
-			return d
-		}),
-	)
-	return fwk.Dim{}
-}
-
-func (p *page) drawMenuItems(gtx fwk.Gtx) fwk.Dim {
-	gtx.Constraints.Max.X = 200
-	if p.btnAddBooking.Clicked() {
-		p.menuVisibilityAnim.Disappear(gtx.Now)
-		p.Manager.NavigateToPage(add_edit_booking.New(p.Manager, sqlc.Booking{
-			ID: 0,
-		}))
-	}
-	return layout.Flex{Axis: layout.Vertical, Alignment: layout.Start}.Layout(gtx,
-		p.drawMenuItem("New Booking", &p.btnAddBooking),
-	)
 }
 
 func (p *page) drawMenuItem(txt string, btn *widget.Clickable) layout.FlexChild {
@@ -293,7 +219,7 @@ func (p *page) drawBookingItem(gtx fwk.Gtx, index int) fwk.Dim {
 	return p.bookingItems[index].Layout(gtx)
 }
 
-func (p *page) drawBookingItemHeader(gtx fwk.Gtx, month time.Month, year int) []layout.FlexChild {
+func (p *page) drawBookingItemHeader(_ fwk.Gtx, month time.Month, year int) []layout.FlexChild {
 	dateHeader := layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 		inset := layout.UniformInset(16)
 		return inset.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
@@ -316,26 +242,30 @@ func (p *page) drawBookingItemHeader(gtx fwk.Gtx, month time.Month, year int) []
 			}
 			return flex.Layout(gtx,
 				layout.Flexed(layoutRatio[0], func(gtx layout.Context) layout.Dimensions {
-					b := material.Body1(p.Theme, "ID")
+					title := i18n.Get(key.ID)
+					b := material.Body1(p.Theme, title)
 					b.Font.Weight = text.Black
 					b.TextSize = unit.Sp(20)
 					return b.Layout(gtx)
 				}),
 				layout.Flexed(layoutRatio[1], func(gtx layout.Context) layout.Dimensions {
-					b := material.Body1(p.Theme, "Day")
+					title := i18n.Get(key.Day)
+					b := material.Body1(p.Theme, title)
 					b.Font.Weight = text.Black
 					b.TextSize = unit.Sp(20)
 					return b.Layout(gtx)
 				}),
 				layout.Flexed(layoutRatio[2], func(gtx layout.Context) layout.Dimensions {
-					b := material.Body1(p.Theme, "Weekday")
+					title := i18n.Get(key.Weekday)
+					b := material.Body1(p.Theme, title)
 					b.Font.Weight = text.Black
 					b.TextSize = unit.Sp(20)
 					return b.Layout(gtx)
 				}),
 				layout.Flexed(layoutRatio[3], func(gtx layout.Context) layout.Dimensions {
 					return layout.Center.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
-						b := material.Body1(p.Theme, "Availability")
+						title := i18n.Get(key.Availability)
+						b := material.Body1(p.Theme, title)
 						b.Font.Weight = text.Black
 						b.TextSize = unit.Sp(20)
 						return b.Layout(gtx)
@@ -346,7 +276,8 @@ func (p *page) drawBookingItemHeader(gtx fwk.Gtx, month time.Month, year int) []
 						return fwk.Dim{}
 					}
 					return layout.Center.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
-						b := material.Body1(p.Theme, "Delete")
+						title := i18n.Get(key.Delete)
+						b := material.Body1(p.Theme, title)
 						b.Font.Weight = text.Black
 						b.TextSize = unit.Sp(20)
 						return b.Layout(gtx)

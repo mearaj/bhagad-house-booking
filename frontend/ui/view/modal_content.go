@@ -8,6 +8,8 @@ import (
 	"gioui.org/widget"
 	"gioui.org/widget/material"
 	"gioui.org/x/component"
+	"github.com/mearaj/bhagad-house-booking/frontend/i18n"
+	"github.com/mearaj/bhagad-house-booking/frontend/i18n/key"
 	"golang.org/x/exp/shiny/materialdesign/colornames"
 	"golang.org/x/exp/shiny/materialdesign/icons"
 	"image"
@@ -64,7 +66,8 @@ func (m *ModalContent) DrawContent(gtx Gtx, theme *material.Theme, contentWidget
 					}),
 					layout.Rigid(layout.Spacer{Width: unit.Dp(8)}.Layout),
 					layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-						bd := material.Body1(theme, "Bhagad House Booking")
+						title := i18n.Get(key.AppTitle)
+						bd := material.Body1(theme, title)
 						bd.TextSize = unit.Sp(18)
 						bd.Font.Weight = text.ExtraBold
 						bd.Color = theme.ContrastBg

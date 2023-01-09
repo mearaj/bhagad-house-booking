@@ -44,3 +44,8 @@ type UsersResponse struct {
 	Users []User `json:"users,omitempty"`
 	Error string `json:"error,omitempty"`
 }
+
+type SearchBookingsResponse struct {
+	Bookings []Booking `json:"bookings,omitempty"`
+	Error    string    `json:"error,omitempty"`
+}

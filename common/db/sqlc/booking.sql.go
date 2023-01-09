@@ -7,25 +7,36 @@ package sqlc
 
 import (
 	"context"
+	"database/sql"
 	"time"
 )
 
 const createBooking = `-- name: CreateBooking :one
 INSERT INTO bookings (start_date,
                       end_date,
-                      details)
-VALUES ($1, $2, $3)
-RETURNING id, created_at, updated_at, start_date, end_date, details
+                      details,
+                      customer_name,
+                      total_price)
+VALUES ($1, $2, $3, $4, $5)
+RETURNING id, created_at, updated_at, start_date, end_date, details, customer_name, total_price
 `
 
 type CreateBookingParams struct {
-	StartDate time.Time `json:"start_date"`
-	EndDate   time.Time `json:"end_date"`
-	Details   string    `json:"details"`
+	StartDate    time.Time `json:"start_date"`
+	EndDate      time.Time `json:"end_date"`
+	Details      string    `json:"details"`
+	CustomerName string    `json:"customer_name"`
+	TotalPrice   float64   `json:"total_price"`
 }
 
 func (q *Queries) CreateBooking(ctx context.Context, arg CreateBookingParams) (Booking, error) {
-	row := q.db.QueryRowContext(ctx, createBooking, arg.StartDate, arg.EndDate, arg.Details)
+	row := q.db.QueryRowContext(ctx, createBooking,
+		arg.StartDate,
+		arg.EndDate,
+		arg.Details,
+		arg.CustomerName,
+		arg.TotalPrice,
+	)
 	var i Booking
 	err := row.Scan(
 		&i.ID,
@@ -34,6 +45,8 @@ func (q *Queries) CreateBooking(ctx context.Context, arg CreateBookingParams) (B
 		&i.StartDate,
 		&i.EndDate,
 		&i.Details,
+		&i.CustomerName,
+		&i.TotalPrice,
 	)
 	return i, err
 }
@@ -50,7 +63,7 @@ func (q *Queries) DeleteBooking(ctx context.Context, id int64) error {
 }
 
 const getBooking = `-- name: GetBooking :one
-SELECT id, created_at, updated_at, start_date, end_date, details
+SELECT id, created_at, updated_at, start_date, end_date, details, customer_name, total_price
 FROM bookings
 WHERE id = $1
 LIMIT 1
@@ -66,24 +79,26 @@ func (q *Queries) GetBooking(ctx context.Context, id int64) (Booking, error) {
 		&i.StartDate,
 		&i.EndDate,
 		&i.Details,
+		&i.CustomerName,
+		&i.TotalPrice,
 	)
 	return i, err
 }
 
 const getConflictingBookings = `-- name: GetConflictingBookings :many
-SELECT id, created_at, updated_at, start_date, end_date, details
+SELECT id, created_at, updated_at, start_date, end_date, details, customer_name, total_price
 FROM bookings
-WHERE (start_date <= $1 AND end_date >= $1) OR
-    (end_date >= $2 AND start_date <= $2)
+WHERE (start_date <= $1 AND end_date >= $1)
+   OR (start_date <= $2 AND end_date >= $2)
 `
 
 type GetConflictingBookingsParams struct {
-	StartDate time.Time `json:"start_date"`
-	EndDate   time.Time `json:"end_date"`
+	StartDate   time.Time `json:"start_date"`
+	StartDate_2 time.Time `json:"start_date_2"`
 }
 
 func (q *Queries) GetConflictingBookings(ctx context.Context, arg GetConflictingBookingsParams) ([]Booking, error) {
-	rows, err := q.db.QueryContext(ctx, getConflictingBookings, arg.StartDate, arg.EndDate)
+	rows, err := q.db.QueryContext(ctx, getConflictingBookings, arg.StartDate, arg.StartDate_2)
 	if err != nil {
 		return nil, err
 	}
@@ -98,6 +113,8 @@ func (q *Queries) GetConflictingBookings(ctx context.Context, arg GetConflicting
 			&i.StartDate,
 			&i.EndDate,
 			&i.Details,
+			&i.CustomerName,
+			&i.TotalPrice,
 		); err != nil {
 			return nil, err
 		}
@@ -113,12 +130,12 @@ func (q *Queries) GetConflictingBookings(ctx context.Context, arg GetConflicting
 }
 
 const listBookings = `-- name: ListBookings :many
-SELECT id, created_at, updated_at, start_date, end_date, details
+SELECT id, created_at, updated_at, start_date, end_date, details, customer_name, total_price
 FROM bookings
-WHERE (start_date <= $1 AND end_date >= $2) OR
-    (start_date >= $1 AND end_date >= $2) OR
-    (start_date <= $1 AND end_date <= $2) OR
-    (start_date >= $1 AND end_date <= $2)
+WHERE (start_date <= $1 AND end_date >= $2)
+   OR (start_date >= $1 AND end_date >= $2)
+   OR (start_date <= $1 AND end_date <= $2)
+   OR (start_date >= $1 AND end_date <= $2)
 ORDER BY start_date
 `
 
@@ -143,6 +160,48 @@ func (q *Queries) ListBookings(ctx context.Context, arg ListBookingsParams) ([]B
 			&i.StartDate,
 			&i.EndDate,
 			&i.Details,
+			&i.CustomerName,
+			&i.TotalPrice,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const searchBookings = `-- name: SearchBookings :many
+SELECT id, created_at, updated_at, start_date, end_date, details, customer_name, total_price
+FROM bookings
+WHERE customer_name ilike '%' || $1 ||'%'
+   OR details ilike '%' || $1 || '%'
+ORDER BY customer_name ilike $1 || '%', details ilike $1 || '%'
+`
+
+func (q *Queries) SearchBookings(ctx context.Context, dollar_1 sql.NullString) ([]Booking, error) {
+	rows, err := q.db.QueryContext(ctx, searchBookings, dollar_1)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Booking{}
+	for rows.Next() {
+		var i Booking
+		if err := rows.Scan(
+			&i.ID,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.StartDate,
+			&i.EndDate,
+			&i.Details,
+			&i.CustomerName,
+			&i.TotalPrice,
 		); err != nil {
 			return nil, err
 		}
@@ -159,18 +218,22 @@ func (q *Queries) ListBookings(ctx context.Context, arg ListBookingsParams) ([]B
 
 const updateBooking = `-- name: UpdateBooking :one
 UPDATE bookings
-SET start_date     = $2,
-    end_date       = $3,
-    details    = $4
+SET start_date    = $2,
+    end_date      = $3,
+    details       = $4,
+    customer_name = $5,
+    total_price   = $6
 WHERE id = $1
-RETURNING id, created_at, updated_at, start_date, end_date, details
+RETURNING id, created_at, updated_at, start_date, end_date, details, customer_name, total_price
 `
 
 type UpdateBookingParams struct {
-	ID        int64     `json:"id"`
-	StartDate time.Time `json:"start_date"`
-	EndDate   time.Time `json:"end_date"`
-	Details   string    `json:"details"`
+	ID           int64     `json:"id"`
+	StartDate    time.Time `json:"start_date"`
+	EndDate      time.Time `json:"end_date"`
+	Details      string    `json:"details"`
+	CustomerName string    `json:"customer_name"`
+	TotalPrice   float64   `json:"total_price"`
 }
 
 func (q *Queries) UpdateBooking(ctx context.Context, arg UpdateBookingParams) (Booking, error) {
@@ -179,6 +242,8 @@ func (q *Queries) UpdateBooking(ctx context.Context, arg UpdateBookingParams) (B
 		arg.StartDate,
 		arg.EndDate,
 		arg.Details,
+		arg.CustomerName,
+		arg.TotalPrice,
 	)
 	var i Booking
 	err := row.Scan(
@@ -188,6 +253,8 @@ func (q *Queries) UpdateBooking(ctx context.Context, arg UpdateBookingParams) (B
 		&i.StartDate,
 		&i.EndDate,
 		&i.Details,
+		&i.CustomerName,
+		&i.TotalPrice,
 	)
 	return i, err
 }

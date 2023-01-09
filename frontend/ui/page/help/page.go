@@ -7,6 +7,7 @@ import (
 	"gioui.org/widget/material"
 	"github.com/mearaj/bhagad-house-booking/frontend/ui/fwk"
 	view "github.com/mearaj/bhagad-house-booking/frontend/ui/view"
+	"github.com/mearaj/bhagad-house-booking/frontend/user"
 	"golang.org/x/exp/shiny/materialdesign/colornames"
 	"golang.org/x/exp/shiny/materialdesign/icons"
 	"image/color"
@@ -22,11 +23,11 @@ type page struct {
 
 func New(manager fwk.Manager) fwk.Page {
 	navIcon, _ := widget.NewIcon(icons.NavigationArrowBack)
-	errorTh := *manager.Theme()
+	errorTh := *user.Theme()
 	errorTh.ContrastBg = color.NRGBA(colornames.Red500)
 	return &page{
 		Manager:        manager,
-		Theme:          manager.Theme(),
+		Theme:          user.Theme(),
 		title:          "Help",
 		navigationIcon: navIcon,
 	}
@@ -34,7 +35,7 @@ func New(manager fwk.Manager) fwk.Page {
 
 func (p *page) Layout(gtx fwk.Gtx) fwk.Dim {
 	if p.Theme == nil {
-		p.Theme = p.Manager.Theme()
+		p.Theme = user.Theme()
 	}
 	flex := layout.Flex{Axis: layout.Vertical,
 		Spacing:   layout.SpaceEnd,
