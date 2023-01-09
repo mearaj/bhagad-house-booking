@@ -7,7 +7,6 @@ import (
 	"gioui.org/io/system"
 	"gioui.org/layout"
 	"gioui.org/widget"
-	"gioui.org/widget/material"
 	"gioui.org/x/component"
 	"gioui.org/x/notify"
 	"github.com/mearaj/bhagad-house-booking/frontend/service"
@@ -24,7 +23,6 @@ type Manager interface {
 	GetWindowHeightInDp() int
 	GetWindowHeightInPx() int
 	IsStageRunning() bool
-	Theme() *material.Theme
 	Service() service.Service
 	Window() *app.Window
 	Notifier() notify.Notifier
@@ -65,12 +63,13 @@ type Page interface {
 type URL string
 
 const (
-	SettingsPageURL      URL = "/settings"
-	BookingsPageURL      URL = "/bookings"
-	ThemePageURL         URL = "/theme"
-	NotificationsPageURL URL = "/notifications"
-	HelpPageURL          URL = "/help"
-	AboutPageURL         URL = "/about"
+	NavPageUrl            URL = "/nav"
+	BookingsPageURL       URL = "/bookings"
+	SearchBookingsPageURL URL = "/search"
+	SettingsPageURL       URL = "/settings"
+	NotificationsPageURL  URL = "/notifications"
+	HelpPageURL           URL = "/help"
+	AboutPageURL          URL = "/about"
 )
 
 func AddEditBookingPageURL(bookingID int64) URL {

@@ -11,7 +11,11 @@ func NewMap[k comparable, v interface{}]() Map[k, v] {
 	return Map[k, v]{mapped: map[k]v{}}
 }
 
-func (m *Map[key, val]) Value(k key) (val, bool) {
+func NewFromMap[k comparable, v interface{}](m map[k]v) Map[k, v] {
+	return Map[k, v]{mapped: m}
+}
+
+func (m *Map[key, val]) Get(k key) (val, bool) {
 	m.mutex.RLock()
 	defer m.mutex.RUnlock()
 	v, ok := m.mapped[k]

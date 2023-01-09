@@ -43,6 +43,7 @@ func (s *Server) setupRouter() {
 	authRoutes.POST("/bookings", s.createBooking)
 	authRoutes.PUT("/bookings", s.updateBooking)
 	authRoutes.DELETE("/bookings", s.deleteBooking)
+	authRoutes.GET("/bookings/search", s.searchBookings)
 	s.router = router
 }
 

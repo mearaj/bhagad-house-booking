@@ -11,6 +11,7 @@ import (
 	"gioui.org/x/component"
 	"github.com/mearaj/bhagad-house-booking/frontend/ui/fwk"
 	"github.com/mearaj/bhagad-house-booking/frontend/ui/view"
+	"github.com/mearaj/bhagad-house-booking/frontend/user"
 	"golang.org/x/exp/shiny/materialdesign/colornames"
 	"golang.org/x/exp/shiny/materialdesign/icons"
 	"image"
@@ -36,7 +37,7 @@ type pageItem struct {
 
 func (i *pageItem) Layout(gtx fwk.Gtx) fwk.Dim {
 	if i.Theme == nil {
-		i.Theme = i.Manager.Theme()
+		i.Theme = user.Theme()
 	}
 	return i.layoutContent(gtx)
 }

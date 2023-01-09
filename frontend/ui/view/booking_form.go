@@ -2,6 +2,7 @@ package view
 
 import (
 	"fmt"
+	giokey "gioui.org/io/key"
 	"gioui.org/layout"
 	"gioui.org/text"
 	"gioui.org/unit"
@@ -9,13 +10,22 @@ import (
 	"gioui.org/widget/material"
 	"gioui.org/x/component"
 	"github.com/mearaj/bhagad-house-booking/frontend/assets/fonts"
+	"github.com/mearaj/bhagad-house-booking/frontend/i18n"
+	"github.com/mearaj/bhagad-house-booking/frontend/i18n/key"
 	"github.com/mearaj/bhagad-house-booking/frontend/service"
+	"github.com/mearaj/bhagad-house-booking/frontend/user"
 	"github.com/mearaj/giowidgets/calendar"
 	"golang.org/x/exp/shiny/materialdesign/colornames"
 	"golang.org/x/exp/shiny/materialdesign/icons"
 	"image/color"
 	"time"
 )
+
+type BookingFormParams struct {
+	ShowDetails      bool
+	ShowCustomerName bool
+	ShowTotalPrice   bool
+}
 
 type BookingForm struct {
 	Manager
@@ -31,33 +41,40 @@ type BookingForm struct {
 	EndDate            time.Time
 	ButtonSubmit       widget.Clickable
 	Details            component.TextField
-	ShowDetails        bool
+	CustomerName       component.TextField
+	TotalPrice         component.TextField
+	Params             BookingFormParams
 	ButtonText         string
+	layout.List
 }
 
 // NewBookingForm Always call this function to create BookingForm
-func NewBookingForm(manager Manager, booking service.Booking, showDetails bool) BookingForm {
+func NewBookingForm(manager Manager, booking service.Booking, showDetails BookingFormParams) BookingForm {
 	clearIcon, _ := widget.NewIcon(icons.ContentClear)
 	inActiveTheme := fonts.NewTheme()
 	inActiveTheme.ContrastBg = color.NRGBA(colornames.Grey500)
 	contForm := BookingForm{
 		Manager:   manager,
-		Theme:     manager.Theme(),
+		Theme:     user.Theme(),
 		StartDate: booking.StartDate,
 		EndDate:   booking.EndDate,
 		btnClearStartDate: IconButton{
-			Theme: manager.Theme(),
+			Theme: user.Theme(),
 			Icon:  clearIcon,
 			Text:  "",
 		},
 		btnClearEndDate: IconButton{
-			Theme: manager.Theme(),
+			Theme: user.Theme(),
 			Icon:  clearIcon,
 			Text:  "",
 		},
-		ShowDetails: showDetails,
+		Params: showDetails,
+		List:   layout.List{Axis: layout.Vertical},
 	}
-	contForm.Details.SetText(booking.Details)
+	contForm.Details.SetText(booking.CustomerName)
+	contForm.CustomerName.SetText(booking.Details)
+	contForm.TotalPrice.InputHint = giokey.HintNumeric
+	contForm.TotalPrice.SetText(fmt.Sprintf("%.2f", booking.TotalPrice))
 	return contForm
 }
 
@@ -72,58 +89,83 @@ func (bf *BookingForm) Layout(gtx Gtx) Dim {
 	}
 
 	flex := layout.Flex{Axis: layout.Vertical}
-	return flex.Layout(gtx,
-		layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-			if bf.btnStartDate.Clicked() {
-				bf.Modal().Show(bf.showStartFieldCalendar, nil, Animation{
-					Duration: time.Millisecond * 250,
-					State:    component.Invisible,
-					Started:  time.Time{},
-				})
-			}
-			if bf.btnClearStartDate.Button.Clicked() {
-				bf.StartDate = time.Time{}
-			}
-			return bf.drawDateField(gtx, "Start Date", &bf.btnStartDate, &bf.btnClearStartDate, bf.StartDate)
-		}),
-		layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-			if bf.btnEndDate.Clicked() {
-				bf.Modal().Show(bf.showEndFieldCalendar, nil, Animation{
-					Duration: time.Millisecond * 250,
-					State:    component.Invisible,
-					Started:  time.Time{},
-				})
-			}
-			if bf.btnClearEndDate.Button.Clicked() {
-				bf.EndDate = time.Time{}
-			}
-			return bf.drawDateField(gtx, "End Date", &bf.btnEndDate, &bf.btnClearEndDate, bf.EndDate)
-		}),
-		layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-			if !bf.ShowDetails {
-				return Dim{}
-			}
-			inset := layout.UniformInset(16)
-			return inset.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
-				return DrawFormFieldRowWithLabel(gtx, bf.Theme, "Details", "Details", &bf.Details, nil)
-			})
-		}),
-		layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-			inset := layout.UniformInset(16)
-			return inset.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
-				if bf.ButtonText == "" {
-					bf.ButtonText = "Apply"
+	return bf.List.Layout(gtx, 1, func(gtx layout.Context, index int) layout.Dimensions {
+		return flex.Layout(gtx,
+			layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+				if bf.btnStartDate.Clicked() {
+					bf.Modal().Show(bf.showStartFieldCalendar, nil, Animation{
+						Duration: time.Millisecond * 250,
+						State:    component.Invisible,
+						Started:  time.Time{},
+					})
 				}
-				btn := material.Button(bf.Theme, &bf.ButtonSubmit, bf.ButtonText)
-				return btn.Layout(gtx)
-			})
-		}),
-	)
+				if bf.btnClearStartDate.Button.Clicked() {
+					bf.StartDate = time.Time{}
+				}
+				startDate := i18n.Get(key.StartDate)
+				return bf.drawDateField(gtx, startDate, &bf.btnStartDate, &bf.btnClearStartDate, bf.StartDate)
+			}),
+			layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+				if bf.btnEndDate.Clicked() {
+					bf.Modal().Show(bf.showEndFieldCalendar, nil, Animation{
+						Duration: time.Millisecond * 250,
+						State:    component.Invisible,
+						Started:  time.Time{},
+					})
+				}
+				if bf.btnClearEndDate.Button.Clicked() {
+					bf.EndDate = time.Time{}
+				}
+				endDate := i18n.Get(key.EndDate)
+				return bf.drawDateField(gtx, endDate, &bf.btnEndDate, &bf.btnClearEndDate, bf.EndDate)
+			}),
+			layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+				if !bf.Params.ShowCustomerName {
+					return Dim{}
+				}
+				inset := layout.UniformInset(16)
+				return inset.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
+					labelText := i18n.Get(key.CustomerName)
+					return DrawFormFieldRowWithLabel(gtx, bf.Theme, labelText, labelText, &bf.CustomerName, nil)
+				})
+			}),
+			layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+				if !bf.Params.ShowTotalPrice {
+					return Dim{}
+				}
+				inset := layout.UniformInset(16)
+				return inset.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
+					labelText := i18n.Get(key.TotalPrice)
+					return DrawFormFieldRowWithLabel(gtx, bf.Theme, labelText, labelText, &bf.TotalPrice, nil)
+				})
+			}),
+			layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+				if !bf.Params.ShowDetails {
+					return Dim{}
+				}
+				inset := layout.UniformInset(16)
+				return inset.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
+					labelText := i18n.Get(key.Details)
+					return DrawFormFieldRowWithLabel(gtx, bf.Theme, labelText, labelText, &bf.Details, nil)
+				})
+			}),
+			layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+				inset := layout.UniformInset(16)
+				return inset.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
+					bf.ButtonText = i18n.Get(key.Key(bf.ButtonText))
+					if bf.ButtonText == "" {
+						bf.ButtonText = i18n.Get(key.Apply)
+					}
+					btn := material.Button(bf.Theme, &bf.ButtonSubmit, bf.ButtonText)
+					return btn.Layout(gtx)
+				})
+			}),
+		)
+	})
 }
 
 func (bf *BookingForm) drawDateField(gtx Gtx, label string, btnDate *widget.Clickable, btnClearDate *IconButton, t time.Time) Dim {
-	// fieldVal := "Enter dd/mm/yyyy"
-	fieldVal := "Tap to enter date"
+	fieldVal := i18n.Get(key.TapToEnterADate)
 	labelWidth := gtx.Dp(100)
 	flx := layout.Flex{Axis: layout.Vertical}
 	inset := layout.UniformInset(unit.Dp(16))

@@ -6,18 +6,20 @@ import (
 )
 
 type (
-	Booking               = sqlc.Booking
-	BookingParams         = sqlc.ListBookingsParams
-	BookingsResponse      = sqlc.BookingsResponse
-	CreateBookingResponse = sqlc.CreateBookingResponse
-	DeleteBookingResponse = sqlc.DeleteBookingResponse
-	UpdateBookingResponse = sqlc.UpdateBookingResponse
+	Booking                = sqlc.Booking
+	BookingParams          = sqlc.ListBookingsParams
+	BookingsResponse       = sqlc.BookingsResponse
+	SearchBookingsResponse = sqlc.SearchBookingsResponse
+	CreateBookingResponse  = sqlc.CreateBookingResponse
+	DeleteBookingResponse  = sqlc.DeleteBookingResponse
+	UpdateBookingResponse  = sqlc.UpdateBookingResponse
 )
 
 type Service interface {
 	LogInUser(email string, password string)
 	LogOutUser()
 	Bookings(bookingParams BookingParams)
+	SearchBookings(query string)
 	CreateBooking(booking sqlc.CreateBookingParams)
 	UpdateBooking(booking sqlc.UpdateBookingParams)
 	Subscribe(topics ...Topic) Subscriber

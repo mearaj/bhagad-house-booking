@@ -36,7 +36,7 @@ func (s *service) Bookings(bookingParams BookingParams) {
 			return
 		}
 		req.Header.Add("Accept", "application/json")
-		userEvent, ok := s.eventBroker.cachedEvents.Value(TopicUserLoggedInOut)
+		userEvent, ok := s.eventBroker.cachedEvents.Get(TopicUserLoggedInOut)
 		if ok {
 			userResponse, ok := userEvent.Data.(UserResponse)
 			if ok && userResponse.AccessToken != "" {
@@ -59,6 +59,51 @@ func (s *service) Bookings(bookingParams BookingParams) {
 		}
 	}()
 }
+func (s *service) SearchBookings(query string) {
+	go func() {
+		var searchBookingsResponse SearchBookingsResponse
+		searchBookingsResponse.Bookings = make([]Booking, 0)
+		defer func() {
+			if r := recover(); r != nil {
+				fmt.Println("recovered from err, ", r)
+				searchBookingsResponse.Error = fmt.Sprintf("%v", r)
+			}
+			s.eventBroker.Fire(Event{
+				Data:  searchBookingsResponse,
+				Topic: TopicSearchBookings,
+			})
+		}()
+		params := url.Values{}
+		params.Add("query", query)
+		req, err := http.NewRequest("GET", s.config.ApiURL+"/bookings/search?"+params.Encode(), nil)
+		if err != nil {
+			searchBookingsResponse.Error = err.Error()
+			return
+		}
+		req.Header.Add("Accept", "application/json")
+		userEvent, ok := s.eventBroker.cachedEvents.Get(TopicUserLoggedInOut)
+		if ok {
+			userResponse, ok := userEvent.Data.(UserResponse)
+			if ok && userResponse.AccessToken != "" {
+				req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", userResponse.AccessToken))
+			}
+		}
+		cl := http.Client{}
+		resp, err := cl.Do(req)
+		if err != nil {
+			searchBookingsResponse.Error = err.Error()
+			return
+		}
+		defer func() {
+			_ = resp.Body.Close()
+		}()
+		err = json.NewDecoder(resp.Body).Decode(&searchBookingsResponse)
+		if err != nil {
+			searchBookingsResponse.Error = err.Error()
+			return
+		}
+	}()
+}
 func (s *service) CreateBooking(bookingParams sqlc.CreateBookingParams) {
 	go func() {
 		var createBookingResponse CreateBookingResponse
@@ -72,7 +117,7 @@ func (s *service) CreateBooking(bookingParams sqlc.CreateBookingParams) {
 				Topic: TopicCreateBooking,
 			})
 		}()
-		userEvent, ok := s.eventBroker.cachedEvents.Value(TopicUserLoggedInOut)
+		userEvent, ok := s.eventBroker.cachedEvents.Get(TopicUserLoggedInOut)
 		if !ok {
 			createBookingResponse.Error = "user not logged in"
 			return
@@ -136,7 +181,7 @@ func (s *service) UpdateBooking(bookingParams sqlc.UpdateBookingParams) {
 				Topic: TopicUpdateBooking,
 			})
 		}()
-		userEvent, ok := s.eventBroker.cachedEvents.Value(TopicUserLoggedInOut)
+		userEvent, ok := s.eventBroker.cachedEvents.Get(TopicUserLoggedInOut)
 		if !ok {
 			updateBookingsResponse.Error = "user not logged in"
 			return
@@ -208,7 +253,7 @@ func (s *service) DeleteBooking(bookingID int64) {
 			deleteBookingResponse.Error = "booking id cannot be 0"
 			return
 		}
-		userEvent, ok := s.eventBroker.cachedEvents.Value(TopicUserLoggedInOut)
+		userEvent, ok := s.eventBroker.cachedEvents.Get(TopicUserLoggedInOut)
 		if !ok {
 			deleteBookingResponse.Error = "user not logged in"
 			return

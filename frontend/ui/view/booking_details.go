@@ -12,6 +12,7 @@ import (
 	"gioui.org/x/component"
 	. "github.com/mearaj/bhagad-house-booking/common/db/sqlc"
 	"github.com/mearaj/bhagad-house-booking/frontend/assets/fonts"
+	"github.com/mearaj/bhagad-house-booking/frontend/user"
 	"golang.org/x/exp/shiny/materialdesign/colornames"
 	"golang.org/x/exp/shiny/materialdesign/icons"
 	"image"
@@ -39,27 +40,27 @@ func NewBookingDetails(manager Manager, booking Booking) *BookingDetails {
 	iconVisible, _ := widget.NewIcon(icons.ActionVisibility)
 	iconHidden, _ := widget.NewIcon(icons.ActionVisibilityOff)
 	bookingDetails := BookingDetails{
-		Theme:         manager.Theme(),
+		Theme:         user.Theme(),
 		Booking:       booking,
 		Manager:       manager,
 		inputPassword: &component.TextField{Editor: widget.Editor{SingleLine: false}},
 		buttonCopyPvtKey: IconButton{
-			Theme: manager.Theme(),
+			Theme: user.Theme(),
 			Icon:  iconCopy,
 			Text:  "Copy Private Key",
 		},
 		buttonCopyPubKey: IconButton{
-			Theme: manager.Theme(),
+			Theme: user.Theme(),
 			Icon:  iconCopy,
 			Text:  "Copy Public Key",
 		},
 		buttonPrivateKeyVisible: IconButton{
-			Theme: manager.Theme(),
+			Theme: user.Theme(),
 			Icon:  iconVisible,
 			Text:  "Hide Private Key",
 		},
 		buttonPrivateKeyHidden: IconButton{
-			Theme: manager.Theme(),
+			Theme: user.Theme(),
 			Icon:  iconHidden,
 			Text:  "Show Private Key",
 		},

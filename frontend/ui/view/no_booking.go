@@ -9,6 +9,7 @@ import (
 	. "github.com/mearaj/bhagad-house-booking/common/db/sqlc"
 	"github.com/mearaj/bhagad-house-booking/frontend/assets/fonts"
 	"github.com/mearaj/bhagad-house-booking/frontend/ui/fwk"
+	"github.com/mearaj/bhagad-house-booking/frontend/user"
 	"golang.org/x/exp/shiny/materialdesign/colornames"
 	"golang.org/x/exp/shiny/materialdesign/icons"
 	"image/color"
@@ -25,7 +26,7 @@ type NoBookingView struct {
 }
 
 func NewNoBooking(manager Manager) *NoBookingView {
-	acc := NoBookingView{Manager: manager, Theme: manager.Theme()}
+	acc := NoBookingView{Manager: manager, Theme: user.Theme()}
 	acc.ModalContent = NewModalContent(func() {
 		acc.Modal().Dismiss(nil)
 	})
@@ -88,6 +89,6 @@ func (na *NoBookingView) Layout(gtx Gtx) Dim {
 
 func (na *NoBookingView) onSuccess() {
 	na.Modal().Dismiss(func() {
-		na.Manager.NavigateToUrl(fwk.SettingsPageURL)
+		na.Manager.NavigateToUrl(fwk.NavPageUrl)
 	})
 }

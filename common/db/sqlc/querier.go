@@ -6,6 +6,7 @@ package sqlc
 
 import (
 	"context"
+	"database/sql"
 )
 
 type Querier interface {
@@ -19,6 +20,7 @@ type Querier interface {
 	GetUserByID(ctx context.Context, id int64) (User, error)
 	ListBookings(ctx context.Context, arg ListBookingsParams) ([]Booking, error)
 	ListUsers(ctx context.Context, arg ListUsersParams) ([]User, error)
+	SearchBookings(ctx context.Context, dollar_1 sql.NullString) ([]Booking, error)
 	UpdateBooking(ctx context.Context, arg UpdateBookingParams) (Booking, error)
 	UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error)
 }

@@ -12,9 +12,11 @@ import (
 )
 
 type createBookingRequest struct {
-	StartDate time.Time `json:"start_date"`
-	EndDate   time.Time `json:"end_date"`
-	Details   string    `json:"details"`
+	StartDate    time.Time `json:"start_date"`
+	EndDate      time.Time `json:"end_date"`
+	Details      string    `json:"details"`
+	CustomerName string    `json:"customer_name"`
+	TotalPrice   float64   `json:"total_price"`
 }
 
 func (s *Server) createBooking(ctx *gin.Context) {
@@ -115,6 +117,8 @@ func (s *Server) getBookings(ctx *gin.Context) {
 		var anonymousBookings []sqlc.Booking = make([]sqlc.Booking, 0, 1)
 		for _, booking := range bookings {
 			booking.Details = ""
+			booking.TotalPrice = 0
+			booking.CustomerName = ""
 			anonymousBookings = append(anonymousBookings, booking)
 			fmt.Printf("%+v\n", booking)
 		}
@@ -126,15 +130,8 @@ func (s *Server) getBookings(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, resp)
 }
 
-type updateBookingRequest struct {
-	ID        int64     `json:"id"`
-	StartDate time.Time `json:"start_date"`
-	EndDate   time.Time `json:"end_date"`
-	Details   string    `json:"details"`
-}
-
 func (s *Server) updateBooking(ctx *gin.Context) {
-	var req updateBookingRequest
+	var req sqlc.UpdateBookingParams
 	var resp sqlc.UpdateBookingResponse
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		resp.Error = err.Error()
@@ -158,7 +155,7 @@ func (s *Server) updateBooking(ctx *gin.Context) {
 	}
 	req.StartDate = startDate
 	req.EndDate = endDate
-	booking, err := s.store.UpdateBooking(ctx, sqlc.UpdateBookingParams(req))
+	booking, err := s.store.UpdateBooking(ctx, req)
 	if err != nil {
 		resp.Error = err.Error()
 		if errors.Is(err, sql.ErrNoRows) {
@@ -193,5 +190,42 @@ func (s *Server) deleteBooking(ctx *gin.Context) {
 		ctx.JSON(http.StatusInternalServerError, resp)
 		return
 	}
+	ctx.JSON(http.StatusOK, resp)
+}
+
+func (s *Server) searchBookings(ctx *gin.Context) {
+	query, err := url.QueryUnescape(ctx.Query("query"))
+	var resp sqlc.BookingsResponse
+	if err != nil {
+		resp.Error = "invalid search query"
+		ctx.JSON(http.StatusBadRequest, resp)
+		return
+	}
+
+	bookings, err := s.store.SearchBookings(ctx, sql.NullString{
+		String: query,
+		Valid:  true,
+	})
+	if err != nil {
+		resp.Error = err.Error()
+		ctx.JSON(http.StatusInternalServerError, resp)
+		return
+	}
+
+	// If the caller is unauthorized user, then details is empty
+	if _, _, err = checkUserAuthorized(ctx, s.tokenMaker); err != nil {
+		var anonymousBookings = make([]sqlc.Booking, 0, 1)
+		for _, booking := range bookings {
+			booking.Details = ""
+			booking.TotalPrice = 0
+			booking.CustomerName = ""
+			anonymousBookings = append(anonymousBookings, booking)
+			fmt.Printf("%+v\n", booking)
+		}
+		resp.Bookings = anonymousBookings
+		ctx.JSON(http.StatusOK, resp)
+		return
+	}
+	resp.Bookings = bookings
 	ctx.JSON(http.StatusOK, resp)
 }

@@ -8,10 +8,13 @@ import (
 	"gioui.org/widget/material"
 	"gioui.org/x/component"
 	"github.com/mearaj/bhagad-house-booking/common/db/sqlc"
+	"github.com/mearaj/bhagad-house-booking/frontend/i18n"
+	"github.com/mearaj/bhagad-house-booking/frontend/i18n/key"
 	"github.com/mearaj/bhagad-house-booking/frontend/service"
 	"github.com/mearaj/bhagad-house-booking/frontend/ui/fwk"
 	"github.com/mearaj/bhagad-house-booking/frontend/ui/page/add_edit_booking"
 	"github.com/mearaj/bhagad-house-booking/frontend/ui/view"
+	"github.com/mearaj/bhagad-house-booking/frontend/user"
 	"golang.org/x/exp/shiny/materialdesign/colornames"
 	"golang.org/x/exp/shiny/materialdesign/icons"
 	color2 "image/color"
@@ -34,9 +37,8 @@ type pageItem struct {
 
 func (i *pageItem) Layout(gtx fwk.Gtx) fwk.Dim {
 	if i.Theme == nil {
-		i.Theme = i.Manager.Theme()
+		i.Theme = user.Theme()
 	}
-
 	if i.ModalContent == nil {
 		i.ModalContent = view.NewModalContent(func() {
 			i.Modal().Dismiss(nil)
@@ -158,11 +160,28 @@ func (p *pageItem) drawDeleteBookingsModal(gtx fwk.Gtx) fwk.Dim {
 		p.Modal().Dismiss(func() {})
 	}
 
+	delPrompt := i18n.Get(key.BookingDeletePrompt)
+	bookingID := fmt.Sprintf("%s %s %d", i18n.Get(key.Booking), i18n.Get(key.ID), p.Booking.ID)
+	startDate := p.Booking.StartDate
+	endDate := p.Booking.EndDate
+	startDateStr := i18n.Get(key.StartDate)
+	endDateStr := i18n.Get(key.EndDate)
 	promptContent := view.NewPromptContent(p.Theme,
-		"Booking Deletion!",
-		fmt.Sprintf("Are you sure you want to delete Booking %d\n StartDate :- %s.\n EndDate:- %s.\n",
-			p.Booking.ID, p.Booking.StartDate.Format("2006-01-02"),
-			p.Booking.EndDate.Format("2006-01-02")),
-		&p.btnYes, &p.btnNo)
+		i18n.Get(key.BookingDeletion),
+		fmt.Sprintf(
+			"%s\n %s\n %s:- %d %s %d.\n %s:- %d %s %d.\n",
+			delPrompt,
+			bookingID,
+			startDateStr,
+			startDate.Day(),
+			startDate.Month(),
+			startDate.Year(),
+			endDateStr,
+			endDate.Day(),
+			endDate.Month().String(),
+			endDate.Year(),
+		),
+		&p.btnYes,
+		&p.btnNo)
 	return p.ModalContent.DrawContent(gtx, p.Theme, promptContent.Layout)
 }

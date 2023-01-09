@@ -76,3 +76,5 @@ Note: [-ldflags -H=windowsgui](https://stackoverflow.com/questions/23250505/how-
 
 ### Production ###
 flyctl deploy -a bhagad-house-booking-frontend --build-arg API_URL=https://bhagad-house-booking-backend.fly.dev -e GIN_MODE=release -c frontend.fly.toml
+
+flyctl deploy -a bhagad-house-booking-backend -e GIN_MODE=release -c backend.fly.toml

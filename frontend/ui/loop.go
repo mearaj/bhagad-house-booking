@@ -12,6 +12,7 @@ import (
 	"github.com/mearaj/bhagad-house-booking/common/alog"
 	"github.com/mearaj/bhagad-house-booking/frontend/service"
 	. "github.com/mearaj/bhagad-house-booking/frontend/ui/fwk"
+	"github.com/mearaj/bhagad-house-booking/frontend/user"
 	"image"
 	"os/exec"
 	"strings"
@@ -59,10 +60,8 @@ func Loop(w *app.Window) error {
 				e.Insets = system.Insets{}
 				gtx := layout.NewContext(&ops, e)
 				for _, event := range gtx.Events(&backClickTag) {
-					switch e := event.(type) {
-					case key.Event:
-						switch e.Name {
-						case key.NameBack:
+					if e, ok := event.(key.Event); ok {
+						if e.Name == key.NameBack {
 							if len(appManager.pagesStack) > 1 {
 								appManager.PopUp()
 							}
@@ -90,7 +89,7 @@ func Loop(w *app.Window) error {
 					layout.Flexed(1, func(gtx Gtx) Dim {
 						size := image.Point{X: gtx.Constraints.Max.X, Y: gtx.Constraints.Max.Y}
 						bounds := image.Rectangle{Max: size}
-						paint.FillShape(gtx.Ops, appManager.Theme().Bg, clip.UniformRRect(bounds, 0).Op(gtx.Ops))
+						paint.FillShape(gtx.Ops, user.Theme().Bg, clip.UniformRRect(bounds, 0).Op(gtx.Ops))
 						return appManager.Layout(gtx)
 					}),
 				)

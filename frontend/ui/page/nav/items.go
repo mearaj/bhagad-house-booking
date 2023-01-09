@@ -1,4 +1,4 @@
-package settings
+package nav
 
 import (
 	"gioui.org/layout"
@@ -8,9 +8,11 @@ import (
 	"gioui.org/widget"
 	"gioui.org/widget/material"
 	"gioui.org/x/component"
+	"github.com/mearaj/bhagad-house-booking/frontend/i18n/key"
 	"github.com/mearaj/bhagad-house-booking/frontend/service"
 	"github.com/mearaj/bhagad-house-booking/frontend/ui/fwk"
 	"github.com/mearaj/bhagad-house-booking/frontend/ui/view"
+	"github.com/mearaj/bhagad-house-booking/frontend/user"
 	"golang.org/x/exp/shiny/materialdesign/colornames"
 	"golang.org/x/exp/shiny/materialdesign/icons"
 	"image"
@@ -31,46 +33,54 @@ type items struct {
 
 func newItems(manager fwk.Manager) *items {
 	bookingsIcon, _ := widget.NewIcon(icons.SocialGroup)
-	themeIcon, _ := widget.NewIcon(icons.ImagePalette)
-	notificationsIcon, _ := widget.NewIcon(icons.SocialNotifications)
-	helpIcon, _ := widget.NewIcon(icons.ActionHelp)
-	aboutIcon, _ := widget.NewIcon(icons.ActionInfo)
+	settings, _ := widget.NewIcon(icons.ActionSettings)
+	search, _ := widget.NewIcon(icons.ActionSearch)
+	// notificationsIcon, _ := widget.NewIcon(icons.SocialNotifications)
+	// helpIcon, _ := widget.NewIcon(icons.ActionHelp)
+	// aboutIcon, _ := widget.NewIcon(icons.ActionInfo)
 	pageItems := []fwk.View{
 		&pageItem{
 			Manager: manager,
-			Theme:   manager.Theme(),
-			Title:   "Bookings",
+			Theme:   user.Theme(),
+			Title:   key.Bookings,
 			Icon:    bookingsIcon,
 			url:     fwk.BookingsPageURL,
 		},
 		&pageItem{
 			Manager: manager,
-			Theme:   manager.Theme(),
-			Title:   "Theme",
-			Icon:    themeIcon,
-			url:     fwk.ThemePageURL,
+			Theme:   user.Theme(),
+			Title:   key.SearchBookings,
+			Icon:    search,
+			url:     fwk.SearchBookingsPageURL,
 		},
 		&pageItem{
 			Manager: manager,
-			Theme:   manager.Theme(),
-			Title:   "Notifications",
-			Icon:    notificationsIcon,
-			url:     fwk.NotificationsPageURL,
+			Theme:   user.Theme(),
+			Title:   key.Settings,
+			Icon:    settings,
+			url:     fwk.SettingsPageURL,
 		},
-		&pageItem{
-			Manager: manager,
-			Theme:   manager.Theme(),
-			Title:   "Help",
-			Icon:    helpIcon,
-			url:     fwk.HelpPageURL,
-		},
-		&pageItem{
-			Manager: manager,
-			Theme:   manager.Theme(),
-			Title:   "About",
-			Icon:    aboutIcon,
-			url:     fwk.AboutPageURL,
-		},
+		//&pageItem{
+		//	Manager: manager,
+		//	Theme:   user.Theme(),
+		//	Title:   "Notifications",
+		//	Icon:    notificationsIcon,
+		//	url:     fwk.NotificationsPageURL,
+		//},
+		//&pageItem{
+		//	Manager: manager,
+		//	Theme:   user.Theme(),
+		//	Title:   "Help",
+		//	Icon:    helpIcon,
+		//	url:     fwk.HelpPageURL,
+		//},
+		//&pageItem{
+		//	Manager: manager,
+		//	Theme:   user.Theme(),
+		//	Title:   "About",
+		//	Icon:    aboutIcon,
+		//	url:     fwk.AboutPageURL,
+		//},
 		view.NewUserForm(manager),
 	}
 	p := items{
@@ -82,8 +92,13 @@ func newItems(manager fwk.Manager) *items {
 			State:    component.Invisible,
 			Started:  time.Time{},
 		},
-		Theme: manager.Theme(),
+		Theme: user.Theme(),
 		Items: pageItems,
+	}
+	for _, i := range p.Items {
+		if v, ok := i.(*pageItem); ok {
+			v.parentPage = &p
+		}
 	}
 	p.subscription.SubscribeWithCallback(p.OnServiceStateChange)
 	return &p
@@ -97,17 +112,7 @@ func (i *items) Layout(gtx fwk.Gtx) fwk.Dim {
 }
 
 func (i *items) drawItems(gtx fwk.Gtx) fwk.Dim {
-	isAuthorized := i.loginUserResponse.IsLoggedIn() && i.loginUserResponse.IsAdmin()
 	return i.List.Layout(gtx, len(i.Items), func(gtx fwk.Gtx, index int) (d fwk.Dim) {
-		switch i := i.Items[index].(type) {
-		case *pageItem:
-			switch i.Title {
-			case "Customers":
-				if !isAuthorized {
-					return view.Dim{}
-				}
-			}
-		}
 		inset := layout.Inset{Top: unit.Dp(0), Bottom: unit.Dp(0)}
 		return inset.Layout(gtx, func(gtx fwk.Gtx) fwk.Dim {
 			return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
@@ -124,9 +129,8 @@ func (i *items) drawItems(gtx fwk.Gtx) fwk.Dim {
 		})
 	})
 }
-func (p *items) OnServiceStateChange(event service.Event) {
-	switch userResponse := event.Data.(type) {
-	case service.UserResponse:
-		p.loginUserResponse = userResponse
+func (i *items) OnServiceStateChange(event service.Event) {
+	if userResponse, ok := event.Data.(service.UserResponse); ok {
+		i.loginUserResponse = userResponse
 	}
 }
