@@ -575,7 +575,7 @@
             return await WebAssembly.instantiate(source, importObject);
         };
     }
-    WebAssembly.instantiateStreaming(fetch("main.wasm"), go.importObject).then((result) => {
+    WebAssembly.instantiateStreaming(fetch("/main.wasm"), go.importObject).then((result) => {
 		const loader = document.getElementById("app-loader")
 		loader.remove();
 
