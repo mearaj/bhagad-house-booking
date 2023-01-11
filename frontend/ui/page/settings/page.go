@@ -15,7 +15,6 @@ import (
 	"gioui.org/x/component"
 	"github.com/mearaj/bhagad-house-booking/frontend/assets/fonts"
 	"github.com/mearaj/bhagad-house-booking/frontend/i18n"
-	"github.com/mearaj/bhagad-house-booking/frontend/i18n/code"
 	"github.com/mearaj/bhagad-house-booking/frontend/i18n/key"
 	. "github.com/mearaj/bhagad-house-booking/frontend/ui/fwk"
 	"github.com/mearaj/bhagad-house-booking/frontend/ui/view"
@@ -45,8 +44,7 @@ type page struct {
 	colorpicker.MuxState
 	colorpicker.State
 	menuVisibilityAnim component.VisibilityAnimation
-	langEnum           widget.Enum
-	languageCode       code.Code
+	*view.LanguageForm
 }
 
 func New(manager Manager) Page {
@@ -56,13 +54,14 @@ func New(manager Manager) Page {
 	Theme := *user.Theme()
 	SavedTheme := *user.Theme()
 	pg := page{
-		Manager:    manager,
-		Theme:      &Theme,
-		OrigTheme:  &OrigTheme,
-		SavedTheme: &SavedTheme,
-		navIcon:    navIcon,
-		List:       layout.List{Axis: layout.Vertical},
-		menuIcon:   menuIcon,
+		Manager:      manager,
+		Theme:        &Theme,
+		OrigTheme:    &OrigTheme,
+		SavedTheme:   &SavedTheme,
+		navIcon:      navIcon,
+		List:         layout.List{Axis: layout.Vertical},
+		menuIcon:     menuIcon,
+		LanguageForm: view.NewLanguageForm(manager, layout.Horizontal, true),
 		menuVisibilityAnim: component.VisibilityAnimation{
 			Duration: time.Millisecond * 250,
 			State:    component.Invisible,
@@ -88,9 +87,7 @@ func New(manager Manager) Page {
 		},
 	}...)
 	pg.State.SetColor(*pg.MuxState.Color())
-	pg.langEnum.Value = string(*user.LanguageCode())
-	pg.languageCode = *user.LanguageCode()
-	pg.title = i18n.GetFromCode(key.Theme, pg.languageCode)
+	pg.title = i18n.GetFromCode(key.Theme, *user.LanguageCode())
 	return &pg
 }
 
@@ -99,7 +96,7 @@ func (p *page) Layout(gtx Gtx) Dim {
 		Spacing:   layout.SpaceEnd,
 		Alignment: layout.Start,
 	}
-	p.title = i18n.GetFromCode(key.Settings, p.languageCode)
+	p.title = i18n.GetFromCode(key.Settings, *user.LanguageCode())
 
 	d := flex.Layout(gtx,
 		layout.Rigid(p.DrawAppBar),
@@ -172,12 +169,7 @@ func (p *page) drawContentLayout(gtx Gtx) Dim {
 		clip.UniformRRect(image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y), 0).Op(gtx.Ops))
 	inset := layout.UniformInset(unit.Dp(16))
 	gtx.Constraints.Min = gtx.Constraints.Max
-	if p.langEnum.Changed() {
-		p.languageCode = code.Code(p.langEnum.Value)
-		*user.LanguageCode() = p.languageCode
-		user.SaveSettings()
-		op.InvalidateOp{}.Add(gtx.Ops)
-	}
+
 	if p.MuxState.Changed() {
 		p.State.SetColor(*p.MuxState.Color())
 	}
@@ -197,25 +189,7 @@ func (p *page) drawContentLayout(gtx Gtx) Dim {
 				flex := layout.Flex{Axis: layout.Vertical}
 				return flex.Layout(gtx,
 					layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-						h := material.H4(th, i18n.GetFromCode(key.Language, p.languageCode))
-						h.Alignment = text.Middle
-						return h.Layout(gtx)
-					}),
-					layout.Rigid(func(gtx Gtx) Dim {
-						return material.RadioButton(
-							th,
-							&p.langEnum,
-							string(code.English),
-							i18n.GetFromCode(key.English, p.languageCode),
-						).Layout(gtx)
-					}),
-					layout.Rigid(func(gtx Gtx) Dim {
-						return material.RadioButton(
-							th,
-							&p.langEnum,
-							string(code.Gujarati),
-							i18n.GetFromCode(key.Gujarati, p.languageCode),
-						).Layout(gtx)
+						return p.LanguageForm.Layout(gtx)
 					}),
 					layout.Rigid(layout.Spacer{Height: unit.Dp(16)}.Layout),
 					layout.Rigid(func(gtx Gtx) Dim {
@@ -228,7 +202,7 @@ func (p *page) drawContentLayout(gtx Gtx) Dim {
 					}),
 					layout.Rigid(layout.Spacer{Height: unit.Dp(16)}.Layout),
 					layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-						h := material.H4(th, i18n.GetFromCode(key.Theme, p.languageCode))
+						h := material.H4(th, i18n.GetFromCode(key.Theme, *user.LanguageCode()))
 						h.Alignment = text.Middle
 						return h.Layout(gtx)
 					}),
@@ -236,7 +210,7 @@ func (p *page) drawContentLayout(gtx Gtx) Dim {
 						return layout.Flex{Alignment: layout.Middle}.Layout(gtx,
 							layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 								gtx.Constraints.Min.X = gtx.Dp(50)
-								return material.Body1(th, i18n.GetFromCode(key.Red, p.languageCode)).Layout(gtx)
+								return material.Body1(th, i18n.GetFromCode(key.Red, *user.LanguageCode())).Layout(gtx)
 							}),
 							layout.Flexed(1, func(gtx layout.Context) layout.Dimensions {
 								return material.Slider(th, &p.State.R, 0, 1).Layout(gtx)
@@ -249,7 +223,7 @@ func (p *page) drawContentLayout(gtx Gtx) Dim {
 						return layout.Flex{Alignment: layout.Middle}.Layout(gtx,
 							layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 								gtx.Constraints.Min.X = gtx.Dp(50)
-								return material.Body1(th, i18n.GetFromCode(key.Green, p.languageCode)).Layout(gtx)
+								return material.Body1(th, i18n.GetFromCode(key.Green, *user.LanguageCode())).Layout(gtx)
 							}),
 							layout.Flexed(1, func(gtx layout.Context) layout.Dimensions {
 								return material.Slider(th, &p.State.G, 0, 1).Layout(gtx)
@@ -262,7 +236,7 @@ func (p *page) drawContentLayout(gtx Gtx) Dim {
 						return layout.Flex{Alignment: layout.Middle}.Layout(gtx,
 							layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 								gtx.Constraints.Min.X = gtx.Dp(50)
-								return material.Body1(th, i18n.GetFromCode(key.Blue, p.languageCode)).Layout(gtx)
+								return material.Body1(th, i18n.GetFromCode(key.Blue, *user.LanguageCode())).Layout(gtx)
 							}),
 							layout.Flexed(1, func(gtx layout.Context) layout.Dimensions {
 								return material.Slider(th, &p.State.B, 0, 1).Layout(gtx)
@@ -275,7 +249,7 @@ func (p *page) drawContentLayout(gtx Gtx) Dim {
 						return layout.Flex{Alignment: layout.Middle}.Layout(gtx,
 							layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 								gtx.Constraints.Min.X = gtx.Dp(50)
-								return material.Body1(th, i18n.GetFromCode(key.Alpha, p.languageCode)).Layout(gtx)
+								return material.Body1(th, i18n.GetFromCode(key.Alpha, *user.LanguageCode())).Layout(gtx)
 							}),
 							layout.Flexed(1, func(gtx layout.Context) layout.Dimensions {
 								return material.Slider(th, &p.State.A, 0, 1).Layout(gtx)
@@ -289,7 +263,7 @@ func (p *page) drawContentLayout(gtx Gtx) Dim {
 						return layout.Flex{Alignment: layout.Middle}.Layout(gtx,
 							layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 								gtx.Constraints.Min.X = gtx.Dp(50)
-								return material.Body1(th, i18n.GetFromCode(key.Hex, p.languageCode)).Layout(gtx)
+								return material.Body1(th, i18n.GetFromCode(key.Hex, *user.LanguageCode())).Layout(gtx)
 							}),
 							layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 								return layout.UniformInset(unit.Dp(2)).Layout(gtx, func(gtx Gtx) Dim {
@@ -404,7 +378,6 @@ func (p *page) drawMenuItems(gtx Gtx) Dim {
 	if p.btnSaveSettings.Clicked() {
 		*user.Theme() = *p.Theme
 		*p.OrigTheme = *p.Theme
-		*user.LanguageCode() = p.languageCode
 		user.SaveSettings()
 		p.menuVisibilityAnim.Disappear(gtx.Now)
 		op.InvalidateOp{}.Add(gtx.Ops)
@@ -424,9 +397,6 @@ func (p *page) drawMenuItems(gtx Gtx) Dim {
 		*user.Theme() = *fonts.NewTheme()
 		*p.Theme = *user.Theme()
 		*p.OrigTheme = *user.Theme()
-		p.languageCode = code.English
-		*user.LanguageCode() = code.English
-		p.langEnum.Value = string(code.English)
 		user.SaveSettings()
 		p.State.SetColor(*p.MuxState.Color())
 		p.menuVisibilityAnim.Disappear(gtx.Now)
