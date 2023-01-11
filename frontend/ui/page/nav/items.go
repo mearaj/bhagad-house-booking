@@ -1,7 +1,6 @@
 package nav
 
 import (
-	"fmt"
 	"gioui.org/layout"
 	"gioui.org/unit"
 	"gioui.org/widget"
@@ -134,7 +133,6 @@ func (i *items) drawItems(gtx fwk.Gtx) fwk.Dim {
 					)
 				})
 			})
-			fmt.Println(d)
 			return d
 		}),
 	)

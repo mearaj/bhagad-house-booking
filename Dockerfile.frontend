@@ -20,11 +20,13 @@ RUN cd frontend && go build -o static cmd/static/main.go
 
 COPY frontend/cmd/static/dist/index.html frontend/dist
 COPY frontend/cmd/static/dist/wasm.js frontend/dist/wasm.js
+COPY frontend/assets/appicon.ico frontend/dist/favicon.ico
+COPY frontend/assets/images/thumbnail.png frontend/dist/images/thumbnail.png
 
 ARG API_URL=http://localhost:8001
 ENV API_URL ${API_URL}
 
-ARG STATIC_FOLDER=/dist
+ARG STATIC_FOLDER=dist
 ENV STATIC_FOLDER ${STATIC_FOLDER}
 
 RUN echo "window.API_URL = '${API_URL}';" >> frontend/dist/wasm.js
