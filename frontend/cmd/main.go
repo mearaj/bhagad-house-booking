@@ -14,7 +14,7 @@ func main() {
 
 	go func() {
 		title := app.Title("Bhagad House Booking")
-		w := app.NewWindow(title)
+		w := app.NewWindow(title, app.Size(1024, 768))
 		w.Perform(system.ActionCenter)
 		if err := ui.Loop(w); err != nil {
 			log.Fatalln(err)
