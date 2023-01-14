@@ -1,15 +1,29 @@
 # Bhagad-House-Booking
+
+[![Bhagad House Booking](https://bhagadhouse.com/images/thumbnail.png)](https://bhagadhouse.com/images/thumbnail.png)
+
+
 [Bhagad House Booking](https://bhagadhouse.com) is a private app created in golang with [gioui](https://gioui.org/) and other libraries. 
 It's a private app but it's code are open sourced and MIT-Licensed. You are free to use it.
 
-## Prerequisites
+
+## Development using docker-compose
+### Docker Prerequisites
+1. [Docker or Docker Desktop](https://www.docker.com/)
+
+2. Build and run docker images for backend,frontend and postgresql.
+```
+docker compose up
+```
+2. Refer to [Local Development](#for-local-development)
+
+## For Local Development
+### Local Prerequisites
 1. [golang](https://go.dev/)
 2. [gioui](https://gioui.org/)
 3. [Docker or Docker Desktop](https://www.docker.com/)
 4. [golang-migrate](https://pkg.go.dev/github.com/golang-migrate/migrate/v4@v4.15.2)
 5. [Postgresql 14 or later](https://www.postgresql.org/download/)
-
-## For Local Development
 
 ### Database
 1. Make sure your postgresql database is running at 5432.
@@ -51,13 +65,6 @@ export window.STATIC_FOLDER = 'dist'
 export window.INNER_PORT = '8002'
 cd frontend/cmd/static && go run main.go
 ```
-
-## Development using docker-compose
-1. Build and run docker images for backend,frontend and postgresql.
-```
-docker compose up
-```
-2. Refer to [Local Development](#for-local-development)
 
 ## Compile for windows on Arch Linux
 ```#!console
