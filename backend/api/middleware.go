@@ -3,7 +3,7 @@ package api
 import (
 	"errors"
 	"github.com/gin-gonic/gin"
-	"github.com/mearaj/bhagad-house-booking/common/db/sqlc"
+	"github.com/mearaj/bhagad-house-booking/common/response"
 	"github.com/mearaj/bhagad-house-booking/common/token"
 	"net/http"
 	"strings"
@@ -42,7 +42,7 @@ func authMiddleWare(tokenMaker token.Maker) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		payload, status, err := checkUserAuthorized(ctx, tokenMaker)
 		if err != nil {
-			ctx.AbortWithStatusJSON(status, sqlc.AuthErrorResponse{Error: err.Error()})
+			ctx.AbortWithStatusJSON(status, response.AuthError{Error: err.Error()})
 			return
 		}
 		ctx.Set(authorizationPayloadKey, payload)

@@ -7,7 +7,6 @@ import (
 	"gioui.org/unit"
 	"gioui.org/widget"
 	"gioui.org/widget/material"
-	"github.com/mearaj/bhagad-house-booking/common/db/sqlc"
 	"github.com/mearaj/bhagad-house-booking/common/utils"
 	"github.com/mearaj/bhagad-house-booking/frontend/i18n"
 	"github.com/mearaj/bhagad-house-booking/frontend/i18n/key"
@@ -15,6 +14,7 @@ import (
 	"github.com/mearaj/bhagad-house-booking/frontend/ui/fwk"
 	"github.com/mearaj/bhagad-house-booking/frontend/ui/view"
 	"github.com/mearaj/bhagad-house-booking/frontend/user"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"golang.org/x/exp/shiny/materialdesign/colornames"
 	"golang.org/x/exp/shiny/materialdesign/icons"
 	"image/color"
@@ -42,7 +42,7 @@ type page struct {
 	subscription       service.Subscriber
 	fetchingBookingsCh chan service.BookingsResponse
 	bookingsCount      int64
-	bookingForm        view.BookingForm
+	bookingForm        view.BookingDateForm
 	limit              int32
 	offset             int32
 	loginUserResponse  service.UserResponse
@@ -71,9 +71,9 @@ func New(manager fwk.Manager) fwk.Page {
 		fetchingBookingsCh: make(chan service.BookingsResponse, 1),
 		limit:              1000,
 		offset:             0,
-		bookingForm:        view.NewBookingForm(manager, service.Booking{StartDate: startDate, EndDate: endDate}, view.BookingFormParams{}),
+		bookingForm:        view.NewBookingForm(manager, service.Booking{StartDate: startDate, EndDate: endDate}, true),
 	}
-	p.subscription = manager.Service().Subscribe(service.TopicBookingsFetched, service.TopicUserLoggedInOut, service.TopicDeleteBooking)
+	p.subscription = manager.Service().Subscribe(service.TopicFetchBookings, service.TopicLoggedInOut, service.TopicDeleteBooking)
 	p.subscription.SubscribeWithCallback(p.OnServiceStateChange)
 	return &p
 }
@@ -236,8 +236,7 @@ func (p *page) drawBookingItemHeader(_ fwk.Gtx, month time.Month, year int) []la
 		return inset.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
 			flex := layout.Flex{}
 			layoutRatio := flexUserLayoutRatio
-			isAuthorized := p.loginUserResponse.IsLoggedIn() && p.loginUserResponse.IsAdmin()
-			if isAuthorized {
+			if p.loginUserResponse.IsAuthorized() {
 				layoutRatio = flexAdminLayoutRatio
 			}
 			return flex.Layout(gtx,
@@ -272,7 +271,7 @@ func (p *page) drawBookingItemHeader(_ fwk.Gtx, month time.Month, year int) []la
 					})
 				}),
 				layout.Flexed(layoutRatio[4], func(gtx layout.Context) layout.Dimensions {
-					if !isAuthorized {
+					if !p.loginUserResponse.IsAuthorized() {
 						return fwk.Dim{}
 					}
 					return layout.Center.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
@@ -292,7 +291,7 @@ func (p *page) drawBookingItemHeader(_ fwk.Gtx, month time.Month, year int) []la
 func (p *page) fetchBookings() {
 	if !p.isFetchingBookings {
 		p.isFetchingBookings = true
-		p.Service().Bookings(service.BookingParams{
+		p.Service().Bookings(service.BookingsRequest{
 			StartDate: p.bookingForm.StartDate,
 			EndDate:   p.bookingForm.EndDate,
 		})
@@ -321,8 +320,7 @@ func (p *page) OnServiceStateChange(event service.Event) {
 				Manager:           p.Manager,
 				Time:              startDate,
 				LoginUserResponse: p.loginUserResponse,
-				Booking: sqlc.Booking{
-					ID:        0,
+				Booking: service.Booking{
 					StartDate: startDate,
 					EndDate:   startDate,
 				},
@@ -351,6 +349,7 @@ func (p *page) OnServiceStateChange(event service.Event) {
 		}
 
 		p.bookingItems = bookingItems
+		p.Window().Invalidate()
 	case service.UserResponse:
 		p.loginUserResponse = eventData
 		for _, bookingItem := range p.bookingItems {
@@ -359,16 +358,17 @@ func (p *page) OnServiceStateChange(event service.Event) {
 		if !p.isFetchingBookings {
 			p.fetchBookings()
 		}
+		p.Window().Invalidate()
 	case service.DeleteBookingResponse:
 		var txt string
-		if (eventData.Error == "" && eventData.ID == 0) || !p.isDeletingBooking {
+		if (eventData.Error == "" && eventData.ID.Hex() == primitive.NilObjectID.Hex()) || !p.isDeletingBooking {
 			return
 		}
 		if eventData.Error != "" {
-			txt = fmt.Sprintf("couldn't delete booking with ID %d, error: %s", eventData.ID, eventData.Error)
+			txt = fmt.Sprintf("couldn't delete booking with ID %s, error: %s", eventData.ID.Hex(), eventData.Error)
 		}
 		if eventData.Error == "" {
-			txt = fmt.Sprintf("Successfully deleted booking with ID %d", eventData.ID)
+			txt = fmt.Sprintf("Successfully deleted booking with ID %s", eventData.ID.Hex())
 		}
 		if txt != "" {
 			if !p.isFetchingBookings {
@@ -377,6 +377,7 @@ func (p *page) OnServiceStateChange(event service.Event) {
 			p.Snackbar().Show(txt, nil, color.NRGBA(colornames.White), "CLOSE")
 		}
 		p.isDeletingBooking = false
+		p.Window().Invalidate()
 	}
 }
 func (p *page) URL() fwk.URL {

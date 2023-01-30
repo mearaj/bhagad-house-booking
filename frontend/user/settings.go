@@ -3,7 +3,7 @@ package user
 import (
 	"encoding/json"
 	"gioui.org/widget/material"
-	"github.com/mearaj/bhagad-house-booking/common/alog"
+	"github.com/mearaj/bhagad-house-booking/common/response"
 	"github.com/mearaj/bhagad-house-booking/frontend/assets/fonts"
 	"github.com/mearaj/bhagad-house-booking/frontend/i18n/code"
 	"image/color"
@@ -24,13 +24,15 @@ type flatTheme struct {
 }
 
 type jsonSettings struct {
-	LanguageCode code.Code `json:"languageCode"`
-	FlatTheme    flatTheme `json:"flatTheme"`
+	LanguageCode code.Code          `json:"languageCode"`
+	FlatTheme    flatTheme          `json:"flatTheme"`
+	User         response.LoginUser `json:"user"`
 }
 
 type Settings struct {
 	languageCode code.Code
 	theme        material.Theme
+	user         response.LoginUser
 }
 
 func init() {
@@ -43,6 +45,7 @@ func marshalJSON() ([]byte, error) {
 	if th == nil {
 		th = fonts.NewTheme()
 	}
+	user := User()
 	st := jsonSettings{
 		LanguageCode: *lang,
 		FlatTheme: flatTheme{
@@ -51,6 +54,7 @@ func marshalJSON() ([]byte, error) {
 			Background:         th.Bg,
 			ContrastBackground: th.ContrastBg,
 		},
+		User: *user,
 	}
 	return json.MarshalIndent(&st, "", "  ")
 }
@@ -74,14 +78,18 @@ func Theme() *material.Theme {
 	return theme
 }
 
-func fallbackToDefault(err error) {
+func User() *response.LoginUser {
+	settingsMutex.RLock()
+	defer settingsMutex.RUnlock()
+	return &settings.user
+}
+
+func fallbackToDefault() {
 	settingsMutex.Lock()
 	settings = Settings{
 		languageCode: code.English,
 		theme:        *fonts.NewTheme(),
+		user:         response.LoginUser{},
 	}
 	settingsMutex.Unlock()
-	if err != nil {
-		alog.Logger().Println(err)
-	}
 }

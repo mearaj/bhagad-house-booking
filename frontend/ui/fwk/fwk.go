@@ -15,7 +15,7 @@ import (
 
 type Manager interface {
 	NavigateToPage(page Page)
-	NavigateToUrl(pageURL URL)
+	NavigateToURL(pageURL URL)
 	PopUp()
 	CurrentPage() Page
 	GetWindowWidthInDp() int
@@ -27,7 +27,6 @@ type Manager interface {
 	Window() *app.Window
 	Notifier() notify.Notifier
 	Modal() Modal
-	PageFromUrl(url URL) Page
 	SystemInsets() system.Insets
 	ShouldDrawSidebar() bool
 	Snackbar() Snackbar
@@ -56,15 +55,16 @@ type Page interface {
 	URL() URL
 }
 
-//type ServiceListener interface {
+// type ServiceListener interface {
 //	OnServiceStateChange(event service.Event)
 //}
 
 type URL string
 
 const (
-	NavPageUrl            URL = "/nav"
+	NavPageURL            URL = "/nav"
 	BookingsPageURL       URL = "/bookings"
+	TransactionsPageURL   URL = "/transactions"
 	SearchBookingsPageURL URL = "/search"
 	SettingsPageURL       URL = "/settings"
 	NotificationsPageURL  URL = "/notifications"
@@ -72,8 +72,12 @@ const (
 	AboutPageURL          URL = "/about"
 )
 
-func AddEditBookingPageURL(bookingID int64) URL {
-	return URL(fmt.Sprintf("%s/%d", BookingsPageURL, bookingID))
+func AddEditBookingPageURL(bookingID string) URL {
+	return URL(fmt.Sprintf("%s/%s", BookingsPageURL, bookingID))
+}
+
+func AddEditTransactionsPageURL(bookingID string) URL {
+	return URL(fmt.Sprintf("%s/%s", TransactionsPageURL, bookingID))
 }
 
 type (

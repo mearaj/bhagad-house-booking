@@ -13,9 +13,11 @@ import (
 	"image/color"
 )
 
+const AppBarHeight = unit.Dp(56)
+
 // DrawAppBarLayout reusable function to draw consistent AppBar
 func DrawAppBarLayout(gtx Gtx, th *material.Theme, widget layout.Widget) Dim {
-	gtx.Constraints.Max.Y = gtx.Dp(56)
+	gtx.Constraints.Max.Y = gtx.Dp(AppBarHeight)
 	component.Rect{Size: gtx.Constraints.Max, Color: th.ContrastBg}.Layout(gtx)
 	inset := layout.Inset{Left: unit.Dp(8), Right: unit.Dp(8)}
 	return inset.Layout(gtx, widget)

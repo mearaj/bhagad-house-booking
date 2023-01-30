@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"fmt"
 	"gioui.org/app"
 	"gioui.org/io/system"
 	"gioui.org/layout"
@@ -10,21 +11,17 @@ import (
 	"gioui.org/x/component"
 	"gioui.org/x/notify"
 	"github.com/mearaj/bhagad-house-booking/common/alog"
-	"github.com/mearaj/bhagad-house-booking/common/db/sqlc"
 	"github.com/mearaj/bhagad-house-booking/frontend/service"
 	. "github.com/mearaj/bhagad-house-booking/frontend/ui/fwk"
-	"github.com/mearaj/bhagad-house-booking/frontend/ui/page/about"
-	"github.com/mearaj/bhagad-house-booking/frontend/ui/page/add_edit_booking"
+	"github.com/mearaj/bhagad-house-booking/frontend/ui/page/addedit"
 	"github.com/mearaj/bhagad-house-booking/frontend/ui/page/bookings"
-	"github.com/mearaj/bhagad-house-booking/frontend/ui/page/help"
 	"github.com/mearaj/bhagad-house-booking/frontend/ui/page/nav"
-	"github.com/mearaj/bhagad-house-booking/frontend/ui/page/notifications"
-	"github.com/mearaj/bhagad-house-booking/frontend/ui/page/search_bookings"
-	"github.com/mearaj/bhagad-house-booking/frontend/ui/page/settings"
+	"github.com/mearaj/bhagad-house-booking/frontend/ui/page/search"
+	"github.com/mearaj/bhagad-house-booking/frontend/ui/page/transactions"
 	"github.com/mearaj/bhagad-house-booking/frontend/ui/view"
 	"github.com/mearaj/bhagad-house-booking/frontend/user"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"image"
-	"strconv"
 	"strings"
 	"sync"
 )
@@ -81,7 +78,9 @@ func (m *AppManager) setInitialized(initialized bool) {
 	m.initializedMutex.Unlock()
 }
 
-func (m *AppManager) init() {
+func NewAppManager() *AppManager {
+	m := &AppManager{}
+	m.service = service.NewService()
 	settingsPage := nav.New(m)
 	m.settingsSideBar = settingsPage
 	var err error
@@ -92,6 +91,7 @@ func (m *AppManager) init() {
 	m.SetModal(view.NewModalStack())
 	m.snackbar = view.NewSnackBar(m)
 	m.setInitialized(true)
+	return m
 }
 
 func (m *AppManager) Layout(gtx Gtx) Dim {
@@ -165,15 +165,6 @@ func (m *AppManager) SetModal(modal Modal) {
 	m.modal = modal
 }
 
-func (m *AppManager) PageFromUrl(url URL) Page {
-	switch url {
-	case NavPageUrl:
-		return m.settingsSideBar
-	default:
-		return m.settingsSideBar
-	}
-}
-
 func (m *AppManager) drawPage(gtx Gtx) Dim {
 	maxDim := gtx.Constraints.Max
 
@@ -193,14 +184,13 @@ func (m *AppManager) drawPage(gtx Gtx) Dim {
 			}
 			maxDim := gtx.Constraints.Max
 			gtx.Constraints.Min = maxDim
-			currentPage := m.CurrentPage()
 			areaStack := clip.Rect(image.Rectangle{Max: gtx.Constraints.Max}).Push(gtx.Ops)
 			d := m.pageAnimation.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
-				if currentPage.URL() == NavPageUrl && m.ShouldDrawSidebar() {
+				if m.CurrentPage().URL() == NavPageURL && m.ShouldDrawSidebar() {
 					m.Greetings.Layout(gtx)
 					return Dim{Size: maxDim}
 				}
-				return currentPage.Layout(gtx)
+				return m.CurrentPage().Layout(gtx)
 			})
 			areaStack.Pop()
 			return d
@@ -215,7 +205,7 @@ func (m *AppManager) NavigateToPage(page Page) {
 		return
 	}
 	switch pageURL {
-	case NavPageUrl:
+	case NavPageURL:
 		m.pagesStack = []Page{m.settingsSideBar}
 	default:
 		m.pagesStack = append(m.pagesStack, page)
@@ -223,39 +213,41 @@ func (m *AppManager) NavigateToPage(page Page) {
 	m.pageAnimation.PushLeft()
 }
 
-func (m *AppManager) NavigateToUrl(pageURL URL) {
+func (m *AppManager) NavigateToURL(pageURL URL) {
 	if pageURL == m.CurrentPage().URL() {
 		return
 	}
 	var page Page
 	lastSegment := strings.Split(string(pageURL), "/")
-	var bookingID uint
+	var bookingID string
 	if len(lastSegment) > 0 {
-		bookingIDStr := lastSegment[len(lastSegment)-1]
-		bookingIDUint64, err := strconv.ParseUint(bookingIDStr, 10, 64)
-		if err == nil {
-			bookingID = uint(bookingIDUint64)
-		}
+		bookingID = lastSegment[len(lastSegment)-1]
 	}
 	switch pageURL {
-	case NavPageUrl:
+	case NavPageURL:
 		m.pagesStack = []Page{m.settingsSideBar}
 	case BookingsPageURL:
+		m.pagesStack = []Page{m.settingsSideBar}
 		page = bookings.New(m)
-	case AddEditBookingPageURL(int64(bookingID)):
-		booking := sqlc.Booking{}
-		booking.ID = int64(bookingID)
-		page = add_edit_booking.New(m, booking)
+	case AddEditBookingPageURL(bookingID):
+		booking := service.Booking{}
+		var err error
+		booking.ID, err = primitive.ObjectIDFromHex(bookingID)
+		if err != nil {
+			fmt.Println(err)
+		}
+		page = addedit.New(m, booking)
+	case AddEditTransactionsPageURL(bookingID):
+		booking := service.Booking{}
+		var err error
+		booking.ID, err = primitive.ObjectIDFromHex(bookingID)
+		if err != nil {
+			fmt.Println(err)
+		}
+		page = transactions.New(m, booking)
 	case SearchBookingsPageURL:
-		page = search_bookings.New(m)
-	case SettingsPageURL:
-		page = settings.New(m)
-	case NotificationsPageURL:
-		page = notifications.New(m)
-	case HelpPageURL:
-		page = help.New(m)
-	case AboutPageURL:
-		page = about.New(m)
+		m.pagesStack = []Page{m.settingsSideBar}
+		page = search.New(m)
 	}
 	if page != nil {
 		m.pagesStack = append(m.pagesStack, page)

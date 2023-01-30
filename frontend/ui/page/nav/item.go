@@ -26,8 +26,7 @@ func (c *pageItem) Layout(gtx fwk.Gtx) fwk.Dim {
 	if c.Theme == nil {
 		c.Theme = user.Theme()
 	}
-	shouldReturn := c.URL() == fwk.SearchBookingsPageURL && !(c.parentPage.loginUserResponse.IsLoggedIn() &&
-		c.parentPage.loginUserResponse.IsAdmin())
+	shouldReturn := c.URL() == fwk.SearchBookingsPageURL && !(c.parentPage.loginUserResponse.IsAuthorized())
 	if shouldReturn {
 		return fwk.Dim{}
 	}
@@ -39,8 +38,7 @@ func (c *pageItem) layoutContent(gtx fwk.Gtx) fwk.Dim {
 	gtx.Constraints.Min.X = gtx.Constraints.Max.X
 	btnStyle := material.ButtonLayoutStyle{Background: c.Theme.ContrastBg, Button: &c.Clickable}
 	if c.Clicked() {
-		c.PopUp()
-		c.NavigateToUrl(c.URL())
+		c.NavigateToURL(c.URL())
 	}
 	if c.Hovered() || c.URL() == c.CurrentPage().URL() {
 		btnStyle.Background.A = 50

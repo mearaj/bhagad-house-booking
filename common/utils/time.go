@@ -46,4 +46,11 @@ func GetLastDayOfMonth(t time.Time) time.Time {
 	return t.AddDate(0, 1, -t.Day())
 }
 
-// IsAfterOrEqual compares timeStart with timeEnd, considering only year-month-day
+// GetFormatted20060102 Returns time as "2006-01-02" format, hence other remaining values are zero
+func GetFormatted20060102(t time.Time) (time.Time, error) {
+	newTime, err := time.Parse("2006-01-02", t.Format("2006-01-02"))
+	if err != nil {
+		return t, err
+	}
+	return newTime, nil
+}

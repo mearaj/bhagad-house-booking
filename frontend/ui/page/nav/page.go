@@ -6,12 +6,11 @@ import (
 	"gioui.org/widget"
 	"gioui.org/widget/material"
 	"gioui.org/x/component"
-	"github.com/mearaj/bhagad-house-booking/common/db/sqlc"
 	"github.com/mearaj/bhagad-house-booking/frontend/i18n"
 	"github.com/mearaj/bhagad-house-booking/frontend/i18n/key"
 	"github.com/mearaj/bhagad-house-booking/frontend/service"
 	"github.com/mearaj/bhagad-house-booking/frontend/ui/fwk"
-	"github.com/mearaj/bhagad-house-booking/frontend/ui/page/add_edit_booking"
+	"github.com/mearaj/bhagad-house-booking/frontend/ui/page/addedit"
 	"github.com/mearaj/bhagad-house-booking/frontend/ui/view"
 	"github.com/mearaj/bhagad-house-booking/frontend/user"
 	_ "image/gif"
@@ -36,7 +35,7 @@ func New(manager fwk.Manager) fwk.Page {
 		Manager:      manager,
 		List:         layout.List{Axis: layout.Vertical},
 		items:        newItems(manager),
-		subscription: manager.Service().Subscribe(service.TopicUserLoggedInOut),
+		subscription: manager.Service().Subscribe(service.TopicLoggedInOut),
 	}
 	p.subscription.SubscribeWithCallback(p.OnServiceStateChange)
 	return &p
@@ -44,7 +43,7 @@ func New(manager fwk.Manager) fwk.Page {
 func (p *page) Layout(gtx fwk.Gtx) (d fwk.Dim) {
 	adminClicked := p.loginUserResponse.IsLoggedIn() && p.loginUserResponse.IsAdmin() && p.btnAddBooking.Clicked()
 	if adminClicked {
-		addEditBookingPage := add_edit_booking.New(p.Manager, sqlc.Booking{})
+		addEditBookingPage := addedit.New(p.Manager, service.Booking{})
 		p.Manager.NavigateToPage(addEditBookingPage)
 	}
 
@@ -62,7 +61,7 @@ func (p *page) Layout(gtx fwk.Gtx) (d fwk.Dim) {
 }
 func (p *page) DrawAppBar(gtx fwk.Gtx) fwk.Dim {
 	if p.buttonNavIcon.Clicked() {
-		p.Manager.NavigateToUrl(fwk.NavPageUrl)
+		p.Manager.NavigateToURL(fwk.NavPageURL)
 	}
 
 	return view.DrawAppBarLayout(gtx, user.Theme(), func(gtx fwk.Gtx) fwk.Dim {
@@ -92,8 +91,7 @@ func (p *page) DrawAppBar(gtx fwk.Gtx) fwk.Dim {
 				)
 			}),
 			layout.Rigid(func(gtx fwk.Gtx) fwk.Dim {
-				isAuthorized := p.loginUserResponse.IsLoggedIn() && p.loginUserResponse.IsAdmin()
-				if !isAuthorized {
+				if !p.loginUserResponse.IsAuthorized() {
 					return fwk.Dim{}
 				}
 				btnText := i18n.Get(key.NewBooking)
@@ -109,14 +107,8 @@ func (p *page) DrawAppBar(gtx fwk.Gtx) fwk.Dim {
 	})
 }
 
-func (p *page) onAddBookingSuccess() {
-	p.Modal().Dismiss(func() {
-		p.NavigateToUrl(fwk.NavPageUrl)
-	})
-}
-
 func (p *page) URL() fwk.URL {
-	return fwk.NavPageUrl
+	return fwk.NavPageURL
 }
 func (p *page) OnServiceStateChange(event service.Event) {
 	switch userResponse := event.Data.(type) {

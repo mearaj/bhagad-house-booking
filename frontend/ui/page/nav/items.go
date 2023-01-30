@@ -84,7 +84,7 @@ func newItems(manager fwk.Manager) *items {
 	p := items{
 		List:         layout.List{Axis: layout.Vertical},
 		Manager:      manager,
-		subscription: manager.Service().Subscribe(service.TopicUserLoggedInOut),
+		subscription: manager.Service().Subscribe(service.TopicLoggedInOut),
 		animation: view.Animation{
 			Duration: time.Millisecond * 100,
 			State:    component.Invisible,

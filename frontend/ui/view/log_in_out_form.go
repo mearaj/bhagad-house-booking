@@ -6,6 +6,7 @@ import (
 	"gioui.org/unit"
 	"gioui.org/widget"
 	"gioui.org/widget/material"
+	"gioui.org/x/component"
 	"github.com/mearaj/bhagad-house-booking/frontend/assets/fonts"
 	"github.com/mearaj/bhagad-house-booking/frontend/i18n"
 	"github.com/mearaj/bhagad-house-booking/frontend/i18n/key"
@@ -32,11 +33,15 @@ func NewUserForm(manager Manager) *UserForm {
 	inActiveTheme := fonts.NewTheme()
 	inActiveTheme.ContrastBg = color.NRGBA(colornames.Grey500)
 	contForm := UserForm{
-		Manager:      manager,
-		Theme:        user.Theme(),
-		email:        FormField{FieldName: i18n.Get(key.Email)},
-		password:     FormField{FieldName: i18n.Get(key.Password)},
-		subscription: manager.Service().Subscribe(service.TopicUserLoggedInOut),
+		Manager: manager,
+		Theme:   user.Theme(),
+		email: FormField{FieldName: i18n.Get(key.Email),
+			TextField: component.TextField{Editor: widget.Editor{SingleLine: true, Submit: true}},
+		},
+		password: FormField{FieldName: i18n.Get(key.Password),
+			TextField: component.TextField{Editor: widget.Editor{SingleLine: true, Submit: true}},
+		},
+		subscription: manager.Service().Subscribe(service.TopicLoggedInOut),
 	}
 	contForm.email.InputHint = key2.HintEmail
 	contForm.subscription.SubscribeWithCallback(contForm.OnServiceStateChange)
@@ -55,8 +60,7 @@ func (p *UserForm) Layout(gtx Gtx) Dim {
 			layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 				return layout.Center.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
 					title := i18n.Get(key.AdminLogin)
-					isAuthorized := p.loginUserResponse.IsLoggedIn() && p.loginUserResponse.IsAdmin()
-					if isAuthorized {
+					if p.loginUserResponse.IsAuthorized() {
 						title = p.loginUserResponse.User.Name
 						if title == "" {
 							title = p.loginUserResponse.User.Email
@@ -82,23 +86,39 @@ func (p *UserForm) Layout(gtx Gtx) Dim {
 }
 
 func (p *UserForm) inputField(gtx Gtx, field *FormField) Dim {
-	isAuthorized := p.loginUserResponse.IsLoggedIn() && p.loginUserResponse.IsAdmin()
-	if isAuthorized {
+	if p.loginUserResponse.IsAuthorized() {
 		return Dim{}
 	}
 	return DrawFormFieldRowWithLabel(gtx, p.Theme, "", field.FieldName, &field.TextField, nil)
 }
 
+func (p *UserForm) submitted() (submitted bool) {
+	for _, e := range p.email.Events() {
+		if _, ok := e.(widget.SubmitEvent); ok {
+			submitted = true
+			return
+		}
+	}
+	for _, e := range p.password.Events() {
+		if _, ok := e.(widget.SubmitEvent); ok {
+			submitted = true
+			return
+		}
+	}
+	return
+}
+
 func (p *UserForm) logInOut(gtx Gtx) Dim {
 	title := i18n.Get(key.LogIn)
-	isAuthorized := p.loginUserResponse.IsLoggedIn() && p.loginUserResponse.IsAdmin()
-	if isAuthorized {
+	if p.loginUserResponse.IsAuthorized() {
 		title = i18n.Get(key.LogOut)
 	}
+
+	submitted := p.submitted()
 	if !p.isLoggingInOut {
-		if p.btnLogInOut.Clicked() {
+		if p.btnLogInOut.Clicked() || submitted {
 			p.isLoggingInOut = true
-			if !isAuthorized {
+			if !p.loginUserResponse.IsAuthorized() {
 				email := strings.TrimSpace(p.email.Text())
 				password := strings.TrimSpace(p.password.Text())
 				if email != "" && password != "" {
@@ -107,7 +127,7 @@ func (p *UserForm) logInOut(gtx Gtx) Dim {
 					p.isLoggingInOut = false
 				}
 			}
-			if isAuthorized {
+			if p.loginUserResponse.IsAuthorized() {
 				p.Service().LogOutUser()
 			}
 		}

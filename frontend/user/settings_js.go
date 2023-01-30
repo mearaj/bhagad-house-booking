@@ -5,6 +5,7 @@ package user
 import (
 	"errors"
 	"github.com/mearaj/bhagad-house-booking/frontend/assets/fonts"
+	log "github.com/sirupsen/logrus"
 	"syscall/js"
 )
 
@@ -15,18 +16,21 @@ func LoadSettings() {
 	var err error
 	if localStorage.IsNull() || localStorage.IsUndefined() {
 		err = errors.New(LocalStorage + " is not defined")
-		fallbackToDefault(err)
+		log.Errorln(err)
+		fallbackToDefault()
 		return
 	}
 	data := localStorage.Call("getItem", SettingsFileName)
 	if data.IsNull() || data.IsUndefined() {
-		err = errors.New("settings not saved to local storage")
-		fallbackToDefault(err)
+		err = errors.New("settings were not saved to local storage")
+		log.Errorln(err)
+		fallbackToDefault()
 		return
 	}
 	settingsJSON, err := unmarshalJSON([]byte(data.String()))
 	if err != nil {
-		fallbackToDefault(err)
+		log.Errorln(err)
+		fallbackToDefault()
 		return
 	}
 	th := fonts.NewTheme()
@@ -35,10 +39,12 @@ func LoadSettings() {
 	ctBg := settingsJSON.FlatTheme.ContrastBackground
 	ctFg := settingsJSON.FlatTheme.ContrastForeground
 	th.Fg, th.Bg, th.ContrastBg, th.ContrastFg = fg, bg, ctBg, ctFg
+	user := settingsJSON.User
 	settingsMutex.Lock()
 	settings = Settings{
 		languageCode: settingsJSON.LanguageCode,
 		theme:        *th,
+		user:         user,
 	}
 	settingsMutex.Unlock()
 }
@@ -46,13 +52,15 @@ func SaveSettings() {
 	var err error
 	data, err := marshalJSON()
 	if err != nil {
-		fallbackToDefault(err)
+		fallbackToDefault()
+		log.Errorln(err)
 		return
 	}
 	localStorage := js.Global().Get(LocalStorage)
 	if localStorage.IsNull() || localStorage.IsUndefined() {
 		err = errors.New(LocalStorage + " is not defined")
-		fallbackToDefault(err)
+		log.Errorln(err)
+		fallbackToDefault()
 		return
 	}
 	localStorage.Call("setItem", SettingsFileName, string(data))

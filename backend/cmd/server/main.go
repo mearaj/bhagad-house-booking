@@ -1,27 +1,33 @@
 package main
 
 import (
-	"database/sql"
-	_ "github.com/lib/pq"
+	"context"
 	"github.com/mearaj/bhagad-house-booking/backend"
 	"github.com/mearaj/bhagad-house-booking/backend/api"
-	"github.com/mearaj/bhagad-house-booking/common/db/sqlc"
 	log "github.com/sirupsen/logrus"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/mongo/readpref"
 )
 
 func main() {
 	config := backend.LoadConfig()
-	conn, err := sql.Open(config.DatabaseDriver, config.DatabaseURL)
+	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(config.DatabaseURL))
 	if err != nil {
-		log.Fatalln("cannot connect to db:", err)
+		log.Fatalln("could not connect to db:", err)
+		return
 	}
-	store := sqlc.NewStore(conn)
-	server, err := api.NewServer(config, store)
+	if err = client.Ping(context.TODO(), readpref.Primary()); err != nil {
+		log.Fatalln("could not connect to db:", err)
+		return
+	}
+	server, err := api.NewServer(config, client)
 	if err != nil {
 		log.Fatalln(err)
+		return
 	}
 	err = server.Start()
 	if err != nil {
-		log.Fatalln("cannot start server:", err)
+		log.Fatalln("could not start server:", err)
 	}
 }

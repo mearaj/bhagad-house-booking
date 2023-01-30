@@ -15,8 +15,8 @@ const (
 	DatabaseURL    = "DATABASE_URL"
 )
 
-const DefaultDatabaseDriver = "postgres"
-const DefaultDatabaseURL = "postgresql://root:secret@localhost:5432/bhagad_house_booking?sslmode=disable"
+const DefaultDatabaseDriver = "mongodb"
+const DefaultDatabaseURL = "mongodb://root:example@localhost:27017/?"
 
 func LoadConfig() (config Config) {
 	if config.DatabaseDriver = os.Getenv(DatabaseDriver); config.DatabaseDriver == "" {

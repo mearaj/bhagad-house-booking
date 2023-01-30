@@ -10,7 +10,6 @@ import (
 	"gioui.org/op/clip"
 	"gioui.org/op/paint"
 	"github.com/mearaj/bhagad-house-booking/common/alog"
-	"github.com/mearaj/bhagad-house-booking/frontend/service"
 	. "github.com/mearaj/bhagad-house-booking/frontend/ui/fwk"
 	"github.com/mearaj/bhagad-house-booking/frontend/user"
 	"image"
@@ -32,15 +31,13 @@ func FixTimezone() {
 	time.Local = z
 }
 
-var appManager = AppManager{service: service.NewService()}
-
 func init() {
 	go FixTimezone()
-	go appManager.init()
 }
 
 func Loop(w *app.Window) error {
 	var ops op.Ops
+	appManager := NewAppManager()
 	appManager.window = w
 
 	// backClickTag is meant for tracking user's backClick action, specially on mobile

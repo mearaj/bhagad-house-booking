@@ -9,29 +9,37 @@ import (
 type Topic int
 
 const (
-	TopicBookingsFetched Topic = iota
+	TopicFetchBookings Topic = iota
 	TopicSearchBookings
-	TopicUserLoggedInOut
+	TopicLoggedInOut
 	TopicCreateBooking
 	TopicUpdateBooking
 	TopicDeleteBooking
+	TopicFetchTransactions
+	TopicAddUpdateTransaction
+	TopicDeleteTransaction
 )
 
 var AllTopicsArr = [...]Topic{
-	TopicBookingsFetched,
+	TopicFetchBookings,
 	TopicSearchBookings,
-	TopicUserLoggedInOut,
+	TopicLoggedInOut,
 	TopicCreateBooking,
 	TopicUpdateBooking,
 	TopicDeleteBooking,
+	TopicFetchTransactions,
+	TopicAddUpdateTransaction,
+	TopicDeleteTransaction,
 }
 
 type BookingChangedEventData struct{}
 type CustomersChangeEventData struct{ BookingPublicKey string }
 
 type Event struct {
-	Data  interface{}
-	Topic Topic
+	Data   interface{}
+	Topic  Topic
+	Cached bool
+	ID     interface{}
 }
 
 type EventCallback func(event Event)
@@ -195,6 +203,7 @@ func newEventBroker() *eventBroker {
 func (eb *eventBroker) addSubscriber(sub *subscriber) {
 	eb.subscribers.Set(sub, struct{}{})
 	for _, e := range eb.cachedEvents.Values() {
+		e.Cached = true
 		if ok, err := sub.IsSubscribedTo(e.Topic); ok && err == nil {
 			go sub.fire(e)
 		}

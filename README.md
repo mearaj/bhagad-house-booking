@@ -1,6 +1,8 @@
-# Bhagad-House-Booking
+<h1 style="text-align: center"> Bhagad-House-Booking</h1>
 
-[![Bhagad House Booking](https://bhagadhouse.com/images/thumbnail.png)](https://bhagadhouse.com/images/thumbnail.png)
+<p style="text-align: center">
+<img src="https://bhagadhouse.com/images/thumbnail.png" alt="Bhagad House Booking"/>
+</p>
 
 
 [Bhagad House Booking](https://bhagadhouse.com) is a private app created in golang with [gioui](https://gioui.org/) and other libraries. 
@@ -15,7 +17,17 @@ It's a private app but it's code are open sourced and MIT-Licensed. You are free
 ```
 docker compose up
 ```
-2. Refer to [Local Development](#for-local-development)
+3. If using admin email and admin password<br>
+```
+ADMIN_USER_EMAL=YOUR_EMAIL ADMIN_USER_PASSWORD=YOUR_PASSWORD docker compose up
+```
+Or
+```
+export ADMIN_USER_EMAL=YOUR_EMAIL
+export ADMIN_USER_PASSWORD=YOUR_PASSWORD
+docker compose up
+```
+4. Refer to [Local Development](#for-local-development)
 
 ## For Local Development
 ### Local Prerequisites

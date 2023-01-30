@@ -18,6 +18,7 @@ type FormField struct {
 
 func DrawFormFieldRowWithLabel(gtx Gtx, th *material.Theme, labelText string, labelHintText string, textField *component.TextField, button *IconButton) Dim {
 	flex := layout.Flex{Axis: layout.Vertical, Spacing: layout.SpaceStart, Alignment: layout.Baseline}
+
 	return flex.Layout(gtx,
 		layout.Rigid(func(gtx Gtx) Dim {
 			if labelText == "" {
@@ -26,7 +27,7 @@ func DrawFormFieldRowWithLabel(gtx Gtx, th *material.Theme, labelText string, la
 			flex := layout.Flex{Axis: layout.Horizontal, Spacing: layout.SpaceBetween, Alignment: layout.Middle}
 			return flex.Layout(gtx,
 				layout.Flexed(1.0, func(gtx Gtx) Dim {
-					inset := layout.Inset{Bottom: unit.Dp(4.0)}
+					inset := layout.Inset{Bottom: 2}
 					return inset.Layout(gtx, func(gtx Gtx) Dim {
 						return material.Label(th, unit.Sp(16.0), labelText).Layout(gtx)
 					})

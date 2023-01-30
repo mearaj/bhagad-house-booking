@@ -1,228 +1,155 @@
 package view
 
 import (
-	"errors"
+	"fmt"
 	"gioui.org/layout"
-	"gioui.org/op"
-	"gioui.org/op/clip"
-	"gioui.org/op/paint"
+	"gioui.org/text"
 	"gioui.org/unit"
-	"gioui.org/widget"
 	"gioui.org/widget/material"
-	"gioui.org/x/component"
-	. "github.com/mearaj/bhagad-house-booking/common/db/sqlc"
-	"github.com/mearaj/bhagad-house-booking/frontend/assets/fonts"
+	"github.com/mearaj/bhagad-house-booking/frontend/i18n"
+	"github.com/mearaj/bhagad-house-booking/frontend/i18n/key"
+	"github.com/mearaj/bhagad-house-booking/frontend/service"
+	"github.com/mearaj/bhagad-house-booking/frontend/ui/fwk"
+	"github.com/mearaj/bhagad-house-booking/frontend/ui/helper"
 	"github.com/mearaj/bhagad-house-booking/frontend/user"
-	"golang.org/x/exp/shiny/materialdesign/colornames"
-	"golang.org/x/exp/shiny/materialdesign/icons"
-	"image"
-	"image/color"
-	"strings"
+	"time"
 )
 
 type BookingDetails struct {
 	*material.Theme
-	buttonCopyPvtKey        IconButton
-	buttonCopyPubKey        IconButton
-	buttonPrivateKeyVisible IconButton
-	buttonPrivateKeyHidden  IconButton
-	inputPassword           *component.TextField
-	Booking                 Booking
-	inputPasswordStr        string
-	pvtKeyStr               string
-	pvtKeyListLayout        layout.List
-	pubKeyListLayout        layout.List
-	Manager
+	service.Booking
+	layout.Inset
 }
 
-func NewBookingDetails(manager Manager, booking Booking) *BookingDetails {
-	iconCopy, _ := widget.NewIcon(icons.ContentContentCopy)
-	iconVisible, _ := widget.NewIcon(icons.ActionVisibility)
-	iconHidden, _ := widget.NewIcon(icons.ActionVisibilityOff)
-	bookingDetails := BookingDetails{
-		Theme:         user.Theme(),
-		Booking:       booking,
-		Manager:       manager,
-		inputPassword: &component.TextField{Editor: widget.Editor{SingleLine: false}},
-		buttonCopyPvtKey: IconButton{
-			Theme: user.Theme(),
-			Icon:  iconCopy,
-			Text:  "Copy Private Key",
-		},
-		buttonCopyPubKey: IconButton{
-			Theme: user.Theme(),
-			Icon:  iconCopy,
-			Text:  "Copy Public Key",
-		},
-		buttonPrivateKeyVisible: IconButton{
-			Theme: user.Theme(),
-			Icon:  iconVisible,
-			Text:  "Hide Private Key",
-		},
-		buttonPrivateKeyHidden: IconButton{
-			Theme: user.Theme(),
-			Icon:  iconHidden,
-			Text:  "Show Private Key",
-		},
-	}
+const BookingDetailsHeadFontSize = unit.Sp(18)
+const BookingDetailsBodyFontSize = unit.Sp(18)
+const BookingDetailsHeadFontWeight = text.ExtraBold
+const BookingDetailsBodyFontWeight = text.Medium
+const BookingDetailsLabelWidth = unit.Dp(160)
+const BookingDetailsFormInset = unit.Dp(16)
 
-	return &bookingDetails
+func (p *BookingDetails) Layout(gtx fwk.Gtx) fwk.Dim {
+	if p.Theme == nil {
+		p.Theme = user.Theme()
+	}
+	return p.layoutContent(gtx)
 }
-
-func (ad *BookingDetails) Layout(gtx Gtx) Dim {
-	if ad.Theme == nil {
-		ad.Theme = fonts.NewTheme()
-	}
-	if ad.inputPassword.Text() != ad.inputPasswordStr {
-		ad.inputPassword.ClearError()
-	}
-	ad.inputPasswordStr = ad.inputPassword.Text()
-
-	inset := layout.UniformInset(unit.Dp(16))
-	flex := layout.Flex{Axis: layout.Vertical, Alignment: layout.Start}
-	d := flex.Layout(gtx,
-		layout.Rigid(func(gtx Gtx) Dim {
-			inset := inset
-			return inset.Layout(gtx, ad.drawPasswordField)
-		}),
-		layout.Rigid(func(gtx Gtx) Dim {
-			inset := inset
-			return inset.Layout(gtx, ad.drawPvtKeyField)
-		}),
-		layout.Rigid(func(gtx Gtx) Dim {
-			inset := inset
-			return inset.Layout(gtx, ad.drawPubKeyField)
-		}),
-	)
+func (p *BookingDetails) layoutContent(gtx fwk.Gtx) fwk.Dim {
+	d := p.Inset.Layout(gtx, func(gtx fwk.Gtx) fwk.Dim {
+		flex := layout.Flex{Axis: layout.Vertical}
+		d := flex.Layout(gtx,
+			layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+				labelTxt := fmt.Sprintf("%s %s", i18n.Get(key.Booking), i18n.Get(key.ID))
+				valueTxt := p.Booking.ID.Hex()
+				return p.drawBookingField(gtx, labelTxt, valueTxt)
+			}),
+			layout.Rigid(func(gtx fwk.Gtx) fwk.Dim {
+				labelTxt := i18n.Get(key.CustomerName)
+				valueTxt := p.Booking.CustomerName
+				return p.drawBookingField(gtx, labelTxt, valueTxt)
+			}),
+			layout.Rigid(func(gtx fwk.Gtx) fwk.Dim {
+				labelTxt := i18n.Get(key.Booking) + " " + i18n.Get(key.Details)
+				valueTxt := p.Booking.Details
+				return p.drawBookingField(gtx, labelTxt, valueTxt)
+			}),
+			layout.Rigid(func(gtx fwk.Gtx) fwk.Dim {
+				label := i18n.Get(key.StartDate)
+				return p.drawBookingDate(gtx, p.StartDate, label)
+			}),
+			layout.Rigid(func(gtx fwk.Gtx) fwk.Dim {
+				label := i18n.Get(key.EndDate)
+				return p.drawBookingDate(gtx, p.EndDate, label)
+			}),
+			layout.Rigid(func(gtx fwk.Gtx) fwk.Dim {
+				labelTxt := i18n.Get(key.RatePerDay)
+				valueTxt := fmt.Sprintf("%.2f", p.Booking.RatePerDay)
+				return p.drawBookingField(gtx, labelTxt, valueTxt)
+			}),
+			layout.Rigid(func(gtx fwk.Gtx) fwk.Dim {
+				labelTxt := i18n.Get(key.TotalPrice)
+				startDate := p.Booking.StartDate
+				endDate := p.Booking.EndDate
+				ratePerDay := p.Booking.RatePerDay
+				valueTxt := fmt.Sprintf("%.2f",
+					helper.BookingTotalPrice(ratePerDay, startDate, endDate),
+				)
+				return p.drawBookingField(gtx, labelTxt, valueTxt)
+			}),
+		)
+		return d
+	})
 	return d
 }
 
-func (ad *BookingDetails) drawPasswordField(gtx Gtx) Dim {
-	if ad.buttonPrivateKeyHidden.Button.Clicked() {
-		var err error
-		if strings.TrimSpace(ad.inputPassword.Text()) == "" {
-			err = errors.New("password is empty")
-			ad.inputPassword.SetError(err.Error())
-			ad.pvtKeyStr = ""
-		} else {
-			//ad.pvtKeyStr, err = ad.Booking.PrivateKey(ad.inputPasswordStr)
-			//if err != nil {
-			//	ad.pvtKeyStr = ""
-			//	ad.inputPassword.SetError(err.Error())
-			//}
-		}
-	}
-	if ad.buttonPrivateKeyVisible.Button.Clicked() {
-		ad.pvtKeyStr = ""
-	}
-	labelPasswordText := "Enter Password"
-	flex := layout.Flex{Axis: layout.Vertical}
-	return flex.Layout(gtx,
-		layout.Rigid(func(gtx Gtx) Dim {
-			th := *ad.Theme
-			origSize := th.TextSize
-			if strings.TrimSpace(ad.inputPassword.Text()) == "" && !ad.inputPassword.Focused() {
-				th.TextSize = unit.Sp(12)
-			} else {
-				th.TextSize = origSize
-			}
-			return ad.inputPassword.Layout(gtx, &th, labelPasswordText)
+func (p *BookingDetails) drawLabelField(gtx fwk.Gtx, labelText string) [2]layout.FlexChild {
+	return [2]layout.FlexChild{
+		layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+			gtx.Constraints.Max.X = gtx.Dp(BookingDetailsLabelWidth)
+			gtx.Constraints.Min.X = gtx.Dp(BookingDetailsLabelWidth)
+			label := material.Label(p.Theme, BookingDetailsHeadFontSize, labelText)
+			label.Font.Weight = BookingDetailsHeadFontWeight
+			return label.Layout(gtx)
 		}),
-		layout.Rigid(layout.Spacer{Height: unit.Dp(8)}.Layout),
-		layout.Rigid(func(gtx Gtx) Dim {
-			gtx.Constraints.Min.X = gtx.Constraints.Max.X
-			btn := &ad.buttonPrivateKeyHidden
-			if ad.pvtKeyStr != "" {
-				btn = &ad.buttonPrivateKeyVisible
-			}
-			return btn.Layout(gtx)
+		layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+			return material.Label(p.Theme, BookingDetailsHeadFontSize, ": ").Layout(gtx)
+		}),
+	}
+}
+
+func (p *BookingDetails) drawBookingField(gtx fwk.Gtx, labelText string, valueText string) fwk.Dim {
+	flex := layout.Flex{Alignment: layout.Start}
+	labelField := p.drawLabelField(gtx, labelText)
+	return flex.Layout(gtx,
+		labelField[0],
+		labelField[1],
+		layout.Flexed(1, func(gtx layout.Context) layout.Dimensions {
+			ins := layout.Inset{}
+			return ins.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
+				b := material.Body1(p.Theme, valueText)
+				b.Font.Weight = BookingDetailsBodyFontWeight
+				b.TextSize = BookingDetailsBodyFontSize
+				return b.Layout(gtx)
+			})
 		}),
 	)
 }
 
-func (ad *BookingDetails) drawPvtKeyField(gtx Gtx) Dim {
-	if ad.buttonCopyPvtKey.Button.Clicked() {
-		ad.Manager.Window().WriteClipboard(ad.pvtKeyStr)
-	}
-	flex := layout.Flex{Axis: layout.Vertical}
+func (p *BookingDetails) drawBookingDate(gtx fwk.Gtx, t time.Time, labelStr string) fwk.Dim {
+	flex := layout.Flex{Alignment: layout.Start}
 	return flex.Layout(gtx,
-		layout.Rigid(func(gtx Gtx) Dim {
-			gtx.Constraints.Min.X = gtx.Constraints.Max.X
-			var txt string
-			txt = strings.TrimSpace(ad.pvtKeyStr)
-			txtColor := ad.Theme.Fg
-			if txt == "" {
-				txt = "Your Private Key"
-				txtColor = color.NRGBA(colornames.Grey500)
-			}
-			inset := layout.UniformInset(unit.Dp(16))
-			mac := op.Record(gtx.Ops)
-			d := inset.Layout(gtx,
-				func(gtx Gtx) Dim {
-					lbl := material.Label(ad.Theme, ad.Theme.TextSize, txt)
-					lbl.Color = txtColor
-					return ad.pvtKeyListLayout.Layout(gtx, 1, func(gtx layout.Context, index int) layout.Dimensions {
-						return lbl.Layout(gtx)
-					})
-				})
-			stop := mac.Stop()
-			bounds := image.Rect(0, 0, d.Size.X, d.Size.Y)
-			rect := clip.UniformRRect(bounds, gtx.Dp(4))
-			paint.FillShape(gtx.Ops,
-				ad.Theme.Fg,
-				clip.Stroke{Path: rect.Path(gtx.Ops), Width: float32(gtx.Dp(1))}.Op(),
-			)
-			stop.Add(gtx.Ops)
-			return d
+		layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+			gtx.Constraints.Max.X = gtx.Dp(BookingDetailsLabelWidth)
+			gtx.Constraints.Min.X = gtx.Dp(BookingDetailsLabelWidth)
+			label := material.Label(p.Theme, BookingDetailsHeadFontSize, labelStr)
+			label.Font.Weight = BookingDetailsHeadFontWeight
+			return label.Layout(gtx)
 		}),
-		layout.Rigid(layout.Spacer{Height: unit.Dp(8)}.Layout),
-		layout.Rigid(func(gtx Gtx) Dim {
-			gtx.Constraints.Min.X = gtx.Constraints.Max.X
-			return ad.buttonCopyPvtKey.Layout(gtx)
+		layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+			return material.Label(p.Theme, BookingDetailsHeadFontSize, ": ").Layout(gtx)
+		}),
+		layout.Flexed(1, func(gtx layout.Context) layout.Dimensions {
+			ins := layout.Inset{}
+			return ins.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
+				b := material.Body1(p.Theme, helper.GetFormattedDate(t))
+				b.Font.Weight = BookingDetailsBodyFontWeight
+				b.TextSize = BookingDetailsBodyFontSize
+				return b.Layout(gtx)
+			})
 		}),
 	)
 }
-
-func (ad *BookingDetails) drawPubKeyField(gtx Gtx) Dim {
-	//publicKey := ad.Booking.PublicKey
-	if ad.buttonCopyPubKey.Button.Clicked() {
-		//ad.Manager.Window().WriteClipboard(publicKey)
+func DrawBookingDetailsLabelField(gtx fwk.Gtx, theme *material.Theme, labelText string) [2]layout.FlexChild {
+	return [2]layout.FlexChild{
+		layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+			gtx.Constraints.Max.X = gtx.Dp(BookingDetailsLabelWidth)
+			gtx.Constraints.Min.X = gtx.Dp(BookingDetailsLabelWidth)
+			label := material.Label(theme, BookingDetailsHeadFontSize, labelText)
+			label.Font.Weight = BookingDetailsHeadFontWeight
+			return label.Layout(gtx)
+		}),
+		layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+			return material.Label(theme, BookingDetailsHeadFontSize, ": ").Layout(gtx)
+		}),
 	}
-	flex := layout.Flex{Axis: layout.Vertical}
-	return flex.Layout(gtx,
-		layout.Rigid(func(gtx Gtx) Dim {
-			gtx.Constraints.Min.X = gtx.Constraints.Max.X
-			var txt string
-			//txt = publicKey
-			txtColor := ad.Theme.Fg
-			if txt == "" {
-				txt = "Your Public Key"
-				txtColor = color.NRGBA(colornames.Grey500)
-			}
-			inset := layout.UniformInset(unit.Dp(16))
-			mac := op.Record(gtx.Ops)
-			d := inset.Layout(gtx,
-				func(gtx Gtx) Dim {
-					lbl := material.Label(ad.Theme, ad.Theme.TextSize, txt)
-					lbl.Color = txtColor
-					return ad.pubKeyListLayout.Layout(gtx, 1, func(gtx layout.Context, index int) layout.Dimensions {
-						return lbl.Layout(gtx)
-					})
-				})
-			stop := mac.Stop()
-			bounds := image.Rect(0, 0, d.Size.X, d.Size.Y)
-			rect := clip.UniformRRect(bounds, gtx.Dp(4))
-			paint.FillShape(gtx.Ops,
-				ad.Theme.Fg,
-				clip.Stroke{Path: rect.Path(gtx.Ops), Width: float32(gtx.Dp(1))}.Op(),
-			)
-			stop.Add(gtx.Ops)
-			return d
-		}),
-		layout.Rigid(layout.Spacer{Height: unit.Dp(8)}.Layout),
-		layout.Rigid(func(gtx Gtx) Dim {
-			gtx.Constraints.Min.X = gtx.Constraints.Max.X
-			return ad.buttonCopyPubKey.Layout(gtx)
-		}),
-	)
 }
