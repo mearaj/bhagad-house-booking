@@ -9,6 +9,7 @@ import (
 	"gioui.org/widget"
 	"gioui.org/x/component"
 	"gioui.org/x/notify"
+	"github.com/mearaj/bhagad-house-booking/common/response"
 	"github.com/mearaj/bhagad-house-booking/frontend/service"
 	"image/color"
 )
@@ -30,6 +31,7 @@ type Manager interface {
 	SystemInsets() system.Insets
 	ShouldDrawSidebar() bool
 	Snackbar() Snackbar
+	User() response.LoginUser
 }
 
 type Modal interface {
@@ -55,9 +57,16 @@ type Page interface {
 	URL() URL
 }
 
-// type ServiceListener interface {
-//	OnServiceStateChange(event service.Event)
-//}
+// ServiceListener is also responsible for firing event to it's child
+type ServiceListener interface {
+	OnServiceStateChange(event service.Event)
+}
+
+// PagePostPopUp is a page which is active after previous page is popped up
+type PagePostPopUp interface {
+	Page
+	OnPopUpPreviousPage()
+}
 
 type URL string
 

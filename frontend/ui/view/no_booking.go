@@ -1,13 +1,13 @@
 package view
 
 import (
+	"fmt"
 	"gioui.org/layout"
 	"gioui.org/text"
 	"gioui.org/unit"
 	"gioui.org/widget"
 	"gioui.org/widget/material"
 	"github.com/mearaj/bhagad-house-booking/frontend/assets/fonts"
-	"github.com/mearaj/bhagad-house-booking/frontend/service"
 	"github.com/mearaj/bhagad-house-booking/frontend/ui/fwk"
 	"github.com/mearaj/bhagad-house-booking/frontend/user"
 	"golang.org/x/exp/shiny/materialdesign/colornames"
@@ -59,7 +59,7 @@ func (na *NoBookingView) Layout(gtx Gtx) Dim {
 	flex := layout.Flex{Axis: layout.Vertical, Spacing: layout.SpaceSides, Alignment: layout.Middle}
 	gtx.Constraints.Min.Y = gtx.Constraints.Max.Y
 	if na.buttonNewBooking.Button.Clicked() {
-		na.Manager.NavigateToURL(fwk.AddEditBookingPageURL(service.Booking{}.ID.Hex()))
+		na.Manager.NavigateToURL(fwk.AddEditBookingPageURL(fmt.Sprintf("%d", 0)))
 	}
 	d := flex.Layout(gtx,
 		layout.Rigid(func(gtx Gtx) Dim {

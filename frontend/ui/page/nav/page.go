@@ -20,14 +20,13 @@ import (
 
 type page struct {
 	layout.List
-	items fwk.View
+	items *items
 	fwk.Manager
-	buttonNavIcon     widget.Clickable
-	btnAddBooking     widget.Clickable
-	menuIcon          *widget.Icon
-	BookingsView      fwk.View
-	loginUserResponse service.UserResponse
-	subscription      service.Subscriber
+	buttonNavIcon widget.Clickable
+	btnAddBooking widget.Clickable
+	menuIcon      *widget.Icon
+	BookingsView  fwk.View
+	subscription  service.Subscriber
 }
 
 func New(manager fwk.Manager) fwk.Page {
@@ -37,11 +36,10 @@ func New(manager fwk.Manager) fwk.Page {
 		items:        newItems(manager),
 		subscription: manager.Service().Subscribe(service.TopicLoggedInOut),
 	}
-	p.subscription.SubscribeWithCallback(p.OnServiceStateChange)
 	return &p
 }
 func (p *page) Layout(gtx fwk.Gtx) (d fwk.Dim) {
-	adminClicked := p.loginUserResponse.IsLoggedIn() && p.loginUserResponse.IsAdmin() && p.btnAddBooking.Clicked()
+	adminClicked := p.Manager.User().IsLoggedIn() && p.Manager.User().IsAdmin() && p.btnAddBooking.Clicked()
 	if adminClicked {
 		addEditBookingPage := addedit.New(p.Manager, service.Booking{})
 		p.Manager.NavigateToPage(addEditBookingPage)
@@ -91,7 +89,7 @@ func (p *page) DrawAppBar(gtx fwk.Gtx) fwk.Dim {
 				)
 			}),
 			layout.Rigid(func(gtx fwk.Gtx) fwk.Dim {
-				if !p.loginUserResponse.IsAuthorized() {
+				if !p.Manager.User().IsAuthorized() {
 					return fwk.Dim{}
 				}
 				btnText := i18n.Get(key.NewBooking)
@@ -111,8 +109,8 @@ func (p *page) URL() fwk.URL {
 	return fwk.NavPageURL
 }
 func (p *page) OnServiceStateChange(event service.Event) {
-	switch userResponse := event.Data.(type) {
+	switch event.Data.(type) {
 	case service.UserResponse:
-		p.loginUserResponse = userResponse
+		p.items.OnServiceStateChange(event)
 	}
 }

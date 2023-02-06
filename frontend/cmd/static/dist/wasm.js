@@ -25,8 +25,8 @@
 				outputBuf += decoder.decode(buf);
 				const nl = outputBuf.lastIndexOf("\n");
 				if (nl != -1) {
-					console.log(outputBuf.substr(0, nl));
-					outputBuf = outputBuf.substr(nl + 1);
+					console.log(outputBuf.substring(0, nl));
+					outputBuf = outputBuf.substring(nl + 1);
 				}
 				return buf.length;
 			},
@@ -575,7 +575,7 @@
             return await WebAssembly.instantiate(source, importObject);
         };
     }
-    WebAssembly.instantiateStreaming(fetch("/main.wasm"), go.importObject).then((result) => {
+    WebAssembly.instantiateStreaming(fetch("main.wasm"), go.importObject).then((result) => {
 		const loader = document.getElementById("app-loader")
 		loader.remove();
 
@@ -588,7 +588,7 @@
 			}
 			this.realAddEventListener(a,b,c);
 		};
-		go.run(result.instance);
+        go.run(result.instance);
     });
 })();
-window.API_URL = 'http://localhost:8001';
+window.API_URL = 'https://bhagad-house-booking-m7b5esyecq-el.a.run.app';

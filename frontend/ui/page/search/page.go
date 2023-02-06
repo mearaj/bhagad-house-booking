@@ -12,7 +12,6 @@ import (
 	"github.com/mearaj/bhagad-house-booking/frontend/ui/fwk"
 	"github.com/mearaj/bhagad-house-booking/frontend/ui/view"
 	"github.com/mearaj/bhagad-house-booking/frontend/user"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"golang.org/x/exp/shiny/materialdesign/colornames"
 	"golang.org/x/exp/shiny/materialdesign/icons"
 	"image/color"
@@ -36,8 +35,6 @@ type page struct {
 	closeSnapBar           widget.Clickable
 	navigationIcon         *widget.Icon
 	bookingItems           []*pageItem
-	subscription           service.Subscriber
-	loginUserResponse      service.UserResponse
 	searchBookingsChannels chan service.BookingsResponse
 	formField              view.FormField
 	fwk.Manager
@@ -59,8 +56,6 @@ func New(manager fwk.Manager) fwk.Page {
 		offset:                 0,
 		formField:              view.FormField{FieldName: i18n.Get(key.SearchBookings)},
 	}
-	p.subscription = manager.Service().Subscribe()
-	p.subscription.SubscribeWithCallback(p.OnServiceStateChange)
 	return &p
 }
 
@@ -72,12 +67,12 @@ func (p *page) Layout(gtx fwk.Gtx) fwk.Dim {
 		p.searchBookings()
 		p.initialized = true
 	}
-	if !p.loginUserResponse.IsAuthorized() {
+	if !p.Manager.User().IsAuthorized() {
 		return fwk.Dim{}
 	}
-	val := strings.TrimSpace(p.formField.Text())
+	val := strings.TrimSpace(p.formField.TextField.Text())
 	if val != p.query && !p.isSearchingBookings {
-		p.query = p.formField.Text()
+		p.query = p.formField.TextField.Text()
 		p.searchBookings()
 	}
 	p.title = i18n.Get(key.SearchBookings)
@@ -137,7 +132,10 @@ func (p *page) drawFormField(gtx fwk.Gtx) fwk.Dim {
 		return flex.Layout(gtx,
 			layout.Rigid(layout.Spacer{Height: 8}.Layout),
 			layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-				return view.DrawFormFieldRowWithLabel(gtx, p.Theme, "", p.formField.FieldName, &p.formField.TextField, nil)
+				return view.DrawFormField(gtx,
+					p.Theme, "", p.formField.FieldName, &p.formField.TextField,
+					nil, nil, nil,
+				)
 			}),
 			layout.Rigid(layout.Spacer{Height: 8}.Layout),
 		)
@@ -154,7 +152,7 @@ func (p *page) drawBookingItem(gtx fwk.Gtx, index int) fwk.Dim {
 func (p *page) searchBookings() {
 	if !p.isSearchingBookings {
 		p.isSearchingBookings = true
-		p.Service().SearchBookings(p.formField.Text())
+		p.Service().SearchBookings(p.formField.TextField.Text())
 	}
 }
 
@@ -185,21 +183,16 @@ func (p *page) OnServiceStateChange(event service.Event) {
 			bookingItems = append(bookingItems, bookingItem)
 		}
 		p.bookingItems = bookingItems
-	case service.UserResponse:
-		p.loginUserResponse = eventData
-		if !p.isSearchingBookings {
-			p.searchBookings()
-		}
 	case service.DeleteBookingResponse:
 		var txt string
-		if (eventData.ID.Hex() == primitive.NilObjectID.Hex()) || !p.isDeletingBooking {
+		if (eventData.Number == 0) || !p.isDeletingBooking {
 			return
 		}
 		if eventData.Error != "" {
-			txt = fmt.Sprintf("couldn't delete booking with ID %s, error: %s", eventData.ID.Hex(), eventData.Error)
+			txt = fmt.Sprintf("couldn't delete booking with No. %d, error: %s", eventData.Number, eventData.Error)
 		}
 		if eventData.Error == "" {
-			txt = fmt.Sprintf("Successfully deleted booking with ID %s", eventData.ID.Hex())
+			txt = fmt.Sprintf("Successfully deleted booking with No. %d", eventData.Number)
 		}
 		if txt != "" {
 			if !p.isSearchingBookings {
@@ -209,6 +202,7 @@ func (p *page) OnServiceStateChange(event service.Event) {
 		}
 		p.isDeletingBooking = false
 	}
+	p.Window().Invalidate()
 }
 func (p *page) URL() fwk.URL {
 	return fwk.SearchBookingsPageURL

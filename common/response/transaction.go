@@ -6,17 +6,17 @@ import (
 )
 
 type AddUpdateTransaction struct {
-	Transaction model.Transaction `json:"transaction,omitempty" bson:"transaction,omitempty"`
-	Error       string            `json:"error,omitempty" bson:"transactions,omitempty"`
+	Transaction model.Transaction `json:"transaction,omitempty"`
+	Error       string            `json:"error,omitempty"`
 }
 
 type GetTransactions struct {
-	Transactions []model.Transaction `json:"transactions,omitempty" bson:"transactions,omitempty"`
-	Error        string              `json:"error,omitempty" bson:"transactions,omitempty"`
+	Transactions []model.Transaction `json:"transactions,omitempty"`
+	Error        string              `json:"error,omitempty"`
 }
 
 type DeleteTransaction struct {
-	ID        primitive.ObjectID `json:"_id,omitempty"        bson:"_id,omitempty"`
-	BookingID primitive.ObjectID `json:"booking_id,omitempty"        bson:"booking_id,omitempty"`
-	Error     string             `json:"error,omitempty"`
+	ID            primitive.ObjectID `json:"_id,omitempty"`
+	BookingNumber int                `json:"booking_number,omitempty"`
+	Error         string             `json:"error,omitempty"`
 }

@@ -11,14 +11,8 @@ import (
 	"strings"
 )
 
-type FormField struct {
-	FieldName string
-	component.TextField
-}
-
-func DrawFormFieldRowWithLabel(gtx Gtx, th *material.Theme, labelText string, labelHintText string, textField *component.TextField, button *IconButton) Dim {
+func DrawFormField(gtx Gtx, th *material.Theme, labelText, labelHintText string, textField *component.TextField, button *IconButton, labelBtn *material.ButtonStyle, labelEndWidget layout.Widget) Dim {
 	flex := layout.Flex{Axis: layout.Vertical, Spacing: layout.SpaceStart, Alignment: layout.Baseline}
-
 	return flex.Layout(gtx,
 		layout.Rigid(func(gtx Gtx) Dim {
 			if labelText == "" {
@@ -26,11 +20,35 @@ func DrawFormFieldRowWithLabel(gtx Gtx, th *material.Theme, labelText string, la
 			}
 			flex := layout.Flex{Axis: layout.Horizontal, Spacing: layout.SpaceBetween, Alignment: layout.Middle}
 			return flex.Layout(gtx,
-				layout.Flexed(1.0, func(gtx Gtx) Dim {
+				layout.Rigid(func(gtx Gtx) Dim {
 					inset := layout.Inset{Bottom: 2}
 					return inset.Layout(gtx, func(gtx Gtx) Dim {
 						return material.Label(th, unit.Sp(16.0), labelText).Layout(gtx)
 					})
+				}),
+				layout.Rigid(func(gtx Gtx) Dim {
+					flex := layout.Flex{Alignment: layout.Middle}
+					return flex.Layout(gtx,
+						layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+							if labelBtn == nil {
+								return Dim{}
+							}
+							inset := layout.Inset{Bottom: 2}
+							return inset.Layout(gtx, func(gtx Gtx) Dim {
+								return labelBtn.Layout(gtx)
+							})
+						}),
+						layout.Rigid(layout.Spacer{Width: 16}.Layout),
+						layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+							if labelEndWidget == nil {
+								return Dim{}
+							}
+							inset := layout.Inset{Bottom: 2}
+							return inset.Layout(gtx, func(gtx Gtx) Dim {
+								return labelEndWidget(gtx)
+							})
+						}),
+					)
 				}),
 			)
 		}),
@@ -66,6 +84,7 @@ func DrawFormFieldRowWithLabel(gtx Gtx, th *material.Theme, labelText string, la
 		}),
 	)
 }
+
 func DrawAvatar(gtx Gtx, initials string, bgColor color.NRGBA, textTheme *material.Theme) Dim {
 	d := component.Rect{
 		Color: bgColor,

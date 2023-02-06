@@ -39,8 +39,8 @@ func (p *BookingDetails) layoutContent(gtx fwk.Gtx) fwk.Dim {
 		flex := layout.Flex{Axis: layout.Vertical}
 		d := flex.Layout(gtx,
 			layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-				labelTxt := fmt.Sprintf("%s %s", i18n.Get(key.Booking), i18n.Get(key.ID))
-				valueTxt := p.Booking.ID.Hex()
+				labelTxt := fmt.Sprintf("%s %s", i18n.Get(key.Booking), i18n.Get(key.NumberShort))
+				valueTxt := fmt.Sprintf("%d", p.Booking.Number)
 				return p.drawBookingField(gtx, labelTxt, valueTxt)
 			}),
 			layout.Rigid(func(gtx fwk.Gtx) fwk.Dim {

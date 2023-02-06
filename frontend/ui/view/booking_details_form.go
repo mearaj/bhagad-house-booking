@@ -5,7 +5,6 @@ import (
 	giokey "gioui.org/io/key"
 	"gioui.org/layout"
 	"gioui.org/text"
-	"gioui.org/unit"
 	"gioui.org/widget"
 	"gioui.org/widget/material"
 	"gioui.org/x/component"
@@ -17,42 +16,68 @@ import (
 	"github.com/mearaj/bhagad-house-booking/frontend/ui/helper"
 	"github.com/mearaj/bhagad-house-booking/frontend/user"
 	"golang.org/x/exp/shiny/materialdesign/colornames"
+	"golang.org/x/exp/shiny/materialdesign/icons"
+	"image"
 	"image/color"
 	"strings"
-	"time"
 )
 
 type BookingDetailsForm struct {
 	Manager
 	Theme                 *material.Theme
 	initialized           bool
+	IsSendingEmail        bool
+	IsSendingSMS          bool
 	BtnSubmit             widget.Clickable
 	BtnManageTransactions widget.Clickable
+	BtnSendEmail          material.ButtonStyle
+	BtnSendSMS            material.ButtonStyle
 	BookingForm           BookingDateForm
-	Details               component.TextField
 	TotalPrice            float64
-	CustomerName          component.TextField
+	Details               FormField
+	CustomerName          FormField
+	CustomerEmail         component.TextField
+	CustomerPhone         component.TextField
 	RatePerDay            component.TextField
 	BtnText               string
-	booking               service.Booking
+	Booking               service.Booking
+	IconDone              *widget.Icon
+	prevPhoneNumber       string
+	prevEmail             string
 	layout.List
 }
 
 // NewBookingDetailsForm
 func NewBookingDetailsForm(manager Manager, booking service.Booking) BookingDetailsForm {
 	inActiveTheme := fonts.NewTheme()
+	iconDone, _ := widget.NewIcon(icons.ActionDone)
 	inActiveTheme.ContrastBg = color.NRGBA(colornames.Grey500)
 	contForm := BookingDetailsForm{
-		Manager:     manager,
-		Theme:       user.Theme(),
-		BookingForm: NewBookingForm(manager, booking, false),
-		List:        layout.List{Axis: layout.Vertical},
-		booking:     booking,
+		Manager: manager,
+		Theme:   user.Theme(),
+		BookingForm: NewBookingForm(manager, service.BookingsRequest{
+			StartDate: booking.StartDate,
+			EndDate:   booking.EndDate,
+		}, false),
+		List:           layout.List{Axis: layout.Vertical},
+		Booking:        booking,
+		CustomerEmail:  component.TextField{Editor: widget.Editor{InputHint: giokey.HintEmail, SingleLine: true}},
+		CustomerPhone:  component.TextField{Editor: widget.Editor{InputHint: giokey.HintTelephone, SingleLine: true}},
+		BtnSendEmail:   material.Button(user.Theme(), &widget.Clickable{}, ""),
+		BtnSendSMS:     material.Button(user.Theme(), &widget.Clickable{}, ""),
+		IconDone:       iconDone,
+		IsSendingEmail: false,
+		IsSendingSMS:   false,
 	}
-	contForm.Details.SetText(booking.CustomerName)
-	contForm.CustomerName.SetText(booking.Details)
+	contForm.Details.TextField.SetText(booking.CustomerName)
+	contForm.CustomerName.TextField.SetText(booking.Details)
+	contForm.CustomerEmail.SetText(booking.CustomerEmail)
+	contForm.CustomerPhone.SetText(booking.CustomerPhone)
 	contForm.RatePerDay.InputHint = giokey.HintNumeric
 	contForm.RatePerDay.SetText(fmt.Sprintf("%.2f", booking.RatePerDay))
+	if booking.Number == 0 {
+		contForm.RatePerDay.SetText(fmt.Sprintf("%.2f", user.BookingRate()))
+	}
 	return contForm
 }
 
@@ -65,7 +90,14 @@ func (bf *BookingDetailsForm) Layout(gtx Gtx) Dim {
 			bf.Modal().Dismiss(nil)
 		}
 	}
-
+	if bf.prevPhoneNumber != bf.CustomerPhone.Text() {
+		bf.CustomerPhone.ClearError()
+		bf.prevPhoneNumber = bf.CustomerPhone.Text()
+	}
+	if bf.prevEmail != bf.CustomerEmail.Text() {
+		bf.CustomerEmail.ClearError()
+		bf.prevEmail = bf.CustomerEmail.Text()
+	}
 	flex := layout.Flex{Axis: layout.Vertical}
 	return bf.List.Layout(gtx, 1, func(gtx layout.Context, index int) layout.Dimensions {
 		return flex.Layout(gtx,
@@ -77,21 +109,86 @@ func (bf *BookingDetailsForm) Layout(gtx Gtx) Dim {
 				inset := layout.UniformInset(16)
 				return inset.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
 					labelText := i18n.Get(key.CustomerName)
-					return DrawFormFieldRowWithLabel(gtx, bf.Theme, labelText, labelText, &bf.CustomerName, nil)
+					bf.CustomerName.LabelHintText = labelText
+					bf.CustomerName.FieldName = labelText
+					bf.CustomerName.Theme = bf.Theme
+					return bf.CustomerName.Layout(gtx)
+				})
+			}),
+			layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+				inset := layout.UniformInset(16)
+				return inset.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
+					labelText := i18n.Get(key.CustomerEmail)
+					sendEmailText := i18n.Get(key.SendEmail)
+					isBookingNew := bf.Booking.Number == 0
+					btn := &bf.BtnSendEmail
+					iconDone := func(gtx fwk.Gtx) Dim {
+						iconColor := color.NRGBA(colornames.Green500)
+						if bf.IsSendingEmail {
+							loader := Loader{
+								Theme: bf.Theme,
+								Size:  image.Point{X: gtx.Dp(32), Y: gtx.Dp(32)},
+							}
+							return loader.Layout(gtx)
+						}
+
+						return bf.IconDone.Layout(gtx, iconColor)
+					}
+					if isBookingNew {
+						btn = nil
+						iconDone = nil
+					}
+					if !bf.Booking.ConfirmEmailSent && !bf.IsSendingEmail {
+						iconDone = nil
+					}
+					bf.BtnSendEmail.Text = sendEmailText
+					return DrawFormField(gtx, bf.Theme, labelText, labelText, &bf.CustomerEmail, nil, btn, iconDone)
+				})
+			}),
+			layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+				inset := layout.UniformInset(16)
+				return inset.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
+					labelText := i18n.Get(key.CustomerPhone)
+					sendSMSText := i18n.Get(key.SendSMS)
+					isBookingNew := bf.Booking.Number == 0
+					btn := &bf.BtnSendSMS
+					iconDone := func(gtx fwk.Gtx) Dim {
+						iconColor := color.NRGBA(colornames.Green500)
+						if bf.IsSendingSMS {
+							loader := Loader{
+								Theme: bf.Theme,
+								Size:  image.Point{X: gtx.Dp(32), Y: gtx.Dp(32)},
+							}
+							return loader.Layout(gtx)
+						}
+
+						return bf.IconDone.Layout(gtx, iconColor)
+					}
+					if isBookingNew {
+						btn = nil
+						iconDone = nil
+					}
+					if !bf.Booking.ConfirmSMSSent && !bf.IsSendingSMS {
+						iconDone = nil
+					}
+					bf.BtnSendSMS.Text = sendSMSText
+					return DrawFormField(gtx, bf.Theme, labelText, labelText, &bf.CustomerPhone, nil, btn, iconDone)
 				})
 			}),
 			layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 				inset := layout.UniformInset(16)
 				return inset.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
 					labelText := i18n.Get(key.Details)
-					return DrawFormFieldRowWithLabel(gtx, bf.Theme, labelText, labelText, &bf.Details, nil)
+					bf.Details.FieldName = labelText
+					bf.Details.LabelHintText = labelText
+					return bf.Details.Layout(gtx)
 				})
 			}),
 			layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 				inset := layout.UniformInset(16)
 				return inset.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
 					labelText := i18n.Get(key.RatePerDay)
-					return DrawFormFieldRowWithLabel(gtx, bf.Theme, labelText, labelText, &bf.RatePerDay, nil)
+					return DrawFormField(gtx, bf.Theme, labelText, labelText, &bf.RatePerDay, nil, nil, nil)
 				})
 			}),
 			layout.Rigid(func(gtx layout.Context) layout.Dimensions {
@@ -119,7 +216,7 @@ func (bf *BookingDetailsForm) Layout(gtx Gtx) Dim {
 						}),
 						layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 							btnManage := &bf.BtnManageTransactions
-							isBookingNew := helper.IsNilObjectID(bf.booking.ID)
+							isBookingNew := bf.Booking.Number == 0
 							bgColor := bf.Theme.ContrastBg
 							if isBookingNew {
 								btnManage = &widget.Clickable{}
@@ -143,56 +240,6 @@ func (bf *BookingDetailsForm) Layout(gtx Gtx) Dim {
 					btn := material.Button(bf.Theme, &bf.BtnSubmit, bf.BtnText)
 					return btn.Layout(gtx)
 				})
-			}),
-		)
-	})
-}
-
-func (bf *BookingDetailsForm) drawDateField(gtx Gtx, label string, btnDate *widget.Clickable, btnClearDate *IconButton, t time.Time) Dim {
-	fieldVal := i18n.Get(key.TapToEnterADate)
-	labelWidth := gtx.Dp(100)
-	flx := layout.Flex{Axis: layout.Vertical}
-	inset := layout.UniformInset(unit.Dp(16))
-	return inset.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
-		return flx.Layout(gtx,
-			layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-				gtx.Constraints.Min.X, gtx.Constraints.Max.X = labelWidth, labelWidth
-				inset := layout.Inset{Bottom: unit.Dp(4)}
-				return inset.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
-					return material.Label(bf.Theme, bf.Theme.TextSize, label).Layout(gtx)
-				})
-			}),
-			layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-				flx := layout.Flex{Alignment: layout.Middle}
-				return flx.Layout(gtx,
-					layout.Flexed(1, func(gtx layout.Context) layout.Dimensions {
-						return btnDate.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
-							return widget.Border{
-								Color:        bf.Theme.ContrastBg,
-								CornerRadius: 0,
-								Width:        unit.Dp(1),
-							}.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
-								inset := layout.UniformInset(unit.Dp(12))
-								return inset.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
-									lbl := material.Label(bf.Theme, bf.Theme.TextSize, fieldVal)
-									lbl.Color = color.NRGBA(colornames.Grey500)
-									lbl.Font.Weight = text.Normal
-									if !t.IsZero() {
-										lbl.Text = fmt.Sprintf("%d %s %d", t.Day(), t.Month().String(), t.Year())
-										lbl.Color = bf.Theme.Fg
-										lbl.Font.Weight = text.Bold
-									}
-									return lbl.Layout(gtx)
-								})
-							})
-						})
-					}),
-					layout.Rigid(layout.Spacer{Width: unit.Dp(16)}.Layout),
-					layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-						btnClearDate.Inset = layout.UniformInset(unit.Dp(8))
-						return btnClearDate.Layout(gtx)
-					}),
-				)
 			}),
 		)
 	})

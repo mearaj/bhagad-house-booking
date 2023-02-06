@@ -1,7 +1,7 @@
 package backend
 
 import (
-	log "github.com/sirupsen/logrus"
+	"github.com/gin-gonic/gin"
 	"os"
 	"time"
 )
@@ -11,10 +11,15 @@ type Config struct {
 	DatabaseURL         string
 	ServerPort          string
 	TokenSymmetricKey   string
-	AccessTokenDuration time.Duration
 	AdminEmail          string
 	AdminPassword       string
 	AdminName           string
+	SendGridAPIKey      string
+	TwilioAccountSID    string
+	TwilioAuthToken     string
+	TwilioPhoneNumber   string
+	GinMode             string
+	AccessTokenDuration time.Duration
 }
 
 // These values map to the environment variable names. Should be same as above config file
@@ -27,41 +32,33 @@ const (
 	AdminUserEmail      = "ADMIN_USER_EMAIL"
 	AdminUserPassword   = "ADMIN_USER_PASSWORD"
 	AdminUserName       = "ADMIN_USER_NAME"
+	SendGridApiKey      = "SENDGRID_API_KEY"
+	TwilioAccountSID    = "TWILIO_ACCOUNT_SID"
+	TwilioAuthToken     = "TWILIO_AUTH_TOKEN"
+	TwilioPhoneNumber   = "TWILIO_PHONE_NUMBER"
+	GinMode             = "GIN_MODE"
 )
 
-const DefaultDatabaseDriver = "mongodb"
-const DefaultDatabaseURL = "mongodb://root:example@localhost:27017/?"
-const DefaultServerPort = "8080"
-const DefaultTokenSymmetricKey = "12345678901234567890123456789012"
-const DefaultAccessTokenDuration = "24h"
-
 func LoadConfig() (config Config) {
-	if config.DatabaseDriver = os.Getenv(DatabaseDriver); config.DatabaseDriver == "" {
-		config.DatabaseDriver = DefaultDatabaseDriver
-	}
-	if config.DatabaseURL = os.Getenv(DatabaseURL); config.DatabaseURL == "" {
-		config.DatabaseURL = DefaultDatabaseURL
-	}
-	if config.ServerPort = os.Getenv(ServerPort); config.ServerPort == "" {
-		config.ServerPort = DefaultServerPort
-	}
-	if config.TokenSymmetricKey = os.Getenv(TokenSymmetricKey); config.TokenSymmetricKey == "" {
-		config.TokenSymmetricKey = DefaultTokenSymmetricKey
-	}
-	accessTokenDurationStr := os.Getenv(AccessTokenDuration)
-	var accessTokenDuration time.Duration
 	var err error
-	if accessTokenDurationStr == "" {
-		accessTokenDurationStr = DefaultAccessTokenDuration
-	}
-
+	var accessTokenDuration time.Duration
+	accessTokenDurationStr := os.Getenv(AccessTokenDuration)
 	if accessTokenDuration, err = time.ParseDuration(accessTokenDurationStr); err != nil {
-		log.Errorln(err)
-		accessTokenDuration = time.Minute * 15
+		accessTokenDuration = time.Hour * 24
 	}
+	config.DatabaseDriver = os.Getenv(DatabaseDriver)
+	config.DatabaseURL = os.Getenv(DatabaseURL)
+	config.ServerPort = os.Getenv(ServerPort)
+	config.TokenSymmetricKey = os.Getenv(TokenSymmetricKey)
+	config.TwilioAccountSID = os.Getenv(TwilioAccountSID)
+	config.TwilioPhoneNumber = os.Getenv(TwilioPhoneNumber)
+	config.TwilioAuthToken = os.Getenv(TwilioAuthToken)
 	config.AdminEmail = os.Getenv(AdminUserEmail)
 	config.AdminPassword = os.Getenv(AdminUserPassword)
 	config.AdminName = os.Getenv(AdminUserName)
+	config.SendGridAPIKey = os.Getenv(SendGridApiKey)
 	config.AccessTokenDuration = accessTokenDuration
+	config.GinMode = os.Getenv(GinMode)
+	gin.SetMode(config.GinMode)
 	return config
 }

@@ -24,15 +24,13 @@ type items struct {
 	animation view.Animation
 	List      layout.List
 	*view.UserForm
-	Items             []*pageItem
-	loginUserResponse service.UserResponse
-	subscription      service.Subscriber
+	Items []*pageItem
 	*view.LanguageForm
 }
 
 func newItems(manager fwk.Manager) *items {
 	bookingsIcon, _ := widget.NewIcon(icons.SocialGroup)
-	//settings, _ := widget.NewIcon(icons.ActionSettings)
+	settings, _ := widget.NewIcon(icons.ActionSettings)
 	search, _ := widget.NewIcon(icons.ActionSearch)
 	// notificationsIcon, _ := widget.NewIcon(icons.SocialNotifications)
 	// helpIcon, _ := widget.NewIcon(icons.ActionHelp)
@@ -52,13 +50,13 @@ func newItems(manager fwk.Manager) *items {
 			Icon:    search,
 			url:     fwk.SearchBookingsPageURL,
 		},
-		//{
-		//	Manager: manager,
-		//	Theme:   user.Theme(),
-		//	Title:   key.Settings,
-		//	Icon:    settings,
-		//	url:     fwk.SettingsPageURL,
-		//},
+		{
+			Manager: manager,
+			Theme:   user.Theme(),
+			Title:   key.Settings,
+			Icon:    settings,
+			url:     fwk.SettingsPageURL,
+		},
 		//{
 		//	Manager: manager,
 		//	Theme:   user.Theme(),
@@ -82,9 +80,8 @@ func newItems(manager fwk.Manager) *items {
 		//},
 	}
 	p := items{
-		List:         layout.List{Axis: layout.Vertical},
-		Manager:      manager,
-		subscription: manager.Service().Subscribe(service.TopicLoggedInOut),
+		List:    layout.List{Axis: layout.Vertical},
+		Manager: manager,
 		animation: view.Animation{
 			Duration: time.Millisecond * 100,
 			State:    component.Invisible,
@@ -98,7 +95,6 @@ func newItems(manager fwk.Manager) *items {
 	for _, i := range p.Items {
 		i.parentPage = &p
 	}
-	p.subscription.SubscribeWithCallback(p.OnServiceStateChange)
 	return &p
 }
 
@@ -120,10 +116,15 @@ func (i *items) drawItems(gtx fwk.Gtx) fwk.Dim {
 					return layout.Flex{Axis: layout.Vertical, Spacing: layout.SpaceBetween}.Layout(gtx,
 						layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 							flex := layout.Flex{Axis: layout.Vertical}
+							itemOne := i.Items[0]
+							itemTwo := i.Items[1]
+							itemThree := i.Items[2]
 							return flex.Layout(gtx,
-								layout.Rigid(i.Items[0].Layout),
+								layout.Rigid(itemOne.Layout),
 								layout.Rigid(view.HorizontalRule{Color: color.NRGBA(colornames.Grey500)}.Layout),
-								layout.Rigid(i.Items[1].Layout),
+								layout.Rigid(itemTwo.Layout),
+								layout.Rigid(view.HorizontalRule{Color: color.NRGBA(colornames.Grey500)}.Layout),
+								layout.Rigid(itemThree.Layout),
 								layout.Rigid(view.HorizontalRule{Color: color.NRGBA(colornames.Grey500)}.Layout),
 								layout.Rigid(i.UserForm.Layout),
 								layout.Rigid(view.HorizontalRule{Color: color.NRGBA(colornames.Grey500)}.Layout),
@@ -138,7 +139,7 @@ func (i *items) drawItems(gtx fwk.Gtx) fwk.Dim {
 	)
 }
 func (i *items) OnServiceStateChange(event service.Event) {
-	if userResponse, ok := event.Data.(service.UserResponse); ok {
-		i.loginUserResponse = userResponse
+	if _, ok := event.Data.(service.UserResponse); ok {
+		i.UserForm.OnServiceStateChange(event)
 	}
 }

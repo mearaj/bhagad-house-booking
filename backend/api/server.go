@@ -15,6 +15,7 @@ import (
 	"github.com/mearaj/bhagad-house-booking/common/utils"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type Server struct {
@@ -48,6 +49,10 @@ func (s *Server) setupCollections() {
 	usersCollection = database.Collection("users")
 	bookingsCollection = database.Collection("bookings")
 	transactionsCollection = database.Collection("transactions")
+	bookingsCollection.Indexes().CreateOne(context.TODO(), mongo.IndexModel{
+		Keys:    bson.D{{Key: "number", Value: 1}},
+		Options: options.Index().SetUnique(true),
+	})
 }
 
 // setupAdmin for security reasons, password is removed after the function is returned
@@ -65,9 +70,10 @@ func (s *Server) setupAdmin() {
 	}
 	// check if user exists, error is expected if it doesn't
 	err := usersCollection.FindOne(context.TODO(), bson.M{"email": s.config.AdminEmail}).Decode(&rsp.User)
-	if err != nil {
-		alog.Logger().Errorln(err)
+	if err == nil {
+		return // admin exists
 	}
+	alog.Logger().Errorln(err)
 	hashedPassword, err := utils.HashPassword(s.config.AdminPassword)
 	if err != nil {
 		alog.Logger().Errorln(err)
@@ -106,9 +112,11 @@ func (s *Server) setupRouter() {
 	authRoutes.PUT("/bookings", s.updateBooking)
 	authRoutes.DELETE("/bookings", s.deleteBooking)
 	authRoutes.GET("/bookings/search", s.searchBookings)
-	authRoutes.GET("/bookings/:booking_id/transactions", s.getTransactions)
+	authRoutes.GET("/bookings/:number/transactions", s.getTransactions)
 	authRoutes.POST("/transactions", s.addUpdateTransaction)
 	authRoutes.DELETE("/transactions", s.deleteTransaction)
+	authRoutes.POST("/bookings/:number/sendNewBookingEmail", s.sendNewBookingEmail)
+	authRoutes.POST("/bookings/:number/sendNewBookingSMS", s.sendNewBookingSMS)
 	s.router = router
 }
 

@@ -22,7 +22,7 @@ func (l *Loader) Layout(gtx Gtx) Dim {
 	return layout.Flex{Alignment: layout.Middle,
 		Axis:    layout.Vertical,
 		Spacing: layout.SpaceSides}.Layout(gtx,
-		layout.Flexed(1.0, func(gtx Gtx) Dim {
+		layout.Rigid(func(gtx Gtx) Dim {
 			return layout.Center.Layout(gtx,
 				func(gtx Gtx) Dim {
 					if l.Size == (image.Point{}) {

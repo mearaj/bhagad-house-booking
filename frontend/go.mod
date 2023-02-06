@@ -10,7 +10,7 @@ require (
 	github.com/gin-contrib/gzip v0.0.6
 	github.com/gin-gonic/gin v1.8.2
 	github.com/mearaj/bhagad-house-booking/common v0.0.0-20221030045753-4d768dbceae8
-	github.com/mearaj/giowidgets v0.0.0-20230127070405-363e85a9e4f6
+	github.com/mearaj/giowidgets v0.0.0-20230205083713-1de75d86e35a
 	github.com/sirupsen/logrus v1.9.0
 	go.mongodb.org/mongo-driver v1.11.1
 	golang.org/x/exp/shiny v0.0.0-20230126173853-a67bb567ff2e

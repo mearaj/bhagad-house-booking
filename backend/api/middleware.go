@@ -1,10 +1,14 @@
 package api
 
 import (
+	"context"
 	"errors"
 	"github.com/gin-gonic/gin"
+	"github.com/mearaj/bhagad-house-booking/common/model"
 	"github.com/mearaj/bhagad-house-booking/common/response"
 	"github.com/mearaj/bhagad-house-booking/common/token"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 	"net/http"
 	"strings"
 )
@@ -34,6 +38,24 @@ func checkUserAuthorized(ctx *gin.Context, tokenMaker token.Maker) (payload *tok
 	payload, err = tokenMaker.VerifyToken(accessToken)
 	if err != nil {
 		return nil, http.StatusUnauthorized, err
+	}
+	var user model.User
+	err = usersCollection.FindOne(context.TODO(), bson.D{{Key: "email", Value: payload.UniqueStr}}).Decode(&user)
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return nil, http.StatusUnauthorized, errors.New("unauthorized")
+		}
+		return nil, http.StatusInternalServerError, err
+	}
+	var adminFound bool
+	for _, role := range user.Roles {
+		if role == model.UserRolesAdmin {
+			adminFound = true
+			break
+		}
+	}
+	if !adminFound {
+		return nil, http.StatusUnauthorized, errors.New("unauthorized")
 	}
 	return payload, http.StatusOK, nil
 }

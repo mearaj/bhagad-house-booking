@@ -27,12 +27,14 @@ type jsonSettings struct {
 	LanguageCode code.Code          `json:"languageCode"`
 	FlatTheme    flatTheme          `json:"flatTheme"`
 	User         response.LoginUser `json:"user"`
+	BookingRate  float64            `json:"booking_rate"`
 }
 
 type Settings struct {
 	languageCode code.Code
 	theme        material.Theme
 	user         response.LoginUser
+	bookingRate  float64
 }
 
 func init() {
@@ -46,6 +48,7 @@ func marshalJSON() ([]byte, error) {
 		th = fonts.NewTheme()
 	}
 	user := User()
+	rate := BookingRate()
 	st := jsonSettings{
 		LanguageCode: *lang,
 		FlatTheme: flatTheme{
@@ -54,7 +57,8 @@ func marshalJSON() ([]byte, error) {
 			Background:         th.Bg,
 			ContrastBackground: th.ContrastBg,
 		},
-		User: *user,
+		User:        *user,
+		BookingRate: rate,
 	}
 	return json.MarshalIndent(&st, "", "  ")
 }
@@ -84,12 +88,31 @@ func User() *response.LoginUser {
 	return &settings.user
 }
 
+func BookingRate() float64 {
+	settingsMutex.RLock()
+	defer settingsMutex.RUnlock()
+	return settings.bookingRate
+}
+
+func SetBookingRate(rate float64) {
+	settingsMutex.Lock()
+	settings.bookingRate = rate
+	settingsMutex.Unlock()
+	SaveSettings()
+}
+
+func SetUser(user response.LoginUser) {
+	settingsMutex.Lock()
+	settings.user = user
+	settingsMutex.Unlock()
+	SaveSettings()
+}
+
 func fallbackToDefault() {
 	settingsMutex.Lock()
 	settings = Settings{
 		languageCode: code.English,
 		theme:        *fonts.NewTheme(),
-		user:         response.LoginUser{},
 	}
 	settingsMutex.Unlock()
 }

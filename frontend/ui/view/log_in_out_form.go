@@ -20,13 +20,11 @@ import (
 
 type UserForm struct {
 	Manager
-	Theme             *material.Theme
-	email             FormField
-	password          FormField
-	btnLogInOut       widget.Clickable
-	isLoggingInOut    bool
-	loginUserResponse service.UserResponse
-	subscription      service.Subscriber
+	Theme          *material.Theme
+	email          FormField
+	password       FormField
+	btnLogInOut    widget.Clickable
+	isLoggingInOut bool
 }
 
 func NewUserForm(manager Manager) *UserForm {
@@ -41,10 +39,8 @@ func NewUserForm(manager Manager) *UserForm {
 		password: FormField{FieldName: i18n.Get(key.Password),
 			TextField: component.TextField{Editor: widget.Editor{SingleLine: true, Submit: true}},
 		},
-		subscription: manager.Service().Subscribe(service.TopicLoggedInOut),
 	}
-	contForm.email.InputHint = key2.HintEmail
-	contForm.subscription.SubscribeWithCallback(contForm.OnServiceStateChange)
+	contForm.email.TextField.InputHint = key2.HintEmail
 	return &contForm
 }
 
@@ -60,10 +56,10 @@ func (p *UserForm) Layout(gtx Gtx) Dim {
 			layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 				return layout.Center.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
 					title := i18n.Get(key.AdminLogin)
-					if p.loginUserResponse.IsAuthorized() {
-						title = p.loginUserResponse.User.Name
+					if p.Manager.User().IsAuthorized() {
+						title = p.Manager.User().User.Name
 						if title == "" {
-							title = p.loginUserResponse.User.Email
+							title = p.Manager.User().User.Email
 						}
 					}
 					return material.H4(p.Theme, title).Layout(gtx)
@@ -86,20 +82,21 @@ func (p *UserForm) Layout(gtx Gtx) Dim {
 }
 
 func (p *UserForm) inputField(gtx Gtx, field *FormField) Dim {
-	if p.loginUserResponse.IsAuthorized() {
+	if p.Manager.User().IsAuthorized() {
 		return Dim{}
 	}
-	return DrawFormFieldRowWithLabel(gtx, p.Theme, "", field.FieldName, &field.TextField, nil)
+	return DrawFormField(
+		gtx, p.Theme, "", field.FieldName, &field.TextField, nil, nil, nil)
 }
 
 func (p *UserForm) submitted() (submitted bool) {
-	for _, e := range p.email.Events() {
+	for _, e := range p.email.TextField.Events() {
 		if _, ok := e.(widget.SubmitEvent); ok {
 			submitted = true
 			return
 		}
 	}
-	for _, e := range p.password.Events() {
+	for _, e := range p.password.TextField.Events() {
 		if _, ok := e.(widget.SubmitEvent); ok {
 			submitted = true
 			return
@@ -110,7 +107,7 @@ func (p *UserForm) submitted() (submitted bool) {
 
 func (p *UserForm) logInOut(gtx Gtx) Dim {
 	title := i18n.Get(key.LogIn)
-	if p.loginUserResponse.IsAuthorized() {
+	if p.Manager.User().IsAuthorized() {
 		title = i18n.Get(key.LogOut)
 	}
 
@@ -118,16 +115,16 @@ func (p *UserForm) logInOut(gtx Gtx) Dim {
 	if !p.isLoggingInOut {
 		if p.btnLogInOut.Clicked() || submitted {
 			p.isLoggingInOut = true
-			if !p.loginUserResponse.IsAuthorized() {
-				email := strings.TrimSpace(p.email.Text())
-				password := strings.TrimSpace(p.password.Text())
+			if !p.Manager.User().IsAuthorized() {
+				email := strings.TrimSpace(p.email.TextField.Text())
+				password := strings.TrimSpace(p.password.TextField.Text())
 				if email != "" && password != "" {
-					p.Service().LogInUser(p.email.Text(), p.password.Text())
+					p.Service().LogInUser(p.email.TextField.Text(), p.password.TextField.Text())
 				} else {
 					p.isLoggingInOut = false
 				}
 			}
-			if p.loginUserResponse.IsAuthorized() {
+			if p.Manager.User().IsAuthorized() {
 				p.Service().LogOutUser()
 			}
 		}
@@ -141,9 +138,7 @@ func (p *UserForm) logInOut(gtx Gtx) Dim {
 	return loader.Layout(gtx)
 }
 func (p *UserForm) OnServiceStateChange(event service.Event) {
-	if userResponse, ok := event.Data.(service.UserResponse); ok {
+	if _, ok := event.Data.(service.UserResponse); ok {
 		p.isLoggingInOut = false
-		p.loginUserResponse = userResponse
 	}
-
 }

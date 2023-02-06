@@ -36,8 +36,8 @@ func (tr *TransactionForm) Layout(gtx fwk.Gtx) fwk.Dim {
 		tr.AmountField.ClearError()
 		tr.PreviousAmount = tr.AmountField.Text()
 	}
-	// If booking id is new, then Transaction cannot be made as it depends upon existing booking
-	if helper.IsNilObjectID(tr.Transaction.BookingID) {
+	// If Booking id is new, then Transaction cannot be made as it depends upon existing Booking
+	if tr.Transaction.BookingNumber == 0 {
 		return fwk.Dim{}
 	}
 	flex := layout.Flex{Axis: layout.Vertical}
@@ -55,12 +55,14 @@ func (tr *TransactionForm) Layout(gtx fwk.Gtx) fwk.Dim {
 		}),
 		layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 			labelText := i18n.Get(key.Details)
-			return DrawFormFieldRowWithLabel(gtx, tr.Theme, labelText, labelText, &tr.DetailsField, nil)
+			return DrawFormField(gtx, tr.Theme, labelText,
+				labelText, &tr.DetailsField, nil, nil, nil)
 		}),
 		layout.Rigid(layout.Spacer{Height: 16}.Layout),
 		layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 			labelText := i18n.Get(key.Amount)
-			return DrawFormFieldRowWithLabel(gtx, tr.Theme, labelText, labelText, &tr.AmountField, nil)
+			return DrawFormField(gtx, tr.Theme, labelText,
+				labelText, &tr.AmountField, nil, nil, nil)
 		}),
 		layout.Rigid(layout.Spacer{Height: 16}.Layout),
 		layout.Rigid(func(gtx layout.Context) layout.Dimensions {

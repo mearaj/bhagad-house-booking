@@ -80,6 +80,16 @@ github.com/mattn/go-isatty v0.0.16 h1:bq3VjFmv/sOjHtdEhmkEV4x1AJtvUvOJ2PFAZ5+peK
 github.com/mattn/go-isatty v0.0.16/go.mod h1:kYGgaQfpe5nmfYZH+SKPsOc2e4SrIfOl2e/yFXSvRLM=
 github.com/mearaj/giowidgets v0.0.0-20230127070405-363e85a9e4f6 h1:9nf+kkezJ+wc4yYd1r/YowNfFB0KVE3jf3qCXJ3Otc0=
 github.com/mearaj/giowidgets v0.0.0-20230127070405-363e85a9e4f6/go.mod h1:61EaQBy4LeAC06Aw3nT6RKRDQecZF+4xyuNc9TT78/I=
+github.com/mearaj/giowidgets v0.0.0-20230203021716-86c5394b2cb6 h1:k8ZdmCMnV6McpUw4531qItNgUS/nEMsNeWNkXgTaY+o=
+github.com/mearaj/giowidgets v0.0.0-20230203021716-86c5394b2cb6/go.mod h1:61EaQBy4LeAC06Aw3nT6RKRDQecZF+4xyuNc9TT78/I=
+github.com/mearaj/giowidgets v0.0.0-20230203033012-aaa7e6b16280 h1:yTp/FxMGaeBOeA5Thw2qLl/7cKzz6kwNzwNMW5frIIs=
+github.com/mearaj/giowidgets v0.0.0-20230203033012-aaa7e6b16280/go.mod h1:61EaQBy4LeAC06Aw3nT6RKRDQecZF+4xyuNc9TT78/I=
+github.com/mearaj/giowidgets v0.0.0-20230203042033-a6ce5ddc2a18 h1:mdNScuPxmdrHedxtW2VYMOPe1QXvPznYS8jjSCDyjB0=
+github.com/mearaj/giowidgets v0.0.0-20230203042033-a6ce5ddc2a18/go.mod h1:61EaQBy4LeAC06Aw3nT6RKRDQecZF+4xyuNc9TT78/I=
+github.com/mearaj/giowidgets v0.0.0-20230203054329-1c2568433016 h1:t1uFe4+9Tg3gkHa3Jsw0sfiPFB/EfCVcOGWHNt3u2/s=
+github.com/mearaj/giowidgets v0.0.0-20230203054329-1c2568433016/go.mod h1:61EaQBy4LeAC06Aw3nT6RKRDQecZF+4xyuNc9TT78/I=
+github.com/mearaj/giowidgets v0.0.0-20230205083713-1de75d86e35a h1:Dge2c2puClk1lGMUsy/fKmCtJR6ZXlS7omyvanIox/8=
+github.com/mearaj/giowidgets v0.0.0-20230205083713-1de75d86e35a/go.mod h1:61EaQBy4LeAC06Aw3nT6RKRDQecZF+4xyuNc9TT78/I=
 github.com/mitchellh/mapstructure v1.1.2/go.mod h1:FVVH3fgwuzCH5S8UJGiWEs2h04kUh9fWfEaFds41c1Y=
 github.com/mitchellh/mapstructure v1.5.0 h1:jeMsZIYE/09sWLaz43PL7Gy6RuMjD2eJVyuac5Z2hdY=
 github.com/mitchellh/mapstructure v1.5.0/go.mod h1:bFUtVrKA4DC2yAKiSyO/QUcy7e+RRV2QTWOzhPopBRo=

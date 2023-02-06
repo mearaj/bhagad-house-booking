@@ -8,9 +8,9 @@ import (
 type AddUpdateTransaction = model.Transaction
 
 type GetTransactions struct {
-	BookingID primitive.ObjectID `json:"booking_id" bson:"booking_id" binding:"required,booking_id"`
+	BookingNumber int `json:"booking_number" bson:"booking_number" binding:"required,booking_id"`
 }
 type DeleteTransaction struct {
-	ID        primitive.ObjectID `json:"_id"        bson:"_id"`
-	BookingID primitive.ObjectID `json:"booking_id"        bson:"booking_id"`
+	ID            primitive.ObjectID `json:"_id"        bson:"_id"`
+	BookingNumber int                `json:"booking_number" bson:"booking_number"`
 }

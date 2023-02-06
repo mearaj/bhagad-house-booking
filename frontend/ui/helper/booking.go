@@ -1,6 +1,8 @@
 package helper
 
 import (
+	"github.com/mearaj/bhagad-house-booking/common/utils"
+	"github.com/mearaj/bhagad-house-booking/frontend/service"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"math"
 	"strconv"
@@ -27,4 +29,13 @@ func BookingTotalPrice(bookingRatePerDay float64, startDate, endDate time.Time) 
 	numberOfDays := float64(int(dur.Hours() / 24))
 	totalPrice := math.Round(numberOfDays * bookingRatePerDay)
 	return totalPrice
+}
+
+func GetDefaultBookingRequest() service.BookingsRequest {
+	startDate := utils.GetFirstDayOfMonth(time.Now().Local())
+	endDate := utils.GetLastDayOfMonth(time.Now().Local().AddDate(0, 5, 0))
+	return service.BookingsRequest{
+		StartDate: startDate,
+		EndDate:   endDate,
+	}
 }

@@ -30,9 +30,8 @@ type pageItem struct {
 	fwk.Manager
 	time.Time
 	service.Booking
-	LoginUserResponse service.UserResponse
-	ModalContent      *view.ModalContent
-	parentPage        *page
+	ModalContent *view.ModalContent
+	parentPage   *page
 }
 
 func (i *pageItem) Layout(gtx fwk.Gtx) fwk.Dim {
@@ -48,9 +47,9 @@ func (i *pageItem) Layout(gtx fwk.Gtx) fwk.Dim {
 }
 func (i *pageItem) layoutContent(gtx fwk.Gtx) fwk.Dim {
 	inset := layout.UniformInset(16)
-	if i.LoginUserResponse.IsAuthorized() && i.btnDelete.Clicked() {
+	if i.Manager.User().IsAuthorized() && i.btnDelete.Clicked() {
 		i.btnRow.Clicked() // discard row click
-		if i.Booking.ID.Hex() != primitive.NilObjectID.Hex() {
+		if i.Booking.Number != 0 {
 			i.Modal().Show(i.drawDeleteBookingsModal, nil, fwk.Animation{
 				Duration: time.Millisecond * 250,
 				State:    component.Invisible,
@@ -58,7 +57,7 @@ func (i *pageItem) layoutContent(gtx fwk.Gtx) fwk.Dim {
 			})
 		}
 	}
-	adminClicked := i.LoginUserResponse.IsAuthorized() && i.btnRow.Clicked()
+	adminClicked := i.Manager.User().IsAuthorized() && i.btnRow.Clicked()
 	if adminClicked {
 		i.Manager.NavigateToPage(addedit.New(i.Manager, i.Booking))
 		i.Window().Invalidate()
@@ -68,18 +67,14 @@ func (i *pageItem) layoutContent(gtx fwk.Gtx) fwk.Dim {
 			flex := layout.Flex{Spacing: layout.SpaceEnd, Alignment: layout.Middle}
 			bookingTime := i.Time
 			layoutRatio := flexUserLayoutRatio
-			if i.LoginUserResponse.IsAuthorized() {
+			if i.Manager.User().IsAuthorized() {
 				layoutRatio = flexAdminLayoutRatio
 			}
 			d := flex.Layout(gtx,
 				layout.Flexed(layoutRatio[0], func(gtx fwk.Gtx) fwk.Dim {
-					bookingID := i.Booking.ID.Hex()
+					bookingID := fmt.Sprintf("%d", i.Booking.Number)
 					if bookingID == primitive.NilObjectID.Hex() {
 						bookingID = "N/A"
-					}
-					if len(bookingID) > 3 {
-						startIndex := len(i.Booking.ID.Hex()) - 5
-						bookingID = bookingID[startIndex:]
 					}
 
 					b := material.Body1(i.Theme, bookingID)
@@ -110,7 +105,7 @@ func (i *pageItem) layoutContent(gtx fwk.Gtx) fwk.Dim {
 				layout.Flexed(layoutRatio[3], func(gtx fwk.Gtx) fwk.Dim {
 					icon, _ := widget.NewIcon(icons.NotificationEventBusy)
 					color := color2.NRGBA(colornames.Red500)
-					isAvailable := i.Booking.ID.Hex() == primitive.NilObjectID.Hex()
+					isAvailable := i.Booking.Number == 0
 					if isAvailable {
 						icon, _ = widget.NewIcon(icons.NotificationEventAvailable)
 						color = color2.NRGBA(colornames.Green500)
@@ -124,7 +119,7 @@ func (i *pageItem) layoutContent(gtx fwk.Gtx) fwk.Dim {
 					})
 				}),
 				layout.Flexed(layoutRatio[4], func(gtx fwk.Gtx) fwk.Dim {
-					if !i.LoginUserResponse.IsAuthorized() {
+					if !i.Manager.User().IsAuthorized() {
 						return fwk.Dim{}
 					}
 					icon, _ := widget.NewIcon(icons.ActionDelete)
@@ -134,7 +129,7 @@ func (i *pageItem) layoutContent(gtx fwk.Gtx) fwk.Dim {
 						gtx.Constraints.Max.Y = gtx.Dp(24)
 						gtx.Constraints.Min.X = gtx.Dp(24)
 						gtx.Constraints.Min.Y = gtx.Dp(24)
-						if i.Booking.ID.Hex() == primitive.NilObjectID.Hex() {
+						if i.Booking.Number == 0 {
 							icon, _ = widget.NewIcon(icons.ContentBlock)
 							color = i.Theme.ContrastBg
 						}
@@ -151,25 +146,25 @@ func (i *pageItem) layoutContent(gtx fwk.Gtx) fwk.Dim {
 	gtx.Constraints.Max.Y = d.Size.Y
 	return d
 }
-func (p *pageItem) drawDeleteBookingsModal(gtx fwk.Gtx) fwk.Dim {
+func (i *pageItem) drawDeleteBookingsModal(gtx fwk.Gtx) fwk.Dim {
 	gtx.Constraints.Max.X = int(float32(gtx.Constraints.Max.X) * 0.85)
 	gtx.Constraints.Max.Y = int(float32(gtx.Constraints.Max.Y) * 0.85)
-	if p.btnYes.Clicked() && p.LoginUserResponse.IsAuthorized() {
-		p.parentPage.isDeletingBooking = true
-		p.Service().DeleteBooking(p.Booking.ID)
-		p.Modal().Dismiss(func() { p.Window().Invalidate() })
+	if i.btnYes.Clicked() && i.Manager.User().IsAuthorized() {
+		i.parentPage.isDeletingBooking = true
+		i.Service().DeleteBooking(i.Booking.Number)
+		i.Modal().Dismiss(func() { i.Window().Invalidate() })
 	}
-	if p.btnNo.Clicked() {
-		p.Modal().Dismiss(func() {})
+	if i.btnNo.Clicked() {
+		i.Modal().Dismiss(func() {})
 	}
 
 	delPrompt := i18n.Get(key.BookingDeletePrompt)
-	bookingID := fmt.Sprintf("%s %s %s", i18n.Get(key.Booking), i18n.Get(key.ID), p.Booking.ID.Hex())
-	startDate := p.Booking.StartDate
-	endDate := p.Booking.EndDate
+	bookingID := fmt.Sprintf("%s %s %d", i18n.Get(key.Booking), i18n.Get(key.NumberShort), i.Booking.Number)
+	startDate := i.Booking.StartDate
+	endDate := i.Booking.EndDate
 	startDateStr := i18n.Get(key.StartDate)
 	endDateStr := i18n.Get(key.EndDate)
-	promptContent := view.NewPromptContent(p.Theme,
+	promptContent := view.NewPromptContent(i.Theme,
 		i18n.Get(key.BookingDeletion),
 		fmt.Sprintf(
 			"%s\n %s\n %s:- %d %s %d.\n %s:- %d %s %d.\n",
@@ -184,7 +179,7 @@ func (p *pageItem) drawDeleteBookingsModal(gtx fwk.Gtx) fwk.Dim {
 			endDate.Month().String(),
 			endDate.Year(),
 		),
-		&p.btnYes,
-		&p.btnNo)
-	return p.ModalContent.DrawContent(gtx, p.Theme, promptContent.Layout)
+		&i.btnYes,
+		&i.btnNo)
+	return i.ModalContent.DrawContent(gtx, i.Theme, promptContent.Layout)
 }

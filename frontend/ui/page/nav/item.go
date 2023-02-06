@@ -26,7 +26,7 @@ func (c *pageItem) Layout(gtx fwk.Gtx) fwk.Dim {
 	if c.Theme == nil {
 		c.Theme = user.Theme()
 	}
-	shouldReturn := c.URL() == fwk.SearchBookingsPageURL && !(c.parentPage.loginUserResponse.IsAuthorized())
+	shouldReturn := (c.URL() == fwk.SearchBookingsPageURL || c.URL() == fwk.SettingsPageURL) && !(c.parentPage.Manager.User().IsAuthorized())
 	if shouldReturn {
 		return fwk.Dim{}
 	}

@@ -40,7 +40,7 @@ type BookingDateForm struct {
 }
 
 // NewBookingForm Always call this function to create BookingDateForm
-func NewBookingForm(manager Manager, booking service.Booking, showSubmitButton bool) BookingDateForm {
+func NewBookingForm(manager Manager, booking service.BookingsRequest, showSubmitButton bool) BookingDateForm {
 	clearIcon, _ := widget.NewIcon(icons.ContentClear)
 	inActiveTheme := fonts.NewTheme()
 	inActiveTheme.ContrastBg = color.NRGBA(colornames.Grey500)
@@ -194,8 +194,11 @@ func (bf *BookingDateForm) drawDateField(gtx Gtx, label string, btnDate *widget.
 func (bf *BookingDateForm) showCalendar(gtx Gtx, cal *giowidgets.Calendar, callback giowidgets.OnCalendarDateClick) Dim {
 	gtx.Constraints.Max.X = int(float32(gtx.Constraints.Max.X) * 0.85)
 	gtx.Constraints.Max.Y = int(float32(bf.GetWindowHeightInPx()) * 0.85)
+	if gtx.Constraints.Max.X > gtx.Constraints.Max.Y {
+		gtx.Constraints.Max.X = gtx.Constraints.Max.Y
+	}
 	cal.OnCalendarDateClick = callback
-	cal.BodyInset = layout.UniformInset(unit.Dp(16))
+	cal.Inset = layout.UniformInset(unit.Dp(16))
 	return ModalContentInstance.DrawContent(gtx, bf.Theme, func(gtx Gtx) Dim {
 		gtx.Constraints.Max.Y = int(float32(bf.GetWindowHeightInPx()) * 0.85)
 		return cal.Layout(gtx)

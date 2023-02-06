@@ -18,6 +18,8 @@ const (
 	TopicFetchTransactions
 	TopicAddUpdateTransaction
 	TopicDeleteTransaction
+	TopicSendNewBookingEmail
+	TopicSendNewBookingSMS
 )
 
 var AllTopicsArr = [...]Topic{
@@ -30,6 +32,8 @@ var AllTopicsArr = [...]Topic{
 	TopicFetchTransactions,
 	TopicAddUpdateTransaction,
 	TopicDeleteTransaction,
+	TopicSendNewBookingEmail,
+	TopicSendNewBookingSMS,
 }
 
 type BookingChangedEventData struct{}
@@ -45,12 +49,10 @@ type Event struct {
 type EventCallback func(event Event)
 
 type subscriber struct {
-	events        chan Event
-	topics        utils.Map[Topic, struct{}]
-	closed        bool
-	closedMutex   sync.RWMutex
-	callback      EventCallback
-	callbackMutex sync.RWMutex
+	events      chan Event
+	topics      utils.Map[Topic, struct{}]
+	closed      bool
+	closedMutex sync.RWMutex
 }
 type Subscriber interface {
 	// Events the channel where Event can be received,
@@ -70,9 +72,6 @@ type Subscriber interface {
 	// Topics returns topics to which subscriber is subscribed to,
 	// can return error esp when subscription is closed
 	Topics() ([]Topic, error)
-	// SubscribeWithCallback (optionally listening with callback),
-	// can return error esp when subscription is closed
-	SubscribeWithCallback(callback EventCallback)
 }
 
 func newSubscriber() *subscriber {
@@ -144,9 +143,6 @@ func (s *subscriber) Close() {
 	s.closedMutex.Lock()
 	s.closed = true
 	s.closedMutex.Unlock()
-	s.callbackMutex.Lock()
-	s.callback = nil
-	s.callbackMutex.Unlock()
 	go close(s.events)
 }
 func (s *subscriber) IsClosed() bool {
@@ -173,17 +169,7 @@ func (s *subscriber) fire(event Event) {
 			default:
 			}
 		}
-		s.callbackMutex.RLock()
-		if s.callback != nil {
-			s.callback(event)
-		}
-		s.callbackMutex.RUnlock()
 	}
-}
-func (s *subscriber) SubscribeWithCallback(callback EventCallback) {
-	s.callbackMutex.Lock()
-	defer s.callbackMutex.Unlock()
-	s.callback = callback
 }
 
 type subscribers = utils.Map[*subscriber, struct{}]

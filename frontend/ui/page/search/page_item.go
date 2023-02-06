@@ -42,7 +42,7 @@ func (p *pageItem) Layout(gtx fwk.Gtx) fwk.Dim {
 }
 func (p *pageItem) layoutContent(gtx fwk.Gtx) fwk.Dim {
 	inset := layout.UniformInset(16)
-	if p.btnDelete.Clicked() && !helper.IsNilObjectID(p.Booking.ID) {
+	if p.btnDelete.Clicked() && p.Booking.Number != 0 {
 		p.parentPage.Modal().Show(p.drawDeleteBookingsModal, nil, fwk.Animation{
 			Duration: time.Millisecond * 250,
 			State:    component.Invisible,
@@ -86,7 +86,7 @@ func (p *pageItem) drawDeleteBookingsModal(gtx fwk.Gtx) fwk.Dim {
 	gtx.Constraints.Max.Y = int(float32(gtx.Constraints.Max.Y) * 0.85)
 	if p.btnYes.Clicked() {
 		p.parentPage.isDeletingBooking = true
-		p.parentPage.Service().DeleteBooking(p.Booking.ID)
+		p.parentPage.Service().DeleteBooking(p.Booking.Number)
 		p.parentPage.Modal().Dismiss(func() { p.parentPage.Window().Invalidate() })
 	}
 	if p.btnNo.Clicked() {
@@ -94,8 +94,7 @@ func (p *pageItem) drawDeleteBookingsModal(gtx fwk.Gtx) fwk.Dim {
 	}
 
 	delPrompt := i18n.Get(key.BookingDeletePrompt)
-	startIndex := len(p.Booking.ID.Hex()) - 4
-	bookingID := fmt.Sprintf("%s %s %s", i18n.Get(key.Booking), i18n.Get(key.ID), p.Booking.ID.Hex()[startIndex:])
+	bookingID := fmt.Sprintf("%s %s %d", i18n.Get(key.Booking), i18n.Get(key.NumberShort), p.Booking.Number)
 	startDate := p.Booking.StartDate
 	endDate := p.Booking.EndDate
 	startDateStr := i18n.Get(key.StartDate)

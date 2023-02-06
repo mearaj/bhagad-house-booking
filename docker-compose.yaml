@@ -17,11 +17,10 @@ services:
     restart: always
     ports:
       - "8001:8080"
+    env_file:
+      - ./backend/.env
     environment:
-      - DATABASE_URL=mongodb://root:example@mongo:27017/?
-      - ADMIN_USER_EMAIL
-      - ADMIN_USER_PASSWORD
-      - ADMIN_USER_NAME
+      DATABASE_URL: mongodb://root:example@mongo:27017/?
     depends_on:
       - mongo
     command: [ "/app/main" ]

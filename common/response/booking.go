@@ -2,7 +2,6 @@ package response
 
 import (
 	"github.com/mearaj/bhagad-house-booking/common/model"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type Bookings struct {
@@ -19,17 +18,24 @@ type CreateBooking struct {
 	Error   string        `json:"error,omitempty"`
 }
 
+type DeleteBooking struct {
+	Number int    `json:"number,omitempty"`
+	Error  string `json:"error,omitempty"`
+}
 type UpdateBooking struct {
 	Booking model.Booking `json:"booking,omitempty"`
 	Error   string        `json:"error,omitempty"`
 }
-
-type DeleteBooking struct {
-	ID    primitive.ObjectID `json:"_id,omitempty"        bson:"_id,omitempty"`
-	Error string             `json:"error,omitempty"`
-}
-
 type SearchBookings struct {
 	Bookings []model.Booking `json:"bookings,omitempty"`
 	Error    string          `json:"error,omitempty"`
+}
+
+type NewBookingEmail struct {
+	Booking model.Booking `json:"booking,omitempty"`
+	Error   string        `json:"error,omitempty"`
+}
+type NewBookingSMS struct {
+	Booking model.Booking `json:"booking,omitempty"`
+	Error   string        `json:"error,omitempty"`
 }

@@ -11,10 +11,12 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"net/http"
+	"strconv"
 	"time"
 )
 
 const ErrorInvalidBookingID = "invalid booking id"
+const ErrorInvalidPhoneNumber = "invalid phone number"
 
 func (s *Server) addUpdateTransaction(ctx *gin.Context) {
 	var rq request.AddUpdateTransaction
@@ -24,13 +26,13 @@ func (s *Server) addUpdateTransaction(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, rsp)
 		return
 	}
-	if rq.BookingID.Hex() == primitive.NilObjectID.Hex() {
+	if rq.BookingNumber == 0 {
 		rsp.Error = ErrorInvalidBookingID
 		ctx.JSON(http.StatusBadRequest, rsp)
 		return
 	}
 	var booking model.Booking
-	err := bookingsCollection.FindOne(context.TODO(), bson.M{"_id": rq.BookingID}).Decode(&booking)
+	err := bookingsCollection.FindOne(context.TODO(), bson.M{"number": rq.BookingNumber}).Decode(&booking)
 	if err != nil {
 		rsp.Error = err.Error()
 		if errors.Is(err, mongo.ErrNoDocuments) {
@@ -51,7 +53,7 @@ func (s *Server) addUpdateTransaction(ctx *gin.Context) {
 		}
 		rq.ID = result.InsertedID.(primitive.ObjectID)
 	}
-	err = transactionsCollection.FindOne(context.TODO(), bson.M{"_id": rq.ID, "booking_id": rq.BookingID}).Decode(&rsp.Transaction)
+	err = transactionsCollection.FindOne(context.TODO(), bson.M{"_id": rq.ID, "booking_number": rq.BookingNumber}).Decode(&rsp.Transaction)
 	if err != nil {
 		rsp.Error = err.Error()
 		ctx.JSON(http.StatusBadRequest, rsp)
@@ -64,7 +66,7 @@ func (s *Server) addUpdateTransaction(ctx *gin.Context) {
 			{Key: "amount", Value: rq.Amount},
 			{Key: "details", Value: rq.Details},
 		}}}
-		filters := bson.D{{Key: "_id", Value: rq.ID}, {Key: "booking_id", Value: rq.BookingID}}
+		filters := bson.D{{Key: "_id", Value: rq.ID}, {Key: "booking_number", Value: rq.BookingNumber}}
 		result, err := transactionsCollection.UpdateOne(context.TODO(), filters, update)
 		if err != nil {
 			rsp.Error = err.Error()
@@ -83,25 +85,21 @@ func (s *Server) addUpdateTransaction(ctx *gin.Context) {
 func (s *Server) getTransactions(ctx *gin.Context) {
 	var rsp response.GetTransactions
 	var rq request.GetTransactions
-	bookingID := ctx.Param("booking_id")
+	bookingID := ctx.Param("number")
 	if bookingID == "" {
 		rsp.Error = ErrorInvalidBookingID
 		ctx.JSON(http.StatusBadRequest, rsp)
 		return
 	}
-	if bookingID == primitive.NilObjectID.Hex() || !primitive.IsValidObjectID(bookingID) {
-		rsp.Error = ErrorInvalidBookingID
-		ctx.JSON(http.StatusBadRequest, rsp)
-		return
-	}
 	var err error
-	rq.BookingID, err = primitive.ObjectIDFromHex(bookingID)
+	number, err := strconv.ParseInt(bookingID, 10, 64)
+	rq.BookingNumber = int(number)
 	if err != nil {
 		rsp.Error = ErrorInvalidBookingID
 		ctx.JSON(http.StatusBadRequest, rsp)
 		return
 	}
-	cursor, err := transactionsCollection.Find(context.TODO(), bson.M{"booking_id": rq.BookingID})
+	cursor, err := transactionsCollection.Find(context.TODO(), bson.M{"booking_number": rq.BookingNumber})
 	if err != nil {
 		rsp.Error = err.Error()
 		ctx.JSON(http.StatusBadRequest, rsp)
@@ -122,7 +120,7 @@ func (s *Server) deleteTransaction(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, rsp)
 		return
 	}
-	filter := bson.D{{Key: "_id", Value: rq.ID}, {Key: "booking_id", Value: rq.BookingID}}
+	filter := bson.D{{Key: "_id", Value: rq.ID}, {Key: "booking_number", Value: rq.BookingNumber}}
 	result, err := transactionsCollection.DeleteOne(context.TODO(), filter)
 	if err != nil {
 		rsp.Error = err.Error()
@@ -131,7 +129,7 @@ func (s *Server) deleteTransaction(ctx *gin.Context) {
 	}
 	if result.DeletedCount == 1 {
 		rsp.ID = rq.ID
-		rsp.BookingID = rq.BookingID
+		rsp.BookingNumber = rq.BookingNumber
 		ctx.JSON(http.StatusOK, rsp)
 		return
 	}

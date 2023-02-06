@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/mearaj/bhagad-house-booking/common/model"
@@ -10,6 +11,8 @@ import (
 	"github.com/mearaj/bhagad-house-booking/common/utils"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"net/http"
 	"net/url"
 	"time"
@@ -53,6 +56,17 @@ func (s *Server) createBooking(ctx *gin.Context) {
 		return
 	}
 
+	var findBooking model.Booking
+	err = bookingsCollection.FindOne(context.TODO(), bson.D{}, &options.FindOneOptions{
+		Sort: bson.D{{Key: "number", Value: -1}},
+	}).Decode(&findBooking)
+	if err != nil && !errors.Is(err, mongo.ErrNoDocuments) {
+		rsp.Error = err.Error()
+		ctx.JSON(http.StatusInternalServerError, rsp)
+		return
+	}
+
+	rq.Number = findBooking.Number + 1
 	rq.StartDate = startDate
 	rq.EndDate = endDate
 	rq.CreatedAt = time.Now()
@@ -123,7 +137,7 @@ func (s *Server) updateBooking(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, rsp)
 		return
 	}
-	rsp.Booking.ID = rq.ID
+	rsp.Booking.Number = rq.Number
 	startDateStr := rq.StartDate.Format("2006-01-02")
 	startDate, err := time.Parse("2006-01-02", startDateStr)
 	if err != nil {
@@ -147,7 +161,7 @@ func (s *Server) updateBooking(ctx *gin.Context) {
 	if len(*bookings) > 0 {
 		// There should only be one booking and it should be booking request to be updated
 		for _, booking := range *bookings {
-			if booking.ID.Hex() != rq.ID.Hex() {
+			if booking.Number != rq.Number {
 				rsp.Error = "booking conflicts"
 				ctx.JSON(http.StatusBadRequest, rsp)
 				return
@@ -157,7 +171,7 @@ func (s *Server) updateBooking(ctx *gin.Context) {
 
 	rq.StartDate = startDate
 	rq.EndDate = endDate
-	filter := bson.D{{Key: "_id", Value: rq.ID}}
+	filter := bson.D{{Key: "number", Value: rq.Number}}
 	update := bson.D{{Key: "$set", Value: rq}}
 	result, err := bookingsCollection.UpdateOne(context.TODO(), filter, update)
 	if err != nil {
@@ -166,7 +180,7 @@ func (s *Server) updateBooking(ctx *gin.Context) {
 		return
 	}
 	if result.MatchedCount == 1 {
-		err = bookingsCollection.FindOne(context.TODO(), bson.M{"_id": rq.ID}).Decode(&rsp.Booking)
+		err = bookingsCollection.FindOne(context.TODO(), bson.M{"number": rq.Number}).Decode(&rsp.Booking)
 		if err != nil {
 			rsp.Error = err.Error()
 			ctx.JSON(http.StatusInternalServerError, rsp)
@@ -187,7 +201,7 @@ func (s *Server) deleteBooking(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, rsp)
 		return
 	}
-	filter := bson.D{{Key: "_id", Value: rq.ID}}
+	filter := bson.D{{Key: "number", Value: rq.Number}}
 	result, err := bookingsCollection.DeleteOne(context.TODO(), filter)
 	if err != nil {
 		rsp.Error = err.Error()
@@ -195,7 +209,7 @@ func (s *Server) deleteBooking(ctx *gin.Context) {
 		return
 	}
 	if result.DeletedCount == 1 {
-		rsp.ID = rq.ID
+		rsp.Number = rq.Number
 		ctx.JSON(http.StatusOK, rsp)
 		return
 	}

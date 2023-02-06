@@ -11,17 +11,19 @@ import (
 	"gioui.org/x/component"
 	"gioui.org/x/notify"
 	"github.com/mearaj/bhagad-house-booking/common/alog"
+	"github.com/mearaj/bhagad-house-booking/common/response"
 	"github.com/mearaj/bhagad-house-booking/frontend/service"
 	. "github.com/mearaj/bhagad-house-booking/frontend/ui/fwk"
 	"github.com/mearaj/bhagad-house-booking/frontend/ui/page/addedit"
 	"github.com/mearaj/bhagad-house-booking/frontend/ui/page/bookings"
 	"github.com/mearaj/bhagad-house-booking/frontend/ui/page/nav"
 	"github.com/mearaj/bhagad-house-booking/frontend/ui/page/search"
+	"github.com/mearaj/bhagad-house-booking/frontend/ui/page/settings"
 	"github.com/mearaj/bhagad-house-booking/frontend/ui/page/transactions"
 	"github.com/mearaj/bhagad-house-booking/frontend/ui/view"
 	"github.com/mearaj/bhagad-house-booking/frontend/user"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"image"
+	"strconv"
 	"strings"
 	"sync"
 )
@@ -30,11 +32,11 @@ import (
 type AppManager struct {
 	window *app.Window
 	view.Greetings
-	settingsSideBar Page
-	service         service.Service
-	Constraints     layout.Constraints
-	Metric          unit.Metric
-	notifier        notify.Notifier
+	sideNavBar  Page
+	service     service.Service
+	Constraints layout.Constraints
+	Metric      unit.Metric
+	notifier    notify.Notifier
 	system.Insets
 	// isStageRunning, true value indicates app is running in foreground,
 	// false indicates running in background
@@ -45,6 +47,7 @@ type AppManager struct {
 	snackbar         Snackbar
 	initialized      bool
 	initializedMutex sync.RWMutex
+	user             service.UserResponse
 }
 
 func (m *AppManager) Service() service.Service {
@@ -81,8 +84,8 @@ func (m *AppManager) setInitialized(initialized bool) {
 func NewAppManager() *AppManager {
 	m := &AppManager{}
 	m.service = service.NewService()
-	settingsPage := nav.New(m)
-	m.settingsSideBar = settingsPage
+	sideNav := nav.New(m)
+	m.sideNavBar = sideNav
 	var err error
 	m.notifier, err = notify.NewNotifier()
 	if err != nil {
@@ -91,6 +94,7 @@ func NewAppManager() *AppManager {
 	m.SetModal(view.NewModalStack())
 	m.snackbar = view.NewSnackBar(m)
 	m.setInitialized(true)
+	m.user = *user.User()
 	return m
 }
 
@@ -129,7 +133,7 @@ func (m *AppManager) CurrentPage() Page {
 		return m.pagesStack[stackSize-1]
 	}
 	m.pagesStack = []Page{nav.New(m)}
-	return m.settingsSideBar
+	return m.pagesStack[0]
 }
 func (m *AppManager) GetWindowWidthInDp() int {
 	width := int(float32(m.Constraints.Max.X) / m.Metric.PxPerDp)
@@ -175,7 +179,7 @@ func (m *AppManager) drawPage(gtx Gtx) Dim {
 			}
 			gtx.Constraints.Max.X = int(float32(maxDim.X) * 0.40)
 			gtx.Constraints.Min = gtx.Constraints.Max
-			d = m.settingsSideBar.Layout(gtx)
+			d = m.sideNavBar.Layout(gtx)
 			return d
 		}),
 		layout.Rigid(func(gtx layout.Context) layout.Dimensions {
@@ -202,11 +206,11 @@ func (m *AppManager) drawPage(gtx Gtx) Dim {
 func (m *AppManager) NavigateToPage(page Page) {
 	pageURL := page.URL()
 	if pageURL == m.CurrentPage().URL() {
-		return
+		m.PopUp()
 	}
 	switch pageURL {
 	case NavPageURL:
-		m.pagesStack = []Page{m.settingsSideBar}
+		m.pagesStack = []Page{m.sideNavBar}
 	default:
 		m.pagesStack = append(m.pagesStack, page)
 	}
@@ -215,7 +219,7 @@ func (m *AppManager) NavigateToPage(page Page) {
 
 func (m *AppManager) NavigateToURL(pageURL URL) {
 	if pageURL == m.CurrentPage().URL() {
-		return
+		m.PopUp()
 	}
 	var page Page
 	lastSegment := strings.Split(string(pageURL), "/")
@@ -225,29 +229,34 @@ func (m *AppManager) NavigateToURL(pageURL URL) {
 	}
 	switch pageURL {
 	case NavPageURL:
-		m.pagesStack = []Page{m.settingsSideBar}
+		m.pagesStack = []Page{m.sideNavBar}
 	case BookingsPageURL:
-		m.pagesStack = []Page{m.settingsSideBar}
+		m.pagesStack = []Page{m.sideNavBar}
 		page = bookings.New(m)
 	case AddEditBookingPageURL(bookingID):
 		booking := service.Booking{}
 		var err error
-		booking.ID, err = primitive.ObjectIDFromHex(bookingID)
+		number, err := strconv.ParseInt(bookingID, 10, 64)
 		if err != nil {
 			fmt.Println(err)
 		}
+		booking.Number = int(number)
 		page = addedit.New(m, booking)
 	case AddEditTransactionsPageURL(bookingID):
 		booking := service.Booking{}
 		var err error
-		booking.ID, err = primitive.ObjectIDFromHex(bookingID)
+		number, err := strconv.ParseInt(bookingID, 10, 64)
 		if err != nil {
 			fmt.Println(err)
 		}
+		booking.Number = int(number)
 		page = transactions.New(m, booking)
 	case SearchBookingsPageURL:
-		m.pagesStack = []Page{m.settingsSideBar}
+		m.pagesStack = []Page{m.sideNavBar}
 		page = search.New(m)
+	case SettingsPageURL:
+		m.pagesStack = []Page{m.sideNavBar}
+		page = settings.New(m)
 	}
 	if page != nil {
 		m.pagesStack = append(m.pagesStack, page)
@@ -259,6 +268,13 @@ func (m *AppManager) PopUp() {
 	stackLength := len(m.pagesStack)
 	if stackLength > 1 {
 		m.pagesStack = m.pagesStack[0 : stackLength-1]
+		if pageAfterPopPup, ok := m.pagesStack[len(m.pagesStack)-1].(PagePostPopUp); ok {
+			pageAfterPopPup.OnPopUpPreviousPage()
+		}
 	}
 	m.pageAnimation.PushRight()
+}
+
+func (m *AppManager) User() response.LoginUser {
+	return m.user
 }

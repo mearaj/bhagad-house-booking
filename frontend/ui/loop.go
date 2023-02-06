@@ -10,6 +10,7 @@ import (
 	"gioui.org/op/clip"
 	"gioui.org/op/paint"
 	"github.com/mearaj/bhagad-house-booking/common/alog"
+	"github.com/mearaj/bhagad-house-booking/frontend/service"
 	. "github.com/mearaj/bhagad-house-booking/frontend/ui/fwk"
 	"github.com/mearaj/bhagad-house-booking/frontend/user"
 	"image"
@@ -43,7 +44,7 @@ func Loop(w *app.Window) error {
 	// backClickTag is meant for tracking user's backClick action, specially on mobile
 	var backClickTag struct{}
 
-	//subscription := appManager.Service().Subscribe()
+	subscription := appManager.Service().Subscribe()
 
 	for {
 		select {
@@ -76,7 +77,7 @@ func Loop(w *app.Window) error {
 				areaStack := clip.Rect(image.Rectangle{Max: gtx.Constraints.Max}).Push(gtx.Ops)
 				// In desktop layout, sidebar exists and needs to listen to entire window's pointer event
 				// hence added here. It avoids conflict with page that contains sidebar
-				for _, elem := range []interface{}{appManager.CurrentPage(), appManager.settingsSideBar} {
+				for _, elem := range []interface{}{appManager.CurrentPage(), appManager.sideNavBar} {
 					pointer.InputOp{
 						Types: pointer.Enter | pointer.Leave | pointer.Drag | pointer.Press | pointer.Release | pointer.Scroll | pointer.Move,
 						Tag:   elem,
@@ -101,17 +102,21 @@ func Loop(w *app.Window) error {
 					appManager.isStageRunning = true
 				}
 			}
-			//case event := <-subscription.Events():
-			//	var settingsBarFound bool
-			//	for _, eachPage := range appManager.pagesStack {
-			//		if l, ok := eachPage.(ServiceListener); ok {
-			//			l.OnServiceStateChange(event)
-			//		}
-			//		settingsBarFound = eachPage == appManager.settingsSideBar
-			//	}
-			//	if l, ok := appManager.settingsSideBar.(ServiceListener); ok && !settingsBarFound {
-			//		l.OnServiceStateChange(event)
-			//	}
+		case event := <-subscription.Events():
+			currentPage := appManager.CurrentPage()
+			settingsSidebar := appManager.sideNavBar
+			for _, currentPage := range appManager.pagesStack {
+				if currentPage, ok := currentPage.(ServiceListener); ok {
+					currentPage.OnServiceStateChange(event)
+				}
+			}
+			if st, ok := settingsSidebar.(ServiceListener); ok && currentPage != settingsSidebar {
+				st.OnServiceStateChange(event)
+			}
+			if usr, ok := event.Data.(service.UserResponse); ok {
+				user.SetUser(usr)
+				appManager.user = usr
+			}
 		}
 	}
 }

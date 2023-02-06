@@ -52,6 +52,7 @@ func (s *Server) loginUser(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, rsp)
 		return
 	}
+
 	err := usersCollection.FindOne(context.TODO(), bson.M{"email": rq.Email}).Decode(&user)
 	if err != nil {
 		rsp.Error = err.Error()
@@ -71,7 +72,14 @@ func (s *Server) loginUser(ctx *gin.Context) {
 		ctx.JSON(http.StatusInternalServerError, rsp)
 		return
 	}
+	payload, err := s.tokenMaker.VerifyToken(accessToken)
+	if err != nil {
+		rsp.Error = err.Error()
+		ctx.JSON(http.StatusInternalServerError, rsp)
+		return
+	}
 	rsp.User = response.User{Name: user.Name, Email: user.Email, ID: user.ID, Roles: user.Roles}
 	rsp.AccessToken = accessToken
+	rsp.ExpiresAt = payload.ExpiredAt
 	ctx.JSON(http.StatusOK, rsp)
 }

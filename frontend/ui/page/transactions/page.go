@@ -28,7 +28,8 @@ type page struct {
 	initialized            bool
 	isFetchingTransactions bool
 	title                  string
-	ViewList               layout.List
+	transactionsList       layout.List
+	viewLayout             layout.List
 	Theme                  *material.Theme
 	btnNav                 widget.Clickable
 	btnAddTransaction      widget.Clickable
@@ -36,8 +37,6 @@ type page struct {
 	navigationIcon         *widget.Icon
 	iconAddTransaction     *widget.Icon
 	bookingDetails         view.BookingDetails
-	loginUserResponse      service.UserResponse
-	subscription           service.Subscriber
 	fwk.Manager
 	Booking             service.Booking
 	selectedTransaction view.TransactionForm
@@ -53,7 +52,8 @@ func New(manager fwk.Manager, booking service.Booking) fwk.Page {
 		Manager:            manager,
 		Theme:              &theme,
 		navigationIcon:     navIcon,
-		ViewList:           layout.List{Axis: layout.Vertical},
+		transactionsList:   layout.List{Axis: layout.Vertical},
+		viewLayout:         layout.List{Axis: layout.Vertical},
 		Booking:            booking,
 		iconAddTransaction: addTransactionIcon,
 		bookingDetails: view.BookingDetails{
@@ -61,9 +61,7 @@ func New(manager fwk.Manager, booking service.Booking) fwk.Page {
 			Theme:   user.Theme(),
 		},
 	}
-	p.subscription = manager.Service().Subscribe()
 	p.ModalContent = view.NewModalContent(p.onModalCloseClick)
-	p.subscription.SubscribeWithCallback(p.OnServiceStateChange)
 	return &p
 }
 
@@ -76,11 +74,12 @@ func (p *page) Layout(gtx fwk.Gtx) fwk.Dim {
 		p.initialized = true
 	}
 	p.title = i18n.Get(key.ManageTransactions)
-	if !p.loginUserResponse.IsAuthorized() {
+	if !p.Manager.User().IsAuthorized() {
 		return fwk.Dim{}
 	}
+
 	if p.btnAddTransaction.Clicked() {
-		p.selectedTransaction = view.NewTransactionForm(model.Transaction{BookingID: p.Booking.ID}, user.Theme())
+		p.selectedTransaction = view.NewTransactionForm(model.Transaction{BookingNumber: p.Booking.Number}, user.Theme())
 		p.Modal().Show(func(gtx layout.Context) layout.Dimensions {
 			return p.drawTransactionForm(gtx)
 		}, nil, view.Animation{
@@ -95,26 +94,27 @@ func (p *page) Layout(gtx fwk.Gtx) fwk.Dim {
 	}
 	if p.selectedTransaction.Cancel.Clicked() {
 		p.Modal().Dismiss(nil)
-		p.selectedTransaction = view.NewTransactionForm(model.Transaction{BookingID: p.Booking.ID}, user.Theme())
+		p.selectedTransaction = view.NewTransactionForm(model.Transaction{BookingNumber: p.Booking.Number}, user.Theme())
 	}
 
 	flex := layout.Flex{Axis: layout.Vertical}
 	d := flex.Layout(gtx,
 		layout.Rigid(p.DrawAppBar),
 		layout.Flexed(1, func(gtx layout.Context) layout.Dimensions {
-			inset := layout.UniformInset(view.BookingDetailsFormInset)
-			return inset.Layout(gtx, func(gtx fwk.Gtx) fwk.Dim {
-				flex := layout.Flex{Axis: layout.Vertical}
-				return flex.Layout(gtx,
-					layout.Rigid(p.drawBookingDetails),
-					layout.Rigid(layout.Spacer{Height: 16}.Layout),
-					layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-						gtx.Constraints.Min = gtx.Constraints.Max
-						return p.ViewList.Layout(gtx, len(p.transactions), func(gtx layout.Context, index int) layout.Dimensions {
-							return p.drawTransactionItem(gtx, index)
-						})
-					}),
-				)
+			return p.viewLayout.Layout(gtx, 1, func(gtx layout.Context, index int) layout.Dimensions {
+				inset := layout.UniformInset(view.BookingDetailsFormInset)
+				return inset.Layout(gtx, func(gtx fwk.Gtx) fwk.Dim {
+					flex := layout.Flex{Axis: layout.Vertical}
+					return flex.Layout(gtx,
+						layout.Rigid(p.drawBookingDetails),
+						layout.Rigid(layout.Spacer{Height: 16}.Layout),
+						layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+							return p.transactionsList.Layout(gtx, len(p.transactions), func(gtx layout.Context, index int) layout.Dimensions {
+								return p.drawTransactionItem(gtx, index)
+							})
+						}),
+					)
+				})
 			})
 		}),
 	)
@@ -259,9 +259,9 @@ func (p *page) drawLabelField(gtx fwk.Gtx, labelText string) [2]layout.FlexChild
 
 func (p *page) drawFloatingButton(gtx fwk.Gtx) fwk.Dim {
 	st := layout.Stack{Alignment: layout.NE}
-	op.Offset(image.Pt(0, gtx.Dp(view.AppBarHeight))).Add(gtx.Ops)
 	return st.Layout(gtx,
 		layout.Stacked(func(gtx layout.Context) layout.Dimensions {
+			op.Offset(image.Pt(0, gtx.Dp(view.AppBarHeight))).Add(gtx.Ops)
 			inset := layout.UniformInset(16)
 			return inset.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
 				btn := material.IconButton(p.Theme, &p.btnAddTransaction, p.iconAddTransaction, "Add Transaction")
@@ -272,9 +272,9 @@ func (p *page) drawFloatingButton(gtx fwk.Gtx) fwk.Dim {
 }
 
 func (p *page) fetchTransactions() {
-	if !p.isFetchingTransactions && !helper.IsNilObjectID(p.Booking.ID) {
+	if !p.isFetchingTransactions && p.Booking.Number != 0 {
 		p.isFetchingTransactions = true
-		p.Service().Transactions(service.TransactionsRequest{BookingID: p.Booking.ID}, p)
+		p.Service().GetTransactions(service.TransactionsRequest{BookingNumber: p.Booking.Number}, p)
 	}
 }
 func (p *page) drawTransactionForm(gtx fwk.Gtx) fwk.Dim {
@@ -301,12 +301,12 @@ func (p *page) handleSubmitTransaction() {
 	if err == nil {
 		p.Modal().Dismiss(nil)
 		p.Service().AddUpdateTransaction(service.AddUpdateTransactionRequest{
-			ID:        p.selectedTransaction.Transaction.ID,
-			BookingID: p.selectedTransaction.Transaction.BookingID,
-			Amount:    amount,
-			Details:   p.selectedTransaction.DetailsField.Text(),
+			ID:            p.selectedTransaction.Transaction.ID,
+			BookingNumber: p.selectedTransaction.Transaction.BookingNumber,
+			Amount:        amount,
+			Details:       p.selectedTransaction.DetailsField.Text(),
 		}, p)
-		p.selectedTransaction = view.NewTransactionForm(model.Transaction{BookingID: p.Booking.ID}, user.Theme())
+		p.selectedTransaction = view.NewTransactionForm(model.Transaction{BookingNumber: p.Booking.Number}, user.Theme())
 	}
 }
 func (p *page) drawDeleteTransactionModel(gtx fwk.Gtx, index int) fwk.Dim {
@@ -315,8 +315,8 @@ func (p *page) drawDeleteTransactionModel(gtx fwk.Gtx, index int) fwk.Dim {
 	if p.transactions[index].BtnYes.Clicked() {
 		p.Modal().Dismiss(func() {
 			p.Service().DeleteTransaction(service.DeleteTransactionRequest{
-				ID:        p.transactions[index].transaction.ID,
-				BookingID: p.transactions[index].transaction.BookingID,
+				ID:            p.transactions[index].transaction.ID,
+				BookingNumber: p.transactions[index].transaction.BookingNumber,
 			}, p)
 		})
 	}
@@ -350,7 +350,7 @@ func (p *page) OnServiceStateChange(event service.Event) {
 	var errTxt string
 	switch eventData := event.Data.(type) {
 	case service.UserResponse:
-		p.loginUserResponse = eventData
+		p.Window().Invalidate()
 	case service.TransactionsResponse:
 		p.isFetchingTransactions = false
 		if event.Cached || event.ID != p {
@@ -392,5 +392,5 @@ func (p *page) onModalCloseClick() {
 }
 
 func (p *page) URL() fwk.URL {
-	return fwk.AddEditTransactionsPageURL(p.Booking.ID.Hex())
+	return fwk.AddEditTransactionsPageURL(fmt.Sprintf("%d", p.Booking.Number))
 }

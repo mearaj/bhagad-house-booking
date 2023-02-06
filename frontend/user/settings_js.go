@@ -40,11 +40,13 @@ func LoadSettings() {
 	ctFg := settingsJSON.FlatTheme.ContrastForeground
 	th.Fg, th.Bg, th.ContrastBg, th.ContrastFg = fg, bg, ctBg, ctFg
 	user := settingsJSON.User
+	rate := settingsJSON.BookingRate
 	settingsMutex.Lock()
 	settings = Settings{
 		languageCode: settingsJSON.LanguageCode,
 		theme:        *th,
 		user:         user,
+		bookingRate:  rate,
 	}
 	settingsMutex.Unlock()
 }

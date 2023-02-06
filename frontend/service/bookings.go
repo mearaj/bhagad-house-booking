@@ -3,19 +3,16 @@ package service
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/mearaj/bhagad-house-booking/common/alog"
-	"github.com/mearaj/bhagad-house-booking/common/response"
-	"github.com/mearaj/bhagad-house-booking/common/token"
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	"github.com/mearaj/bhagad-house-booking/frontend/user"
 	"net/http"
 	"net/url"
 )
 
 const UnauthorizedErrorStr = "unauthorized"
 
-func (s *service) Bookings(bookingParams BookingsRequest) {
+func (s *service) GetBookings(bookingParams BookingsRequest) {
 	go func() {
 		var bookingsResponse BookingsResponse
 		bookingsResponse.Bookings = make([]Booking, 0)
@@ -40,19 +37,10 @@ func (s *service) Bookings(bookingParams BookingsRequest) {
 			return
 		}
 		req.Header.Add("Accept", "application/json")
-		userEvent, ok := s.eventBroker.cachedEvents.Get(TopicLoggedInOut)
-		if ok {
-			userResponse, ok := userEvent.Data.(UserResponse)
-			if ok && userResponse.AccessToken != "" {
-				req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", userResponse.AccessToken))
-			}
-		}
+		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", user.User().AccessToken))
 		cl := http.Client{}
 		rsp, err := cl.Do(req)
 		if err != nil {
-			if errors.Is(err, token.ErrExpiredToken) || errors.Is(err, token.ErrInvalidToken) {
-				s.eventBroker.Fire(Event{Data: UserResponse{}, Topic: TopicLoggedInOut})
-			}
 			bookingsResponse.Error = err.Error()
 			return
 		}
@@ -88,25 +76,19 @@ func (s *service) SearchBookings(query string) {
 			return
 		}
 		req.Header.Add("Accept", "application/json")
-		userEvent, ok := s.eventBroker.cachedEvents.Get(TopicLoggedInOut)
-		if ok {
-			userResponse, ok := userEvent.Data.(UserResponse)
-			if ok && userResponse.AccessToken != "" {
-				req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", userResponse.AccessToken))
-			}
-		}
+		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", user.User().AccessToken))
 		cl := http.Client{}
 		rsp, err := cl.Do(req)
-		if err != nil {
-			if errors.Is(err, token.ErrExpiredToken) || errors.Is(err, token.ErrInvalidToken) {
-				s.eventBroker.Fire(Event{Data: UserResponse{}, Topic: TopicLoggedInOut})
-			}
-			searchBookingsResponse.Error = err.Error()
-			return
-		}
 		defer func() {
 			_ = rsp.Body.Close()
 		}()
+		if err != nil {
+			isAuthErr := s.FireAuthError(rsp, nil, err)
+			if isAuthErr {
+				searchBookingsResponse.Error = err.Error()
+			}
+			return
+		}
 		err = json.NewDecoder(rsp.Body).Decode(&searchBookingsResponse)
 		if err != nil {
 			searchBookingsResponse.Error = err.Error()
@@ -127,20 +109,6 @@ func (s *service) CreateBooking(bookingParams CreateBookingRequest) {
 				Topic: TopicCreateBooking,
 			})
 		}()
-		userEvent, ok := s.eventBroker.cachedEvents.Get(TopicLoggedInOut)
-		if !ok {
-			createBookingResponse.Error = "user not logged in"
-			return
-		}
-		userResponse, ok := userEvent.Data.(UserResponse)
-		if !ok {
-			createBookingResponse.Error = "critical error, need to contact admin"
-			return
-		}
-		if userResponse.AccessToken == "" {
-			createBookingResponse.Error = "user not logged in"
-			return
-		}
 		jsonValues, err := json.Marshal(bookingParams)
 		if err != nil {
 			createBookingResponse.Error = err.Error()
@@ -152,27 +120,19 @@ func (s *service) CreateBooking(bookingParams CreateBookingRequest) {
 			return
 		}
 		req.Header.Add("Accept", "application/json")
-		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", userResponse.AccessToken))
+		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", user.User().AccessToken))
 		cl := http.Client{}
 		rsp, err := cl.Do(req)
-		if rsp.StatusCode == http.StatusUnauthorized {
-			userResponse = UserResponse{AccessToken: "", User: response.User{}, Error: ""}
-			s.eventBroker.Fire(Event{Data: userResponse,
-				Topic: TopicLoggedInOut,
-			})
-			createBookingResponse.Error = UnauthorizedErrorStr
-			return
-		}
-		if err != nil {
-			if errors.Is(err, token.ErrExpiredToken) || errors.Is(err, token.ErrInvalidToken) {
-				s.eventBroker.Fire(Event{Data: UserResponse{}, Topic: TopicLoggedInOut})
-			}
-			createBookingResponse.Error = err.Error()
-			return
-		}
 		defer func() {
 			_ = rsp.Body.Close()
 		}()
+		if err != nil {
+			isAuthErr := s.FireAuthError(rsp, nil, err)
+			if isAuthErr {
+				createBookingResponse.Error = UnauthorizedErrorStr
+			}
+			return
+		}
 		err = json.NewDecoder(rsp.Body).Decode(&createBookingResponse)
 		if err != nil {
 			createBookingResponse.Error = err.Error()
@@ -184,7 +144,7 @@ func (s *service) CreateBooking(bookingParams CreateBookingRequest) {
 func (s *service) UpdateBooking(bookingParams UpdateBookingRequest) {
 	go func() {
 		var updateBookingsResponse UpdateBookingResponse
-		updateBookingsResponse.Booking.ID = bookingParams.ID
+		updateBookingsResponse.Booking.Number = bookingParams.Number
 		defer func() {
 			if r := recover(); r != nil {
 				fmt.Println("recovered from err, ", r)
@@ -195,20 +155,7 @@ func (s *service) UpdateBooking(bookingParams UpdateBookingRequest) {
 				Topic: TopicUpdateBooking,
 			})
 		}()
-		userEvent, ok := s.eventBroker.cachedEvents.Get(TopicLoggedInOut)
-		if !ok {
-			updateBookingsResponse.Error = "user not logged in"
-			return
-		}
-		userResponse, ok := userEvent.Data.(UserResponse)
-		if !ok {
-			updateBookingsResponse.Error = "critical error, need to contact admin"
-			return
-		}
-		if userResponse.AccessToken == "" {
-			updateBookingsResponse.Error = "user not logged in"
-			return
-		}
+
 		jsonValues, err := json.Marshal(bookingParams)
 		if err != nil {
 			updateBookingsResponse.Error = err.Error()
@@ -220,27 +167,19 @@ func (s *service) UpdateBooking(bookingParams UpdateBookingRequest) {
 			return
 		}
 		req.Header.Add("Accept", "application/json")
-		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", userResponse.AccessToken))
+		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", user.User().AccessToken))
 		cl := http.Client{}
 		rsp, err := cl.Do(req)
-		if rsp.StatusCode == http.StatusUnauthorized {
-			userResponse = UserResponse{AccessToken: "", User: response.User{}, Error: ""}
-			s.eventBroker.Fire(Event{Data: userResponse,
-				Topic: TopicLoggedInOut,
-			})
-			updateBookingsResponse.Error = UnauthorizedErrorStr
-			return
-		}
-		if err != nil {
-			if errors.Is(err, token.ErrExpiredToken) || errors.Is(err, token.ErrInvalidToken) {
-				s.eventBroker.Fire(Event{Data: UserResponse{}, Topic: TopicLoggedInOut})
-			}
-			updateBookingsResponse.Error = err.Error()
-			return
-		}
 		defer func() {
 			_ = rsp.Body.Close()
 		}()
+		if err != nil {
+			isAuthErr := s.FireAuthError(rsp, nil, err)
+			if isAuthErr {
+				updateBookingsResponse.Error = UnauthorizedErrorStr
+			}
+			return
+		}
 		err = json.NewDecoder(rsp.Body).Decode(&updateBookingsResponse)
 		if err != nil {
 			updateBookingsResponse.Error = err.Error()
@@ -249,11 +188,11 @@ func (s *service) UpdateBooking(bookingParams UpdateBookingRequest) {
 	}()
 }
 
-func (s *service) DeleteBooking(bookingID primitive.ObjectID) {
+func (s *service) DeleteBooking(number int) {
 	go func() {
 		var deleteBookingResponse DeleteBookingResponse
 		var err error
-		deleteBookingResponse.ID = bookingID
+		deleteBookingResponse.Number = number
 		if err != nil {
 			alog.Logger().Println(err)
 		}
@@ -267,25 +206,11 @@ func (s *service) DeleteBooking(bookingID primitive.ObjectID) {
 				Topic: TopicDeleteBooking,
 			})
 		}()
-		if bookingID.Hex() == primitive.NilObjectID.Hex() {
-			deleteBookingResponse.Error = "booking id cannot be empty"
+		if number == 0 {
+			deleteBookingResponse.Error = "booking id cannot zero"
 			return
 		}
-		userEvent, ok := s.eventBroker.cachedEvents.Get(TopicLoggedInOut)
-		if !ok {
-			deleteBookingResponse.Error = "user not logged in"
-			return
-		}
-		userResponse, ok := userEvent.Data.(UserResponse)
-		if !ok {
-			deleteBookingResponse.Error = "critical error, need to contact admin"
-			return
-		}
-		if userResponse.AccessToken == "" {
-			deleteBookingResponse.Error = "user not logged in"
-			return
-		}
-		delReq := DeleteBookingRequest{ID: bookingID}
+		delReq := DeleteBookingRequest{Number: number}
 		jsonValues, err := json.Marshal(delReq)
 		if err != nil {
 			deleteBookingResponse.Error = err.Error()
@@ -297,27 +222,19 @@ func (s *service) DeleteBooking(bookingID primitive.ObjectID) {
 			return
 		}
 		req.Header.Add("Accept", "application/json")
-		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", userResponse.AccessToken))
+		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", user.User().AccessToken))
 		cl := http.Client{}
 		rsp, err := cl.Do(req)
-		if rsp.StatusCode == http.StatusUnauthorized {
-			userResponse = UserResponse{AccessToken: "", User: response.User{}, Error: ""}
-			s.eventBroker.Fire(Event{Data: userResponse,
-				Topic: TopicLoggedInOut,
-			})
-			deleteBookingResponse.Error = UnauthorizedErrorStr
-			return
-		}
-		if err != nil {
-			if errors.Is(err, token.ErrExpiredToken) || errors.Is(err, token.ErrInvalidToken) {
-				s.eventBroker.Fire(Event{Data: UserResponse{}, Topic: TopicLoggedInOut})
-			}
-			deleteBookingResponse.Error = err.Error()
-			return
-		}
 		defer func() {
 			_ = rsp.Body.Close()
 		}()
+		if err != nil {
+			isAuthErr := s.FireAuthError(rsp, nil, err)
+			if isAuthErr {
+				deleteBookingResponse.Error = UnauthorizedErrorStr
+			}
+			return
+		}
 		err = json.NewDecoder(rsp.Body).Decode(&deleteBookingResponse)
 		if err != nil {
 			deleteBookingResponse.Error = err.Error()
