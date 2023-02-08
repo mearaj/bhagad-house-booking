@@ -8,12 +8,12 @@ import (
 	"gioui.org/widget"
 	"gioui.org/widget/material"
 	"gioui.org/x/component"
+	"github.com/mearaj/bhagad-house-booking/common/utils"
 	"github.com/mearaj/bhagad-house-booking/frontend/assets/fonts"
 	"github.com/mearaj/bhagad-house-booking/frontend/i18n"
 	"github.com/mearaj/bhagad-house-booking/frontend/i18n/key"
 	"github.com/mearaj/bhagad-house-booking/frontend/service"
 	"github.com/mearaj/bhagad-house-booking/frontend/ui/fwk"
-	"github.com/mearaj/bhagad-house-booking/frontend/ui/helper"
 	"github.com/mearaj/bhagad-house-booking/frontend/user"
 	"golang.org/x/exp/shiny/materialdesign/colornames"
 	"golang.org/x/exp/shiny/materialdesign/icons"
@@ -249,5 +249,5 @@ func (bf *BookingDetailsForm) setTotalPrice(gtx fwk.Gtx) {
 	ratePerDayStr := strings.TrimSpace(bf.RatePerDay.Text())
 	startDate := bf.BookingForm.StartDate
 	endDate := bf.BookingForm.EndDate
-	bf.TotalPrice = helper.BookingTotalPriceFromRateStr(ratePerDayStr, startDate, endDate)
+	bf.TotalPrice = utils.BookingTotalPriceFromRateStr(ratePerDayStr, startDate, endDate)
 }

@@ -9,11 +9,11 @@ import (
 	"gioui.org/widget/material"
 	"gioui.org/x/component"
 	"github.com/mearaj/bhagad-house-booking/common/model"
+	"github.com/mearaj/bhagad-house-booking/common/utils"
 	"github.com/mearaj/bhagad-house-booking/frontend/i18n"
 	"github.com/mearaj/bhagad-house-booking/frontend/i18n/key"
 	"github.com/mearaj/bhagad-house-booking/frontend/service"
 	"github.com/mearaj/bhagad-house-booking/frontend/ui/fwk"
-	"github.com/mearaj/bhagad-house-booking/frontend/ui/helper"
 	"github.com/mearaj/bhagad-house-booking/frontend/ui/view"
 	"github.com/mearaj/bhagad-house-booking/frontend/user"
 	"golang.org/x/exp/shiny/materialdesign/icons"
@@ -217,7 +217,7 @@ func (p *page) drawPaymentFields(gtx fwk.Gtx) fwk.Dim {
 			for _, tr := range p.transactions {
 				totalReceived += tr.transaction.Amount
 			}
-			totalPrice := helper.BookingTotalPrice(p.Booking.RatePerDay, p.Booking.StartDate, p.Booking.EndDate)
+			totalPrice := utils.BookingTotalPrice(p.Booking.RatePerDay, p.Booking.StartDate, p.Booking.EndDate)
 			balanceLeft := totalPrice - totalReceived
 			valueTxt = fmt.Sprintf("%.2f", balanceLeft)
 			return p.drawBookingField(gtx, labelTxt, valueTxt)

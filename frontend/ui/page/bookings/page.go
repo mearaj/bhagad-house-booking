@@ -7,11 +7,11 @@ import (
 	"gioui.org/unit"
 	"gioui.org/widget"
 	"gioui.org/widget/material"
+	"github.com/mearaj/bhagad-house-booking/common/utils"
 	"github.com/mearaj/bhagad-house-booking/frontend/i18n"
 	"github.com/mearaj/bhagad-house-booking/frontend/i18n/key"
 	"github.com/mearaj/bhagad-house-booking/frontend/service"
 	"github.com/mearaj/bhagad-house-booking/frontend/ui/fwk"
-	"github.com/mearaj/bhagad-house-booking/frontend/ui/helper"
 	"github.com/mearaj/bhagad-house-booking/frontend/ui/view"
 	"github.com/mearaj/bhagad-house-booking/frontend/user"
 	"golang.org/x/exp/shiny/materialdesign/colornames"
@@ -66,7 +66,7 @@ func New(manager fwk.Manager) fwk.Page {
 		fetchingBookingsCh: make(chan service.BookingsResponse, 1),
 		limit:              1000,
 		offset:             0,
-		bookingForm:        view.NewBookingForm(manager, helper.GetDefaultBookingRequest(), true),
+		bookingForm:        view.NewBookingForm(manager, utils.GetDefaultBookingRequest(), true),
 	}
 	return &p
 }

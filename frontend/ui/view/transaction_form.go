@@ -6,10 +6,10 @@ import (
 	"gioui.org/widget/material"
 	"gioui.org/x/component"
 	"github.com/mearaj/bhagad-house-booking/common/model"
+	"github.com/mearaj/bhagad-house-booking/common/utils"
 	"github.com/mearaj/bhagad-house-booking/frontend/i18n"
 	"github.com/mearaj/bhagad-house-booking/frontend/i18n/key"
 	"github.com/mearaj/bhagad-house-booking/frontend/ui/fwk"
-	"github.com/mearaj/bhagad-house-booking/frontend/ui/helper"
 	"github.com/mearaj/bhagad-house-booking/frontend/user"
 )
 
@@ -46,7 +46,7 @@ func (tr *TransactionForm) Layout(gtx fwk.Gtx) fwk.Dim {
 		layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 			return layout.Center.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
 				labelText := i18n.Get(key.EditTransaction)
-				if helper.IsNilObjectID(tr.Transaction.ID) {
+				if utils.IsNilObjectID(tr.Transaction.ID) {
 					labelText = i18n.Get(key.AddTransaction)
 				}
 				label := material.H5(tr.Theme, labelText)
@@ -70,7 +70,7 @@ func (tr *TransactionForm) Layout(gtx fwk.Gtx) fwk.Dim {
 			return flex.Layout(gtx,
 				layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 					btnText := i18n.Get(key.AddTransaction)
-					if !helper.IsNilObjectID(tr.Transaction.ID) {
+					if !utils.IsNilObjectID(tr.Transaction.ID) {
 						btnText = i18n.Get(key.UpdateTransaction)
 					}
 					btn := material.Button(tr.Theme, &tr.Submit, btnText)

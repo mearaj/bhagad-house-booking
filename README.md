@@ -94,6 +94,14 @@ Note: [-ldflags -H=windowsgui](https://stackoverflow.com/questions/23250505/how-
 ### Steps 
 
 ### Production ###
-flyctl deploy -a bhagad-house-booking-frontend --build-arg API_URL=https://bhagad-house-booking-backend.fly.dev -e GIN_MODE=release -c frontend.fly.toml
-
-flyctl deploy -a bhagad-house-booking-backend -e GIN_MODE=release -c backend.fly.toml
+#### Backend ####
+```!#console
+docker build . --tag mearaj/bhagad_house_booking -f Dockerfile.backend
+```
+```!#console
+docker tag mearaj/bhagad_house_booking gcr.io/bhagadhouse/bhagad_house_booking
+```
+```!#console
+docker push gcr.io/bhagadhouse/bhagad_house_booking:latest
+```
+Ref [Google Cloud](https://cloud.google.com/container-registry/docs/pushing-and-pulling)

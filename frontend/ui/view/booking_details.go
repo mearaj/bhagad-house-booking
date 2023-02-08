@@ -6,11 +6,11 @@ import (
 	"gioui.org/text"
 	"gioui.org/unit"
 	"gioui.org/widget/material"
+	"github.com/mearaj/bhagad-house-booking/common/utils"
 	"github.com/mearaj/bhagad-house-booking/frontend/i18n"
 	"github.com/mearaj/bhagad-house-booking/frontend/i18n/key"
 	"github.com/mearaj/bhagad-house-booking/frontend/service"
 	"github.com/mearaj/bhagad-house-booking/frontend/ui/fwk"
-	"github.com/mearaj/bhagad-house-booking/frontend/ui/helper"
 	"github.com/mearaj/bhagad-house-booking/frontend/user"
 	"time"
 )
@@ -72,7 +72,7 @@ func (p *BookingDetails) layoutContent(gtx fwk.Gtx) fwk.Dim {
 				endDate := p.Booking.EndDate
 				ratePerDay := p.Booking.RatePerDay
 				valueTxt := fmt.Sprintf("%.2f",
-					helper.BookingTotalPrice(ratePerDay, startDate, endDate),
+					utils.BookingTotalPrice(ratePerDay, startDate, endDate),
 				)
 				return p.drawBookingField(gtx, labelTxt, valueTxt)
 			}),
@@ -131,7 +131,7 @@ func (p *BookingDetails) drawBookingDate(gtx fwk.Gtx, t time.Time, labelStr stri
 		layout.Flexed(1, func(gtx layout.Context) layout.Dimensions {
 			ins := layout.Inset{}
 			return ins.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
-				b := material.Body1(p.Theme, helper.GetFormattedDate(t))
+				b := material.Body1(p.Theme, utils.GetFormattedDate(t))
 				b.Font.Weight = BookingDetailsBodyFontWeight
 				b.TextSize = BookingDetailsBodyFontSize
 				return b.Layout(gtx)

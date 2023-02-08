@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"errors"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/mearaj/bhagad-house-booking/common/response"
 	"github.com/mearaj/bhagad-house-booking/common/utils"
@@ -56,14 +57,36 @@ func (s *Server) sendNewBookingSMS(ctx *gin.Context) {
 	case 12: // if the number begins without +
 		phoneNumber = "+" + phoneNumber
 	}
+	bookingNumberStr := fmt.Sprintf("%d.", rsp.Booking.Number)
+	bookingStartStr := utils.GetFormattedDate(rsp.Booking.StartDate) + "."
+	bookingEndStr := utils.GetFormattedDate(rsp.Booking.EndDate) + "."
+	bookingPeriodInt := utils.BookingTotalNumberOfDays(rsp.Booking.StartDate, rsp.Booking.EndDate)
+	bookingPeriodStr := fmt.Sprintf("%d day.", bookingPeriodInt)
+	if bookingPeriodInt > 1 {
+		bookingPeriodStr = fmt.Sprintf("%d days.", bookingPeriodInt)
+	}
+	bookingRateStr := fmt.Sprintf("%.2f.", rsp.Booking.RatePerDay)
+	bookingTotalPriceFloat := rsp.Booking.RatePerDay * float64(bookingPeriodInt)
+	bookingTotalPriceStr := fmt.Sprintf("INR %.2f.", bookingTotalPriceFloat)
+	textContent := fmt.Sprintf(
+		"%s\n%s\n%s : %s\n%s : %s\n%s : %s\n%s : %s\n%s : %s\n%s : %s\n%s : %s\n\n%s",
+		"This is a confirmation sms for your booking at https://bhagadhouse.com.",
+		"Booking Details",
+		"Status", "Confirmed.",
+		"Number", bookingNumberStr,
+		"Starts From", bookingStartStr,
+		"Ends On", bookingEndStr,
+		"Period", bookingPeriodStr,
+		"Rate", bookingRateStr,
+		"Total Price", bookingTotalPriceStr,
+		"Than you for your business",
+	)
 	// Find your Account SID and Auth Token at twilio.com/console
 	// and set the environment variables. See http://twil.io/secure
 	client := twilio.NewRestClient()
 
 	params := &api.CreateMessageParams{}
-	params.SetBody(`
-		This is a confirmation sms for your booking at https://bhagadhouse.com`,
-	)
+	params.SetBody(textContent)
 	params.SetFrom(s.config.TwilioPhoneNumber)
 	params.SetTo(phoneNumber)
 

@@ -1,8 +1,7 @@
-package helper
+package utils
 
 import (
-	"github.com/mearaj/bhagad-house-booking/common/utils"
-	"github.com/mearaj/bhagad-house-booking/frontend/service"
+	"github.com/mearaj/bhagad-house-booking/common/request"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"math"
 	"strconv"
@@ -31,11 +30,19 @@ func BookingTotalPrice(bookingRatePerDay float64, startDate, endDate time.Time) 
 	return totalPrice
 }
 
-func GetDefaultBookingRequest() service.BookingsRequest {
-	startDate := utils.GetFirstDayOfMonth(time.Now().Local())
-	endDate := utils.GetLastDayOfMonth(time.Now().Local().AddDate(0, 5, 0))
-	return service.BookingsRequest{
+func GetDefaultBookingRequest() request.ListBookings {
+	startDate := GetFirstDayOfMonth(time.Now().Local())
+	endDate := GetLastDayOfMonth(time.Now().Local().AddDate(0, 5, 0))
+	return request.ListBookings{
 		StartDate: startDate,
 		EndDate:   endDate,
 	}
+}
+func BookingTotalNumberOfDays(startDate, endDate time.Time) int {
+	// if startDate and endDate are same, then it's 1 Day i.e. 24hrs, hence we need to add it EndDate
+	startDate, _ = time.Parse("2006-01-02", startDate.Format("2006-01-02"))
+	endDate, _ = time.Parse("2006-01-02", endDate.Format("2006-01-02"))
+	dur := endDate.Add(time.Hour * 24).Sub(startDate)
+	numberOfDays := int(dur.Hours() / 24)
+	return numberOfDays
 }

@@ -7,11 +7,11 @@ import (
 	"gioui.org/widget"
 	"gioui.org/widget/material"
 	"gioui.org/x/component"
+	"github.com/mearaj/bhagad-house-booking/common/utils"
 	"github.com/mearaj/bhagad-house-booking/frontend/i18n"
 	"github.com/mearaj/bhagad-house-booking/frontend/i18n/key"
 	"github.com/mearaj/bhagad-house-booking/frontend/service"
 	"github.com/mearaj/bhagad-house-booking/frontend/ui/fwk"
-	"github.com/mearaj/bhagad-house-booking/frontend/ui/helper"
 	"github.com/mearaj/bhagad-house-booking/frontend/ui/page/addedit"
 	"github.com/mearaj/bhagad-house-booking/frontend/ui/page/transactions"
 	"github.com/mearaj/bhagad-house-booking/frontend/ui/view"
@@ -179,7 +179,7 @@ func (p *pageItem) drawBookingDate(gtx fwk.Gtx, t time.Time, labelStr string) fw
 		layout.Flexed(1, func(gtx layout.Context) layout.Dimensions {
 			ins := layout.Inset{}
 			return ins.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
-				b := material.Body1(p.Theme, helper.GetFormattedDate(t))
+				b := material.Body1(p.Theme, utils.GetFormattedDate(t))
 				b.Font.Weight = view.BookingDetailsBodyFontWeight
 				b.TextSize = view.BookingDetailsBodyFontSize
 				return b.Layout(gtx)

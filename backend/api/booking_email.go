@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/mearaj/bhagad-house-booking/common/response"
+	"github.com/mearaj/bhagad-house-booking/common/utils"
 	"github.com/sendgrid/sendgrid-go"
 	gridmail "github.com/sendgrid/sendgrid-go/helpers/mail"
 	"go.mongodb.org/mongo-driver/bson"
@@ -59,9 +60,27 @@ func (s *Server) sendNewBookingEmail(ctx *gin.Context) {
 	from := gridmail.NewEmail("Bhagad House", s.config.AdminEmail)
 	subject := "Bhagad House Booking Confirmation"
 	to := gridmail.NewEmail(rsp.Booking.CustomerName, rsp.Booking.CustomerEmail)
-	plainTextContent := "and easy to do anywhere, even with Go"
-	htmlContent := fmt.Sprintf(EmailHTML)
-	message := gridmail.NewSingleEmail(from, subject, to, plainTextContent, htmlContent)
+	bookingNumberStr := fmt.Sprintf("%d.", rsp.Booking.Number)
+	bookingStartStr := utils.GetFormattedDate(rsp.Booking.StartDate) + "."
+	bookingEndStr := utils.GetFormattedDate(rsp.Booking.EndDate) + "."
+	bookingPeriodInt := utils.BookingTotalNumberOfDays(rsp.Booking.StartDate, rsp.Booking.EndDate)
+	bookingPeriodStr := fmt.Sprintf("%d day.", bookingPeriodInt)
+	if bookingPeriodInt > 1 {
+		bookingPeriodStr = fmt.Sprintf("%d days.", bookingPeriodInt)
+	}
+	bookingRateStr := fmt.Sprintf("%.2f.", rsp.Booking.RatePerDay)
+	bookingTotalPriceFloat := rsp.Booking.RatePerDay * float64(bookingPeriodInt)
+	bookingTotalPriceStr := fmt.Sprintf("INR %.2f.", bookingTotalPriceFloat)
+	htmlContent := fmt.Sprintf(
+		EmailHTML,
+		bookingNumberStr,
+		bookingStartStr,
+		bookingEndStr,
+		bookingPeriodStr,
+		bookingRateStr,
+		bookingTotalPriceStr,
+	)
+	message := gridmail.NewSingleEmail(from, subject, to, "", htmlContent)
 	client := sendgrid.NewSendClient(s.config.SendGridAPIKey)
 	gridResp, err := client.Send(message)
 	if err != nil {

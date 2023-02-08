@@ -12,8 +12,8 @@ import (
 	"gioui.org/widget/material"
 	"gioui.org/x/component"
 	"github.com/mearaj/bhagad-house-booking/common/model"
+	"github.com/mearaj/bhagad-house-booking/common/utils"
 	"github.com/mearaj/bhagad-house-booking/frontend/ui/fwk"
-	"github.com/mearaj/bhagad-house-booking/frontend/ui/helper"
 	"github.com/mearaj/bhagad-house-booking/frontend/ui/view"
 	"golang.org/x/exp/shiny/materialdesign/colornames"
 	"golang.org/x/exp/shiny/materialdesign/icons"
@@ -98,7 +98,7 @@ func (tr *transactionItem) layoutHeader(gtx fwk.Gtx, index int) fwk.Dim {
 				flex := layout.Flex{Spacing: layout.SpaceBetween}
 				return flex.Layout(gtx,
 					layout.Flexed(1, func(gtx layout.Context) layout.Dimensions {
-						txt := helper.GetFormattedDate(tr.transaction.CreatedAt)
+						txt := utils.GetFormattedDate(tr.transaction.CreatedAt)
 						label := material.Label(th, unit.Sp(14), txt)
 						label.Color = th.ContrastFg
 						label.Font.Weight = text.Bold
