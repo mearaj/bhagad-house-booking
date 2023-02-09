@@ -20,6 +20,8 @@ const (
 	TopicDeleteTransaction
 	TopicSendNewBookingEmail
 	TopicSendNewBookingSMS
+	TopicSendNewTransactionEmail
+	TopicSendNewTransactionSMS
 )
 
 var AllTopicsArr = [...]Topic{
@@ -34,6 +36,8 @@ var AllTopicsArr = [...]Topic{
 	TopicDeleteTransaction,
 	TopicSendNewBookingEmail,
 	TopicSendNewBookingSMS,
+	TopicSendNewTransactionEmail,
+	TopicSendNewTransactionSMS,
 }
 
 type BookingChangedEventData struct{}

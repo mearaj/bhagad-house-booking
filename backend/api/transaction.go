@@ -10,12 +10,14 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"net/http"
 	"strconv"
 	"time"
 )
 
 const ErrorInvalidBookingID = "invalid booking id"
+const ErrorInvalidTransactionNumber = "invalid transaction number"
 const ErrorInvalidPhoneNumber = "invalid phone number"
 
 func (s *Server) addUpdateTransaction(ctx *gin.Context) {
@@ -42,9 +44,22 @@ func (s *Server) addUpdateTransaction(ctx *gin.Context) {
 		return
 	}
 	isNew := rq.ID.Hex() == primitive.NilObjectID.Hex()
+
+	// foundTransaction's purpose is to find the maximum value of transaction number for inserting
+	var foundTransaction model.Transaction
+	err = transactionsCollection.FindOne(context.TODO(), bson.D{}, &options.FindOneOptions{
+		Sort: bson.D{{Key: "number", Value: -1}},
+	}).Decode(&foundTransaction)
+	if err != nil && !errors.Is(err, mongo.ErrNoDocuments) {
+		rsp.Error = err.Error()
+		ctx.JSON(http.StatusInternalServerError, rsp)
+		return
+	}
+
 	if isNew {
 		rq.CreatedAt = time.Now()
 		rq.UpdatedAt = time.Now()
+		rq.Number = foundTransaction.Number + 1
 		result, err := transactionsCollection.InsertOne(context.TODO(), rq)
 		if err != nil {
 			rsp.Error = err.Error()
@@ -61,11 +76,17 @@ func (s *Server) addUpdateTransaction(ctx *gin.Context) {
 	}
 
 	if !isNew {
-		update := bson.D{{Key: "$set", Value: bson.D{
+		value := bson.D{
 			{Key: "updated_at", Value: time.Now()},
 			{Key: "amount", Value: rq.Amount},
 			{Key: "details", Value: rq.Details},
-		}}}
+			{Key: "payment_mode", Value: rq.PaymentMode},
+		}
+		if rq.Number == 0 {
+			rq.Number = foundTransaction.Number + 1
+			value = append(value, bson.E{Key: "number", Value: rq.Number})
+		}
+		update := bson.D{{Key: "$set", Value: value}}
 		filters := bson.D{{Key: "_id", Value: rq.ID}, {Key: "booking_number", Value: rq.BookingNumber}}
 		result, err := transactionsCollection.UpdateOne(context.TODO(), filters, update)
 		if err != nil {
@@ -74,7 +95,7 @@ func (s *Server) addUpdateTransaction(ctx *gin.Context) {
 			return
 		}
 		if result.ModifiedCount != 1 {
-			rsp.Error = "unexpected error"
+			rsp.Error = UnexpectedError
 			ctx.JSON(http.StatusInternalServerError, rsp)
 			return
 		}

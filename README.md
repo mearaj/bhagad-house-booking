@@ -105,3 +105,11 @@ docker tag mearaj/bhagad_house_booking gcr.io/bhagadhouse/bhagad_house_booking
 docker push gcr.io/bhagadhouse/bhagad_house_booking:latest
 ```
 Ref [Google Cloud](https://cloud.google.com/container-registry/docs/pushing-and-pulling)
+
+#### Frontend
+From inside the [frontend folder](frontend)
+```!#console
+gogio -target js -o output/wasm cmd/main.go
+```
+Then copy [index.html](frontend/cmd/static/dist/index.html) into [index.html](frontend/output/wasm/index.html)
+Then copy contents of [wasm.js](frontend/cmd/static/dist/wasm.js) into [wasm.js](frontend/output/wasm/wasm.js) 

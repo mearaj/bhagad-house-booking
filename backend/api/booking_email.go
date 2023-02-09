@@ -17,9 +17,8 @@ import (
 	"strconv"
 )
 
-//go:embed email.html
-
-var EmailHTML string
+//go:embed booking_email.html
+var BookingEmailHTML string
 
 const UnexpectedError = "unexpected error"
 
@@ -56,23 +55,28 @@ func (s *Server) sendNewBookingEmail(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, rsp)
 		return
 	}
+	if s.config.SendGridAPIKey == "" {
+		rsp.Error = UnexpectedError
+		ctx.JSON(http.StatusInternalServerError, rsp)
+		return
+	}
 
 	from := gridmail.NewEmail("Bhagad House", s.config.AdminEmail)
 	subject := "Bhagad House Booking Confirmation"
 	to := gridmail.NewEmail(rsp.Booking.CustomerName, rsp.Booking.CustomerEmail)
-	bookingNumberStr := fmt.Sprintf("%d.", rsp.Booking.Number)
+	bookingNumberStr := fmt.Sprintf("%d", rsp.Booking.Number)
 	bookingStartStr := utils.GetFormattedDate(rsp.Booking.StartDate) + "."
 	bookingEndStr := utils.GetFormattedDate(rsp.Booking.EndDate) + "."
 	bookingPeriodInt := utils.BookingTotalNumberOfDays(rsp.Booking.StartDate, rsp.Booking.EndDate)
-	bookingPeriodStr := fmt.Sprintf("%d day.", bookingPeriodInt)
+	bookingPeriodStr := fmt.Sprintf("%d day", bookingPeriodInt)
 	if bookingPeriodInt > 1 {
-		bookingPeriodStr = fmt.Sprintf("%d days.", bookingPeriodInt)
+		bookingPeriodStr = fmt.Sprintf("%d days", bookingPeriodInt)
 	}
-	bookingRateStr := fmt.Sprintf("%.2f.", rsp.Booking.RatePerDay)
+	bookingRateStr := fmt.Sprintf("%.2f", rsp.Booking.RatePerDay)
 	bookingTotalPriceFloat := rsp.Booking.RatePerDay * float64(bookingPeriodInt)
-	bookingTotalPriceStr := fmt.Sprintf("INR %.2f.", bookingTotalPriceFloat)
+	bookingTotalPriceStr := fmt.Sprintf("INR %.2f", bookingTotalPriceFloat)
 	htmlContent := fmt.Sprintf(
-		EmailHTML,
+		BookingEmailHTML,
 		bookingNumberStr,
 		bookingStartStr,
 		bookingEndStr,
@@ -83,6 +87,11 @@ func (s *Server) sendNewBookingEmail(ctx *gin.Context) {
 	message := gridmail.NewSingleEmail(from, subject, to, "", htmlContent)
 	client := sendgrid.NewSendClient(s.config.SendGridAPIKey)
 	gridResp, err := client.Send(message)
+	if gridResp.StatusCode != http.StatusAccepted {
+		rsp.Error = UnexpectedError
+		ctx.JSON(gridResp.StatusCode, rsp)
+		return
+	}
 	if err != nil {
 		rsp.Error = err.Error()
 		ctx.JSON(gridResp.StatusCode, rsp)

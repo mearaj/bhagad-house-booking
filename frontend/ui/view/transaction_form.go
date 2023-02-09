@@ -2,6 +2,7 @@ package view
 
 import (
 	"gioui.org/layout"
+	"gioui.org/unit"
 	"gioui.org/widget"
 	"gioui.org/widget/material"
 	"gioui.org/x/component"
@@ -14,17 +15,19 @@ import (
 )
 
 type TransactionForm struct {
-	Transaction    model.Transaction
-	DetailsField   component.TextField
-	AmountField    component.TextField
-	PreviousAmount string
-	Theme          *material.Theme
-	Submit         widget.Clickable
-	Cancel         widget.Clickable
+	Transaction     model.Transaction
+	DetailsField    component.TextField
+	AmountField     component.TextField
+	PaymentModeEnum widget.Enum
+	PreviousAmount  string
+	Theme           *material.Theme
+	Submit          widget.Clickable
+	Cancel          widget.Clickable
 }
 
 func NewTransactionForm(transaction model.Transaction, theme *material.Theme) TransactionForm {
 	tr := TransactionForm{Transaction: transaction, Theme: theme}
+	tr.PaymentModeEnum.Value = tr.Transaction.PaymentMode.String()
 	return tr
 }
 
@@ -66,12 +69,46 @@ func (tr *TransactionForm) Layout(gtx fwk.Gtx) fwk.Dim {
 		}),
 		layout.Rigid(layout.Spacer{Height: 16}.Layout),
 		layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+			axis := layout.Horizontal
+			if gtx.Constraints.Max.X < gtx.Dp(460) {
+				axis = layout.Vertical
+			}
+
+			flex := layout.Flex{Alignment: layout.Middle, Axis: axis}
+			return flex.Layout(gtx,
+				layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+					txt := i18n.Get(key.PaymentMode) + " : "
+					if gtx.Constraints.Max.X < gtx.Dp(460) {
+						txt = i18n.Get(key.PaymentMode)
+					}
+					label := material.Label(tr.Theme, unit.Sp(16), txt)
+					return label.Layout(gtx)
+				}),
+				layout.Rigid(layout.Spacer{Width: 8}.Layout),
+				layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+					paymentMode := model.PaymentModeCash.String()
+					return material.RadioButton(tr.Theme, &tr.PaymentModeEnum, paymentMode, paymentMode).Layout(gtx)
+				}),
+				layout.Rigid(layout.Spacer{Width: 8}.Layout),
+				layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+					paymentMode := model.PaymentModeCheque.String()
+					return material.RadioButton(tr.Theme, &tr.PaymentModeEnum, paymentMode, paymentMode).Layout(gtx)
+				}),
+				layout.Rigid(layout.Spacer{Width: 8}.Layout),
+				layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+					paymentMode := model.PaymentModeCreditCard.String()
+					return material.RadioButton(tr.Theme, &tr.PaymentModeEnum, paymentMode, paymentMode).Layout(gtx)
+				}),
+			)
+		}),
+		layout.Rigid(layout.Spacer{Height: 16}.Layout),
+		layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 			flex := layout.Flex{Spacing: layout.SpaceSides}
 			return flex.Layout(gtx,
 				layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-					btnText := i18n.Get(key.AddTransaction)
+					btnText := i18n.Get(key.Add)
 					if !utils.IsNilObjectID(tr.Transaction.ID) {
-						btnText = i18n.Get(key.UpdateTransaction)
+						btnText = i18n.Get(key.Update)
 					}
 					btn := material.Button(tr.Theme, &tr.Submit, btnText)
 					return btn.Layout(gtx)

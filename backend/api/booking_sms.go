@@ -61,13 +61,13 @@ func (s *Server) sendNewBookingSMS(ctx *gin.Context) {
 	bookingStartStr := utils.GetFormattedDate(rsp.Booking.StartDate) + "."
 	bookingEndStr := utils.GetFormattedDate(rsp.Booking.EndDate) + "."
 	bookingPeriodInt := utils.BookingTotalNumberOfDays(rsp.Booking.StartDate, rsp.Booking.EndDate)
-	bookingPeriodStr := fmt.Sprintf("%d day.", bookingPeriodInt)
+	bookingPeriodStr := fmt.Sprintf("%d day", bookingPeriodInt)
 	if bookingPeriodInt > 1 {
-		bookingPeriodStr = fmt.Sprintf("%d days.", bookingPeriodInt)
+		bookingPeriodStr = fmt.Sprintf("%d days", bookingPeriodInt)
 	}
-	bookingRateStr := fmt.Sprintf("%.2f.", rsp.Booking.RatePerDay)
+	bookingRateStr := fmt.Sprintf("%.2f", rsp.Booking.RatePerDay)
 	bookingTotalPriceFloat := rsp.Booking.RatePerDay * float64(bookingPeriodInt)
-	bookingTotalPriceStr := fmt.Sprintf("INR %.2f.", bookingTotalPriceFloat)
+	bookingTotalPriceStr := fmt.Sprintf("INR %.2f", bookingTotalPriceFloat)
 	textContent := fmt.Sprintf(
 		"%s\n%s\n%s : %s\n%s : %s\n%s : %s\n%s : %s\n%s : %s\n%s : %s\n%s : %s\n\n%s",
 		"This is a confirmation sms for your booking at https://bhagadhouse.com.",
@@ -79,7 +79,7 @@ func (s *Server) sendNewBookingSMS(ctx *gin.Context) {
 		"Period", bookingPeriodStr,
 		"Rate", bookingRateStr,
 		"Total Price", bookingTotalPriceStr,
-		"Than you for your business",
+		"Thank you for your business!",
 	)
 	// Find your Account SID and Auth Token at twilio.com/console
 	// and set the environment variables. See http://twil.io/secure

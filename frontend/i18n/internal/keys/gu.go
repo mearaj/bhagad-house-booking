@@ -3,6 +3,7 @@ package keys
 import "github.com/mearaj/bhagad-house-booking/frontend/i18n/key"
 
 var GuMapNative = map[key.Key]string{
+	key.Add:                     "ઉમેરો",
 	key.AddTransaction:          "વ્યવહાર ઉમેરો",
 	key.AdminLogin:              "એડમિન લૉગિન",
 	key.Alpha:                   "આલ્ફા",
@@ -52,6 +53,9 @@ var GuMapNative = map[key.Key]string{
 	key.Number:                  "સંખ્યા",
 	key.NumberShort:             "સંખ્યા",
 	key.Password:                "પાસવર્ડ",
+	key.Payment:                 "ચુકવણી",
+	key.PaymentMode:             "ચુકવણી મોડ",
+	key.Period:                  "સમયગાળો",
 	key.RatePerDay:              "દિવસ દીઠ દર",
 	key.Received:                "દપ્રાપ્ત",
 	key.Red:                     "લાલ",

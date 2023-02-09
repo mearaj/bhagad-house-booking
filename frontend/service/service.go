@@ -28,6 +28,8 @@ type (
 	DeleteTransactionResponse    = response.DeleteTransaction
 	NewBookingSMSResponse        = response.NewBookingSMS
 	NewBookingEmailResponse      = response.NewBookingEmail
+	NewTransactionSMSResponse    = response.NewTransactionSMS
+	NewTransactionEmailResponse  = response.NewTransactionEmail
 )
 
 type Service interface {
@@ -44,6 +46,8 @@ type Service interface {
 	DeleteTransaction(request DeleteTransactionRequest, eventID interface{})
 	SendNewBookingSMS(bookingNumber int, eventID interface{})
 	SendNewBookingEmail(bookingNumber int, eventID interface{})
+	SendNewTransactionSMS(transactionNumber int, eventID interface{})
+	SendNewTransactionEmail(transactionNumber int, eventID interface{})
 }
 
 type service struct {

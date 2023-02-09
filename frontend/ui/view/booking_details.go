@@ -49,6 +49,16 @@ func (p *BookingDetails) layoutContent(gtx fwk.Gtx) fwk.Dim {
 				return p.drawBookingField(gtx, labelTxt, valueTxt)
 			}),
 			layout.Rigid(func(gtx fwk.Gtx) fwk.Dim {
+				labelTxt := i18n.Get(key.CustomerPhone)
+				valueTxt := p.Booking.CustomerPhone
+				return p.drawBookingField(gtx, labelTxt, valueTxt)
+			}),
+			layout.Rigid(func(gtx fwk.Gtx) fwk.Dim {
+				labelTxt := i18n.Get(key.CustomerEmail)
+				valueTxt := p.Booking.CustomerEmail
+				return p.drawBookingField(gtx, labelTxt, valueTxt)
+			}),
+			layout.Rigid(func(gtx fwk.Gtx) fwk.Dim {
 				labelTxt := i18n.Get(key.Booking) + " " + i18n.Get(key.Details)
 				valueTxt := p.Booking.Details
 				return p.drawBookingField(gtx, labelTxt, valueTxt)
@@ -60,6 +70,17 @@ func (p *BookingDetails) layoutContent(gtx fwk.Gtx) fwk.Dim {
 			layout.Rigid(func(gtx fwk.Gtx) fwk.Dim {
 				label := i18n.Get(key.EndDate)
 				return p.drawBookingDate(gtx, p.EndDate, label)
+			}),
+			layout.Rigid(func(gtx fwk.Gtx) fwk.Dim {
+				labelTxt := i18n.Get(key.Period)
+				valueInt := utils.BookingTotalNumberOfDays(p.StartDate, p.EndDate)
+				valueTxt := fmt.Sprintf("%d", valueInt)
+				if valueInt > 1 {
+					valueTxt += " Days"
+				} else {
+					valueTxt += " Day"
+				}
+				return p.drawBookingField(gtx, labelTxt, valueTxt)
 			}),
 			layout.Rigid(func(gtx fwk.Gtx) fwk.Dim {
 				labelTxt := i18n.Get(key.RatePerDay)

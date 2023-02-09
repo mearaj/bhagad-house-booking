@@ -19,6 +19,7 @@ import (
 	"golang.org/x/exp/shiny/materialdesign/icons"
 	"image"
 	"image/color"
+	"net/mail"
 	"strings"
 )
 
@@ -59,15 +60,13 @@ func NewBookingDetailsForm(manager Manager, booking service.Booking) BookingDeta
 			StartDate: booking.StartDate,
 			EndDate:   booking.EndDate,
 		}, false),
-		List:           layout.List{Axis: layout.Vertical},
-		Booking:        booking,
-		CustomerEmail:  component.TextField{Editor: widget.Editor{InputHint: giokey.HintEmail, SingleLine: true}},
-		CustomerPhone:  component.TextField{Editor: widget.Editor{InputHint: giokey.HintTelephone, SingleLine: true}},
-		BtnSendEmail:   material.Button(user.Theme(), &widget.Clickable{}, ""),
-		BtnSendSMS:     material.Button(user.Theme(), &widget.Clickable{}, ""),
-		IconDone:       iconDone,
-		IsSendingEmail: false,
-		IsSendingSMS:   false,
+		List:          layout.List{Axis: layout.Vertical},
+		Booking:       booking,
+		CustomerEmail: component.TextField{Editor: widget.Editor{InputHint: giokey.HintEmail, SingleLine: true}},
+		CustomerPhone: component.TextField{Editor: widget.Editor{InputHint: giokey.HintTelephone, SingleLine: true}},
+		BtnSendEmail:  material.Button(user.Theme(), &widget.Clickable{}, ""),
+		BtnSendSMS:    material.Button(user.Theme(), &widget.Clickable{}, ""),
+		IconDone:      iconDone,
 	}
 	contForm.Details.TextField.SetText(booking.CustomerName)
 	contForm.CustomerName.TextField.SetText(booking.Details)
@@ -116,6 +115,8 @@ func (bf *BookingDetailsForm) Layout(gtx Gtx) Dim {
 				})
 			}),
 			layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+				_, err := mail.ParseAddress(bf.Booking.CustomerEmail)
+				isEmailValid := err == nil
 				inset := layout.UniformInset(16)
 				return inset.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
 					labelText := i18n.Get(key.CustomerEmail)
@@ -134,7 +135,7 @@ func (bf *BookingDetailsForm) Layout(gtx Gtx) Dim {
 
 						return bf.IconDone.Layout(gtx, iconColor)
 					}
-					if isBookingNew {
+					if isBookingNew || !isEmailValid {
 						btn = nil
 						iconDone = nil
 					}
@@ -146,6 +147,7 @@ func (bf *BookingDetailsForm) Layout(gtx Gtx) Dim {
 				})
 			}),
 			layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+				isPhoneValid := utils.ValidateIndianPhoneNumber(bf.Booking.CustomerPhone)
 				inset := layout.UniformInset(16)
 				return inset.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
 					labelText := i18n.Get(key.CustomerPhone)
@@ -164,7 +166,7 @@ func (bf *BookingDetailsForm) Layout(gtx Gtx) Dim {
 
 						return bf.IconDone.Layout(gtx, iconColor)
 					}
-					if isBookingNew {
+					if isBookingNew || !isPhoneValid {
 						btn = nil
 						iconDone = nil
 					}

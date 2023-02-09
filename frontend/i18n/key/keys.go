@@ -3,6 +3,7 @@ package key
 type Key string
 
 const (
+	Add                     Key = "Add"
 	AddTransaction          Key = "Add Transaction"
 	AdminLogin              Key = "Admin Login"
 	Alpha                   Key = "Alpha"
@@ -52,6 +53,9 @@ const (
 	Number                  Key = "Number"
 	NumberShort             Key = "No."
 	Password                Key = "Password"
+	Payment                 Key = "Payment"
+	PaymentMode             Key = "Payment Mode"
+	Period                  Key = "Period"
 	RatePerDay              Key = "Rate Per Day"
 	Received                Key = "Received"
 	Red                     Key = "Red"

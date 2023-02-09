@@ -7,23 +7,23 @@ import (
 	"net/http"
 )
 
-func (s *service) SendNewBookingEmail(bookingNumber int, id interface{}) {
+func (s *service) SendNewTransactionEmail(transactionNumber int, id interface{}) {
 	go func() {
-		var bookingEmailResponse NewBookingEmailResponse
+		var transactionEmailResponse NewTransactionEmailResponse
 		defer func() {
 			if r := recover(); r != nil {
 				fmt.Println("recovered from err, ", r)
-				bookingEmailResponse.Error = fmt.Sprintf("%v", r)
+				transactionEmailResponse.Error = fmt.Sprintf("%v", r)
 			}
 			s.eventBroker.Fire(Event{
-				Data:  bookingEmailResponse,
-				Topic: TopicSendNewBookingEmail,
+				Data:  transactionEmailResponse,
+				Topic: TopicSendNewTransactionEmail,
 				ID:    id,
 			})
 		}()
-		req, err := http.NewRequest("POST", s.config.ApiURL+"/bookings/"+fmt.Sprintf("%d", bookingNumber)+"/sendNewBookingEmail", nil)
+		req, err := http.NewRequest("POST", s.config.ApiURL+"/transactions/"+fmt.Sprintf("%d", transactionNumber)+"/sendNewTransactionEmail", nil)
 		if err != nil {
-			bookingEmailResponse.Error = err.Error()
+			transactionEmailResponse.Error = err.Error()
 			return
 		}
 		req.Header.Add("Accept", "application/json")
@@ -33,16 +33,16 @@ func (s *service) SendNewBookingEmail(bookingNumber int, id interface{}) {
 		if err != nil {
 			isAuthErr := s.FireAuthError(rsp, id, err)
 			if isAuthErr {
-				bookingEmailResponse.Error = UnauthorizedErrorStr
+				transactionEmailResponse.Error = UnauthorizedErrorStr
 			}
 			return
 		}
 		defer func() {
 			_ = rsp.Body.Close()
 		}()
-		err = json.NewDecoder(rsp.Body).Decode(&bookingEmailResponse)
+		err = json.NewDecoder(rsp.Body).Decode(&transactionEmailResponse)
 		if err != nil {
-			bookingEmailResponse.Error = err.Error()
+			transactionEmailResponse.Error = err.Error()
 			return
 		}
 	}()

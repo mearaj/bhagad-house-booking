@@ -49,10 +49,20 @@ func (s *Server) setupCollections() {
 	usersCollection = database.Collection("users")
 	bookingsCollection = database.Collection("bookings")
 	transactionsCollection = database.Collection("transactions")
-	bookingsCollection.Indexes().CreateOne(context.TODO(), mongo.IndexModel{
+	_, err := transactionsCollection.Indexes().CreateOne(context.TODO(), mongo.IndexModel{
 		Keys:    bson.D{{Key: "number", Value: 1}},
 		Options: options.Index().SetUnique(true),
 	})
+	if err != nil {
+		alog.Logger().Println(err)
+	}
+	_, err = bookingsCollection.Indexes().CreateOne(context.TODO(), mongo.IndexModel{
+		Keys:    bson.D{{Key: "number", Value: 1}},
+		Options: options.Index().SetUnique(true),
+	})
+	if err != nil {
+		alog.Logger().Println(err)
+	}
 }
 
 // setupAdmin for security reasons, password is removed after the function is returned
@@ -117,6 +127,8 @@ func (s *Server) setupRouter() {
 	authRoutes.DELETE("/transactions", s.deleteTransaction)
 	authRoutes.POST("/bookings/:number/sendNewBookingEmail", s.sendNewBookingEmail)
 	authRoutes.POST("/bookings/:number/sendNewBookingSMS", s.sendNewBookingSMS)
+	authRoutes.POST("/transactions/:number/sendNewTransactionEmail", s.sendNewTransactionEmail)
+	authRoutes.POST("/transactions/:number/sendNewTransactionSMS", s.sendNewTransactionSMS)
 	s.router = router
 }
 

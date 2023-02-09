@@ -20,3 +20,12 @@ type DeleteTransaction struct {
 	BookingNumber int                `json:"booking_number,omitempty"`
 	Error         string             `json:"error,omitempty"`
 }
+
+type NewTransactionEmail struct {
+	Transaction model.Transaction `json:"transaction,omitempty"`
+	Error       string            `json:"error,omitempty"`
+}
+type NewTransactionSMS struct {
+	Transaction model.Transaction `json:"transaction,omitempty"`
+	Error       string            `json:"error,omitempty"`
+}

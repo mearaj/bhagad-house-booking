@@ -3,6 +3,7 @@ package keys
 import "github.com/mearaj/bhagad-house-booking/frontend/i18n/key"
 
 var EnMapNative = map[key.Key]string{
+	key.Add:                     string(key.Add),
 	key.AddTransaction:          string(key.AddTransaction),
 	key.AdminLogin:              string(key.AdminLogin),
 	key.Alpha:                   string(key.Alpha),
@@ -51,6 +52,9 @@ var EnMapNative = map[key.Key]string{
 	key.Number:                  string(key.Number),
 	key.NumberShort:             string(key.NumberShort),
 	key.Password:                string(key.Password),
+	key.Payment:                 string(key.Payment),
+	key.PaymentMode:             string(key.PaymentMode),
+	key.Period:                  string(key.Period),
 	key.RatePerDay:              string(key.RatePerDay),
 	key.Received:                string(key.Received),
 	key.Red:                     string(key.Red),

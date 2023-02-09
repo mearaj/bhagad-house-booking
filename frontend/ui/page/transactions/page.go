@@ -166,6 +166,7 @@ func (p *page) drawTransactionItem(gtx fwk.Gtx, index int) fwk.Dim {
 		p.selectedTransaction.Transaction = transaction
 		p.selectedTransaction.AmountField.SetText(fmt.Sprintf("%.2f", transaction.Amount))
 		p.selectedTransaction.DetailsField.SetText(transaction.Details)
+		p.selectedTransaction.PaymentModeEnum.Value = transaction.PaymentMode.String()
 		p.Modal().Show(func(gtx layout.Context) layout.Dimensions {
 			return p.drawTransactionForm(gtx)
 		}, nil, view.Animation{
@@ -179,6 +180,7 @@ func (p *page) drawTransactionItem(gtx fwk.Gtx, index int) fwk.Dim {
 		p.selectedTransaction.Transaction = transaction
 		p.selectedTransaction.AmountField.SetText(fmt.Sprintf("%.2f", transaction.Amount))
 		p.selectedTransaction.DetailsField.SetText(transaction.Details)
+		p.selectedTransaction.PaymentModeEnum.Value = transaction.PaymentMode.String()
 		p.Modal().Show(func(gtx layout.Context) layout.Dimensions {
 			return p.drawDeleteTransactionModel(gtx, index)
 		}, nil, view.Animation{
@@ -187,6 +189,7 @@ func (p *page) drawTransactionItem(gtx fwk.Gtx, index int) fwk.Dim {
 			Started:  time.Time{},
 		})
 	}
+
 	return p.transactions[index].Layout(gtx, index)
 }
 
@@ -305,6 +308,7 @@ func (p *page) handleSubmitTransaction() {
 			BookingNumber: p.selectedTransaction.Transaction.BookingNumber,
 			Amount:        amount,
 			Details:       p.selectedTransaction.DetailsField.Text(),
+			PaymentMode:   model.PaymentModeString(p.selectedTransaction.PaymentModeEnum.Value).ModeInt(),
 		}, p)
 		p.selectedTransaction = view.NewTransactionForm(model.Transaction{BookingNumber: p.Booking.Number}, user.Theme())
 	}
@@ -352,32 +356,39 @@ func (p *page) OnServiceStateChange(event service.Event) {
 	case service.UserResponse:
 		p.Window().Invalidate()
 	case service.TransactionsResponse:
-		p.isFetchingTransactions = false
 		if event.Cached || event.ID != p {
 			return
 		}
+		p.isFetchingTransactions = false
 		errTxt = eventData.Error
 		var transactions []*transactionItem
 		for _, tr := range eventData.Transactions {
 			transactions = append(transactions, &transactionItem{
 				transaction: tr,
 				Theme:       p.Theme,
+				parent:      p,
 			})
 		}
 		p.transactions = transactions
 	case service.AddUpdateTransactionResponse:
-		p.isFetchingTransactions = false
 		if event.Cached || event.ID != p {
 			return
 		}
+		p.isFetchingTransactions = false
 		p.fetchTransactions()
 	case service.DeleteTransactionResponse:
-		p.isFetchingTransactions = false
 		if event.Cached || event.ID != p {
 			return
 		}
+		p.isFetchingTransactions = false
 		errTxt = eventData.Error
 		p.fetchTransactions()
+	case service.NewTransactionSMSResponse, service.NewTransactionEmailResponse:
+		for _, tr := range p.transactions {
+			if tr == event.ID {
+				tr.OnServiceStateChange(event)
+			}
+		}
 	}
 	if errTxt != "" {
 		if strings.Contains(errTxt, "connection refused") {
